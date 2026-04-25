@@ -101,19 +101,19 @@ draw_drawables :: proc() {
             {pos.x, pos.y, drawable.z},
             {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
             {drawable.texture_data.base.x, drawable.texture_data.base.y},
-	    drawable.texture_data.tex_idx,
+            drawable.texture_data.tex_idx,
         }
         VERTEX_BUFFER[vertex_base_idx + 1] = {
             {pos.x, pos.y - dim.h, drawable.z},
             {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
             {drawable.texture_data.base.x, drawable.texture_data.base.y - drawable.texture_data.dim.h},
-	    drawable.texture_data.tex_idx,
+            drawable.texture_data.tex_idx,
         }
         VERTEX_BUFFER[vertex_base_idx + 2] = {
             {pos.x + dim.w, pos.y, drawable.z},
             {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
             {drawable.texture_data.base.x + drawable.texture_data.dim.w, drawable.texture_data.base.y},
-	    drawable.texture_data.tex_idx,
+            drawable.texture_data.tex_idx,
         }
         VERTEX_BUFFER[vertex_base_idx + 3] = {
             {pos.x + dim.w, pos.y - dim.h, drawable.z},
@@ -122,7 +122,7 @@ draw_drawables :: proc() {
                 drawable.texture_data.base.x + drawable.texture_data.dim.w,
                 drawable.texture_data.base.y - drawable.texture_data.dim.h,
             },
-	    drawable.texture_data.tex_idx,
+            drawable.texture_data.tex_idx,
         }
 
         INDEX_BUFFER[index_base_idx + 0] = cast(u32)(vertex_base_idx + 0)
@@ -330,7 +330,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
     }
 
     {     // create vertex shader module
-        data, err := os.read_entire_file_from_filename_or_err(VERTEX_SHADER_PATH)
+        data, err := os.read_entire_file_from_path(VERTEX_SHADER_PATH, context.allocator)
         if err != nil {
             fmt.eprintln("Error reading vertex shader file", err)
             panic("Failed to read vertex shader file")
@@ -347,7 +347,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
     }
 
     {     // create fragment shader module
-        data, err := os.read_entire_file_from_filename_or_err(FRAGMENT_SHADER_PATH)
+        data, err := os.read_entire_file_from_path(FRAGMENT_SHADER_PATH, context.allocator)
         if err != nil {
             fmt.eprintln("Error reading fragment shader file", err)
             panic("Failed to read fragment shader file")
@@ -396,12 +396,15 @@ init_renderer :: proc() -> (renderer: Renderer) {
             imageView   = renderer.font_texture_image_view,
             imageLayout = .SHADER_READ_ONLY_OPTIMAL,
         }
-	sprite_descriptor_image_info := vulkan.DescriptorImageInfo {
-	    sampler = renderer.sprite_texture_sampler,
-	    imageView = renderer.sprite_texture_image_view,
-	    imageLayout = .SHADER_READ_ONLY_OPTIMAL,
-	}
-	sampler_descriptor_images := []vulkan.DescriptorImageInfo{font_descriptor_image_info, sprite_descriptor_image_info}
+        sprite_descriptor_image_info := vulkan.DescriptorImageInfo {
+            sampler     = renderer.sprite_texture_sampler,
+            imageView   = renderer.sprite_texture_image_view,
+            imageLayout = .SHADER_READ_ONLY_OPTIMAL,
+        }
+        sampler_descriptor_images := []vulkan.DescriptorImageInfo {
+            font_descriptor_image_info,
+            sprite_descriptor_image_info,
+        }
         descriptor_write := vulkan.WriteDescriptorSet {
             sType           = .WRITE_DESCRIPTOR_SET,
             dstSet          = renderer.descriptor_set,
@@ -465,31 +468,31 @@ init_renderer :: proc() -> (renderer: Renderer) {
     return renderer
 }
 
-deinit_renderer :: proc(using renderer: ^Renderer) {
-    for i in 0 ..< len(swapchain_images) {
-        vulkan.DestroySemaphore(device, semaphores_draw_finished[i], nil)
+deinit_renderer :: proc(r: ^Renderer) {
+    for i in 0 ..< len(r.swapchain_images) {
+        vulkan.DestroySemaphore(r.device, r.semaphores_draw_finished[i], nil)
     }
-    delete(semaphores_draw_finished)
-    vulkan.DestroyFence(device, fence_image_acquired, nil)
-    vulkan.DestroyFence(device, fence_frame_finished, nil)
-    vulkan.DestroyCommandPool(device, command_pool, nil)
-    vulkan.DestroyShaderModule(device, vertex_shader_module, nil)
-    vulkan.DestroyBuffer(device, vertex_buffer, nil)
-    vulkan.DestroyBuffer(device, index_buffer, nil)
-    renderer.vertex_buffer_memory_mapped = nil
-    renderer.index_buffer_memory_mapped = nil
-    vulkan.UnmapMemory(device, vertex_buffer_memory)
-    vulkan.UnmapMemory(device, index_buffer_memory)
-    vulkan.FreeMemory(device, vertex_buffer_memory, nil)
-    vulkan.FreeMemory(device, index_buffer_memory, nil)
-    for image_view in swapchain_image_views {
-        vulkan.DestroyImageView(device, image_view, nil)
+    delete(r.semaphores_draw_finished)
+    vulkan.DestroyFence(r.device, r.fence_image_acquired, nil)
+    vulkan.DestroyFence(r.device, r.fence_frame_finished, nil)
+    vulkan.DestroyCommandPool(r.device, r.command_pool, nil)
+    vulkan.DestroyShaderModule(r.device, r.vertex_shader_module, nil)
+    vulkan.DestroyBuffer(r.device, r.vertex_buffer, nil)
+    vulkan.DestroyBuffer(r.device, r.index_buffer, nil)
+    r.vertex_buffer_memory_mapped = nil
+    r.index_buffer_memory_mapped = nil
+    vulkan.UnmapMemory(r.device, r.vertex_buffer_memory)
+    vulkan.UnmapMemory(r.device, r.index_buffer_memory)
+    vulkan.FreeMemory(r.device, r.vertex_buffer_memory, nil)
+    vulkan.FreeMemory(r.device, r.index_buffer_memory, nil)
+    for image_view in r.swapchain_image_views {
+        vulkan.DestroyImageView(r.device, image_view, nil)
     }
-    delete(swapchain_image_views)
-    delete(swapchain_images)
-    vulkan.DestroySwapchainKHR(device, swapchain, nil)
+    delete(r.swapchain_image_views)
+    delete(r.swapchain_images)
+    vulkan.DestroySwapchainKHR(r.device, r.swapchain, nil)
     vulkan.DestroySurfaceKHR(gc.vk_instance, gc.vk_surface, nil)
-    vulkan.DestroyDevice(device, nil)
+    vulkan.DestroyDevice(r.device, nil)
 }
 
 render_frame :: proc(renderer: ^Renderer) {

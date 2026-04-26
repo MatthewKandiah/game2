@@ -78,13 +78,12 @@ Renderer :: struct {
 }
 
 drawable_dim_to_screen_dim :: proc(dim: Dim) -> Dim {
-    return Dim{w = 2 * dim.w / cast(f32)gc.surface_extent.width, h = 2 * dim.h / cast(f32)gc.surface_extent.height}
+    return Dim{v = {2 * dim.w / cast(f32)gc.surface_extent.width, 2 * dim.h / cast(f32)gc.surface_extent.height}}
 }
 
 drawable_pos_to_screen_pos :: proc(pos: Pos) -> Pos {
     return Pos {
-        x = (2 * pos.x) / cast(f32)gc.surface_extent.width - 1,
-        y = 1 - (2 * pos.y) / cast(f32)gc.surface_extent.height,
+        v = {(2 * pos.x) / cast(f32)gc.surface_extent.width - 1, 1 - (2 * pos.y) / cast(f32)gc.surface_extent.height},
     }
 }
 

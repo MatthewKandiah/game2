@@ -1,7 +1,6 @@
 # GAME 2
 
 # TODO - preliminary refactoring
-- refactor stuff like Pos and Dim to improve ergonomics e.g. want nicer arithmetic operations (split out arithmetic.odin? define add, sub, mul, div, etc. for these types)
 - refactor renderer so texture assets and loading is less-hardcoded and more extensible
 - make screen resizing behaviour nicer
 - can renderer be made nicer making more use of dynamic rendering?

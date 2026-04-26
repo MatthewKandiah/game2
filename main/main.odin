@@ -17,59 +17,7 @@ GlobalContext :: struct {
 }
 gc: GlobalContext
 
-// TODO - do we want to refactor Pos and Dim to work more like this
-// lets us access the fields with nice names, but also use Odin's nice array programming when we want to
-Foo :: distinct [2]f32
-
-Bar :: struct #raw_union {
-    v:       Foo,
-    using _: struct {
-        w, h: f32,
-    },
-}
-
-Baz :: struct #raw_union {
-    v:       Foo,
-    using _: struct {
-        d, l: f32,
-    },
-}
-
-add_bar :: proc(lhs, rhs: Bar) -> Bar {
-    return Bar{v = lhs.v + rhs.v}
-}
-
-add_baz :: proc(lhs, rhs: Baz) -> Baz {
-    return Baz{v = lhs.v + rhs.v}
-}
-
-add :: proc {
-    add_bar,
-    add_baz,
-}
-
 main :: proc() {
-    p1 := Bar {
-        v = {1, 2},
-    }
-    p2 := Bar {
-        v = {3, 4},
-    }
-    res := add(p1, p2)
-    w := res.w
-    h := res.h
-
-    baz1 := Baz {
-        v = p1.v,
-    }
-    baz2 := Baz {
-        v = p2.v,
-    }
-    res_baz := add(baz1, baz2)
-    d := res_baz.d
-    l := res_baz.l
-    fmt.println(res, w, h, d, l)
-
     {     // glfw init
         glfw.SetErrorCallback(error_callback)
 
@@ -134,15 +82,15 @@ main :: proc() {
     stopwatch := time.Stopwatch{}
 
     texture_data := TextureData {
-        base    = Pos{54, 0},
-        dim     = Dim{16, 32},
+        base    = Pos{v = {54, 0}},
+        dim     = Dim{v = {16, 32}},
         tex_idx = 1,
     }
 
     drawable := Drawable {
-        pos             = Pos{0, 0},
+        pos             = Pos{v = {0, 0}},
         z               = 1,
-        dim             = Dim{360, 540},
+        dim             = Dim{v = {360, 540}},
         texture_data    = texture_data,
         override_colour = false,
         colour          = RED,

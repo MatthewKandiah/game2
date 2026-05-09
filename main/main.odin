@@ -93,7 +93,7 @@ main :: proc() {
     stopwatch := time.Stopwatch{}
 
     texture_data_red := TextureData {
-        base = Pos{v = {0, 32}}, // base is the bottom left, index is from the top left - I think this is what I was doing wrong that whole time!
+        base = Pos{v = {0, 32}},
         dim = Dim{v = {32, 32}},
         tex_idx = SPRITE_TEXTURE_INDEX,
     }
@@ -114,6 +114,12 @@ main :: proc() {
 	base = Pos{v = {8, 16}},
 	dim = Dim{v = {8, 16}},
 	tex_idx = FONT_TEXTURE_INDEX,
+    }
+
+    texture_data_yellow := TextureData {
+	base = Pos{v = {0, 128}},
+	dim = Dim{v = {128, 128}},
+	tex_idx = YELLOW_TEXTURE_INDEX,
     }
 
     drawable_red := Drawable {
@@ -152,6 +158,15 @@ main :: proc() {
 	colour = YELLOW,
     }
 
+    drawable_yellow := Drawable {
+	pos = drawable_red.pos,
+	z = 0.15,
+	dim = drawable_red.dim,
+	texture_data = texture_data_yellow,
+	override_colour = false,
+	colour = GREY,
+    }
+
     // main loop
     for !glfw.WindowShouldClose(gc.window) {
         time.stopwatch_start(&stopwatch)
@@ -161,7 +176,8 @@ main :: proc() {
 	DRAWABLES[1] = drawable_red
 	DRAWABLES[2] = drawable_green
 	DRAWABLES[3] = drawable_b
-        DRAWABLES_COUNT = 4
+	DRAWABLES[4] = drawable_yellow
+        DRAWABLES_COUNT = 5
         render_frame(&renderer)
 
         h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)

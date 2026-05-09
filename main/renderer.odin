@@ -24,10 +24,12 @@ REQUIRED_DEVICE_EXTENSIONS := []cstring {
 
 VERTEX_SHADER_PATH :: "build/vert.spv"
 FRAGMENT_SHADER_PATH :: "build/frag.spv"
-FONT_TEXTURE_PATH :: "assets/font.png"
-SPRITE_TEXTURE_PATH :: "assets/spritesheet.png"
+TEXTURE_PATHS :: [?]cstring{"assets/font.png", "assets/spritesheet.png", "assets/yellow.png"}
+TEXTURE_ASSETS_COUNT :: len(TEXTURE_PATHS)
+// TODO - can we infer these from the texture paths constant in a more clever way? map path to index maybe?
 FONT_TEXTURE_INDEX :: 0
 SPRITE_TEXTURE_INDEX :: 1
+YELLOW_TEXTURE_INDEX :: 2
 
 VERTEX_BUFFER_SIZE :: 10_000
 VERTEX_BUFFER := [VERTEX_BUFFER_SIZE]Vertex{}
@@ -61,14 +63,10 @@ Renderer :: struct {
     semaphores_draw_finished:    []vulkan.Semaphore,
     fence_image_acquired:        vulkan.Fence,
     fence_frame_finished:        vulkan.Fence,
-    font_texture_image:          vulkan.Image,
-    font_texture_image_memory:   vulkan.DeviceMemory,
-    font_texture_image_view:     vulkan.ImageView,
-    font_texture_sampler:        vulkan.Sampler,
-    sprite_texture_image:        vulkan.Image,
-    sprite_texture_image_memory: vulkan.DeviceMemory,
-    sprite_texture_image_view:   vulkan.ImageView,
-    sprite_texture_sampler:      vulkan.Sampler,
+    texture_images: [TEXTURE_ASSETS_COUNT]vulkan.Image,
+    texture_image_memories:   [TEXTURE_ASSETS_COUNT]vulkan.DeviceMemory,
+    texture_image_views:     [TEXTURE_ASSETS_COUNT]vulkan.ImageView,
+    texture_samplers:        [TEXTURE_ASSETS_COUNT]vulkan.Sampler, // TODO can we just reuse one sampler?
     descriptor_pool:             vulkan.DescriptorPool,
     descriptor_set:              vulkan.DescriptorSet,
     descriptor_set_layout:       vulkan.DescriptorSetLayout,
@@ -247,7 +245,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
     {     // create descriptor pool
         descriptor_pool_size := vulkan.DescriptorPoolSize {
             type            = .COMBINED_IMAGE_SAMPLER,
-            descriptorCount = 2,
+            descriptorCount = TEXTURE_ASSETS_COUNT,
         }
 
         create_info := vulkan.DescriptorPoolCreateInfo {
@@ -263,15 +261,12 @@ init_renderer :: proc() -> (renderer: Renderer) {
         }
     }
 
-    // TODO - don't hardcode the texture paths, have a way to pass in which assets we're initialising
-    renderer.font_texture_image, renderer.font_texture_image_memory, renderer.font_texture_image_view =
-        create_texture_from_file(renderer, FONT_TEXTURE_PATH)
-    renderer.sprite_texture_image, renderer.sprite_texture_image_memory, renderer.sprite_texture_image_view =
-        create_texture_from_file(renderer, SPRITE_TEXTURE_PATH)
-    create_depth_image_and_view(&renderer)
+    for path, idx in TEXTURE_PATHS {
+	renderer.texture_images[idx], renderer.texture_image_memories[idx], renderer.texture_image_views[idx] = create_texture_from_file(renderer, path)
+	renderer.texture_samplers[idx] = create_sampler(renderer)
+    }
 
-    renderer.font_texture_sampler = create_sampler(renderer)
-    renderer.sprite_texture_sampler = create_sampler(renderer)
+    create_depth_image_and_view(&renderer)
 
     {     // create vertex buffer
         create_info := vulkan.BufferCreateInfo {
@@ -367,7 +362,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
         texture_combined_samplers_binding := vulkan.DescriptorSetLayoutBinding {
             binding            = 0,
             descriptorType     = .COMBINED_IMAGE_SAMPLER,
-            descriptorCount    = 2,
+            descriptorCount    = TEXTURE_ASSETS_COUNT,
             stageFlags         = {.FRAGMENT},
             pImmutableSamplers = nil,
         }
@@ -391,28 +386,23 @@ init_renderer :: proc() -> (renderer: Renderer) {
     }
 
     {     // update descriptor set
-        font_descriptor_image_info := vulkan.DescriptorImageInfo {
-            sampler     = renderer.font_texture_sampler,
-            imageView   = renderer.font_texture_image_view,
-            imageLayout = .SHADER_READ_ONLY_OPTIMAL,
-        }
-        sprite_descriptor_image_info := vulkan.DescriptorImageInfo {
-            sampler     = renderer.sprite_texture_sampler,
-            imageView   = renderer.sprite_texture_image_view,
-            imageLayout = .SHADER_READ_ONLY_OPTIMAL,
-        }
-        sampler_descriptor_images := []vulkan.DescriptorImageInfo {
-            font_descriptor_image_info,
-            sprite_descriptor_image_info,
-        }
+        sampler_descriptor_images : [TEXTURE_ASSETS_COUNT]vulkan.DescriptorImageInfo
+	for i in 0..< TEXTURE_ASSETS_COUNT {
+	    sampler_descriptor_images[i] = vulkan.DescriptorImageInfo {
+		sampler = renderer.texture_samplers[i],
+		imageView = renderer.texture_image_views[i],
+		imageLayout = .SHADER_READ_ONLY_OPTIMAL,
+	    }
+	}
+	
         descriptor_write := vulkan.WriteDescriptorSet {
             sType           = .WRITE_DESCRIPTOR_SET,
             dstSet          = renderer.descriptor_set,
             dstBinding      = 0,
             dstArrayElement = 0,
-            descriptorCount = 2,
+            descriptorCount = TEXTURE_ASSETS_COUNT,
             descriptorType  = .COMBINED_IMAGE_SAMPLER,
-            pImageInfo      = raw_data(sampler_descriptor_images),
+            pImageInfo      = &sampler_descriptor_images[0],
         }
         vulkan.UpdateDescriptorSets(renderer.device, 1, &descriptor_write, 0, nil)
     }

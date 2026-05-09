@@ -22,6 +22,12 @@ BLUE :: Colour {
     b = 1,
 }
 
+YELLOW :: Colour {
+    r = 1,
+    g = 1,
+    b = 0,
+}
+
 BLACK :: Colour {
     r = 0,
     g = 0,

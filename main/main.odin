@@ -1,13 +1,13 @@
 package main
 
 import "base:runtime"
+import "core:fmt"
+import "core:log"
+import "core:os"
 import "core:time"
 import "vendor:glfw"
 import "vendor:vulkan"
 import "vk"
-import "core:fmt"
-import "core:log"
-import "core:os"
 
 GlobalContext :: struct {
     window:         glfw.WindowHandle,
@@ -23,12 +23,12 @@ main :: proc() {
     console_logger := log.create_console_logger(lowest = .Warning)
     log_file, log_file_err := os.create("game2_logs.txt")
     if log_file_err != nil {
-	log.fatal(log_file_err)
-	panic("Failed to create log file")
+        log.fatal(log_file_err)
+        panic("Failed to create log file")
     }
     file_logger := log.create_file_logger(log_file, lowest = .Info)
     context.logger = log.create_multi_logger(file_logger, console_logger)
-    
+
     {     // glfw init
         glfw.SetErrorCallback(error_callback)
 
@@ -92,19 +92,64 @@ main :: proc() {
     renderer := init_renderer()
     stopwatch := time.Stopwatch{}
 
-    texture_data := TextureData {
-        base    = Pos{v = {54, 0}},
-        dim     = Dim{v = {16, 32}},
-        tex_idx = 1,
+    texture_data_red := TextureData {
+        base = Pos{v = {0, 32}}, // base is the bottom left, index is from the top left - I think this is what I was doing wrong that whole time!
+        dim = Dim{v = {32, 32}},
+        tex_idx = SPRITE_TEXTURE_INDEX,
     }
 
-    drawable := Drawable {
-        pos             = Pos{v = {0, 0}},
-        z               = 1,
-        dim             = Dim{v = {360, 540}},
-        texture_data    = texture_data,
+    texture_data_green := TextureData {
+        base = Pos{v = {32, 32}},
+        dim = Dim{v = {32, 32}},
+        tex_idx = SPRITE_TEXTURE_INDEX,
+    }
+
+    texture_data_a := TextureData {
+	base = Pos{v = {0, 16}},
+	dim = Dim{v = {8, 16}},
+	tex_idx = FONT_TEXTURE_INDEX,
+    }
+
+    texture_data_b := TextureData {
+	base = Pos{v = {8, 16}},
+	dim = Dim{v = {8, 16}},
+	tex_idx = FONT_TEXTURE_INDEX,
+    }
+
+    drawable_red := Drawable {
+        pos = Pos{v = {0, 0}},
+        z = 0.1,
+        dim = Dim{v = {360, 360}},
+        texture_data = texture_data_red,
         override_colour = false,
-        colour          = RED,
+        colour = RED,
+    }
+
+    drawable_green := Drawable {
+	pos = Pos{v = {360, 360}},
+	z = 0.1,
+	dim = Dim{v = {100, 100}},
+	texture_data = texture_data_green,
+	override_colour = false,
+	colour = GREEN,
+    }
+
+    drawable_a := Drawable {
+	pos = drawable_red.pos,
+	z = 0.2,
+	dim = drawable_red.dim,
+	texture_data = texture_data_a,
+	override_colour = false,
+	colour = BLUE,
+    }
+
+    drawable_b := Drawable {
+	pos = drawable_green.pos,
+	z = 0.2,
+	dim = drawable_green.dim,
+	texture_data = texture_data_b,
+	override_colour = false,
+	colour = YELLOW,
     }
 
     // main loop
@@ -112,10 +157,13 @@ main :: proc() {
         time.stopwatch_start(&stopwatch)
         glfw.PollEvents()
 
-	DRAWABLES[0] = drawable
-	DRAWABLES_COUNT = 1
-	render_frame(&renderer)
-	
+        DRAWABLES[0] = drawable_a
+	DRAWABLES[1] = drawable_red
+	DRAWABLES[2] = drawable_green
+	DRAWABLES[3] = drawable_b
+        DRAWABLES_COUNT = 4
+        render_frame(&renderer)
+
         h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
         for nanos < 16_666_000 {
             h, m, s, nanos = time.precise_clock_from_stopwatch(stopwatch)

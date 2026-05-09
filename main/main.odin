@@ -1,11 +1,11 @@
 package main
 
 import "base:runtime"
-import "core:fmt"
 import "core:time"
 import "vendor:glfw"
 import "vendor:vulkan"
 import "vk"
+import "core:fmt"
 import "core:log"
 import "core:os"
 
@@ -23,18 +23,11 @@ main :: proc() {
     console_logger := log.create_console_logger(lowest = .Warning)
     log_file, log_file_err := os.create("game2_logs.txt")
     if log_file_err != nil {
-	fmt.eprintln(log_file_err)
+	log.fatal(log_file_err)
 	panic("Failed to create log file")
     }
-    // TODO - how does file logger actually work? am I going to cause performance headaches? Or is it cleverly using a thread to avoid blocking? 
     file_logger := log.create_file_logger(log_file, lowest = .Info)
-    // TODO - is there a bug in multi logger where the output depends on the order of these loggers, or is that expected, and possibly a gap in the documentation?
     context.logger = log.create_multi_logger(file_logger, console_logger)
-    log.fatal("foo", 7)
-    log.error("baz", 8)
-    log.warn("waz", 9)
-    log.info("bar", 6)
-    log.debug("faz", 5)
     
     {     // glfw init
         glfw.SetErrorCallback(error_callback)

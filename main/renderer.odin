@@ -2,6 +2,7 @@ package main
 
 import "base:intrinsics"
 import "core:fmt"
+import "core:log"
 import "core:os"
 import "img"
 import "vendor:glfw"
@@ -331,7 +332,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
     {     // create vertex shader module
         data, err := os.read_entire_file_from_path(VERTEX_SHADER_PATH, context.allocator)
         if err != nil {
-            fmt.eprintln("Error reading vertex shader file", err)
+            log.fatal("Error reading vertex shader file", err)
             panic("Failed to read vertex shader file")
         }
         create_info := vulkan.ShaderModuleCreateInfo {
@@ -348,7 +349,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
     {     // create fragment shader module
         data, err := os.read_entire_file_from_path(FRAGMENT_SHADER_PATH, context.allocator)
         if err != nil {
-            fmt.eprintln("Error reading fragment shader file", err)
+            log.fatal("Error reading fragment shader file", err)
             panic("Failed to read fragment shader file")
         }
         create_info := vulkan.ShaderModuleCreateInfo {
@@ -555,7 +556,7 @@ render_frame :: proc(renderer: ^Renderer) {
             &swapchain_image_index,
         )
         if res == .ERROR_OUT_OF_DATE_KHR || res == .SUBOPTIMAL_KHR {
-            // fmt.println("swapchain out of date / suboptimal on acquire next image")
+            log.info("swapchain out of date / suboptimal on acquire next image")
         } else if vk.not_success(res) {
             vk.fatal("failed to get next swapchain image", res)
         }
@@ -731,7 +732,7 @@ render_frame :: proc(renderer: ^Renderer) {
         }
         res := vulkan.QueuePresentKHR(renderer.queue, &present_info)
         if res == .ERROR_OUT_OF_DATE_KHR || res == .SUBOPTIMAL_KHR {
-            // fmt.println("swapchain out of date / suboptimal on queue present")
+            log.info("swapchain out of date / suboptimal on queue present")
         } else if vk.not_success(res) {
             vk.fatal("failed to present image", res)
         }

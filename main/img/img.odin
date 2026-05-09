@@ -1,10 +1,10 @@
 package img
 
-import "core:fmt"
+import "core:log"
 import "vendor:stb/image"
 
 fatal :: proc(args: ..any) {
-    fmt.eprintln(..args)
+    log.fatal(..args)
     panic("img fatal")
 }
 

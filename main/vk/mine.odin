@@ -1,10 +1,10 @@
 package vk
 
-import "core:fmt"
+import "core:log"
 import v "vendor:vulkan"
 
 fatal :: proc(args: ..any) {
-    fmt.eprintln(..args)
+    log.fatal(..args)
     panic("vk fatal")
 }
 

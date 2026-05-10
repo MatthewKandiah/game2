@@ -24,12 +24,13 @@ REQUIRED_DEVICE_EXTENSIONS := []cstring {
 
 VERTEX_SHADER_PATH :: "build/vert.spv"
 FRAGMENT_SHADER_PATH :: "build/frag.spv"
-TEXTURE_PATHS :: [?]cstring{"assets/font.png", "assets/spritesheet.png", "assets/yellow.png"}
+TEXTURE_PATHS :: [?]cstring{"assets/font.png", "assets/spritesheet.png", "assets/yellow.png", "assets/gradient.png"}
 TEXTURE_ASSETS_COUNT :: len(TEXTURE_PATHS)
 // TODO - can we infer these from the texture paths constant in a more clever way? map path to index maybe?
 FONT_TEXTURE_INDEX :: 0
 SPRITE_TEXTURE_INDEX :: 1
 YELLOW_TEXTURE_INDEX :: 2
+GRADIENT_TEXTURE_INDEX :: 3
 
 VERTEX_BUFFER_SIZE :: 10_000
 VERTEX_BUFFER := [VERTEX_BUFFER_SIZE]Vertex{}

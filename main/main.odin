@@ -105,21 +105,27 @@ main :: proc() {
     }
 
     texture_data_a := TextureData {
-	base = Pos{v = {0, 16}},
-	dim = Dim{v = {8, 16}},
-	tex_idx = FONT_TEXTURE_INDEX,
+        base = Pos{v = {0, 16}},
+        dim = Dim{v = {8, 16}},
+        tex_idx = FONT_TEXTURE_INDEX,
     }
 
     texture_data_b := TextureData {
-	base = Pos{v = {8, 16}},
-	dim = Dim{v = {8, 16}},
-	tex_idx = FONT_TEXTURE_INDEX,
+        base = Pos{v = {8, 16}},
+        dim = Dim{v = {8, 16}},
+        tex_idx = FONT_TEXTURE_INDEX,
     }
 
     texture_data_yellow := TextureData {
-	base = Pos{v = {0, 128}},
-	dim = Dim{v = {128, 128}},
-	tex_idx = YELLOW_TEXTURE_INDEX,
+        base = Pos{v = {0, 128}},
+        dim = Dim{v = {128, 128}},
+        tex_idx = YELLOW_TEXTURE_INDEX,
+    }
+
+    texture_data_gradient := TextureData {
+        base = Pos{v = {0, 128}},
+        dim = Dim{v = {128, 128}},
+        tex_idx = GRADIENT_TEXTURE_INDEX,
     }
 
     drawable_red := Drawable {
@@ -132,40 +138,50 @@ main :: proc() {
     }
 
     drawable_green := Drawable {
-	pos = Pos{v = {360, 360}},
-	z = 0.1,
-	dim = Dim{v = {100, 100}},
-	texture_data = texture_data_green,
-	override_colour = false,
-	colour = GREEN,
+        pos = Pos{v = {360, 360}},
+        z = 0.1,
+        dim = Dim{v = {100, 100}},
+        texture_data = texture_data_green,
+        override_colour = false,
+        colour = GREEN,
     }
 
     drawable_a := Drawable {
-	pos = drawable_red.pos,
-	z = 0.2,
-	dim = drawable_red.dim,
-	texture_data = texture_data_a,
-	override_colour = false,
-	colour = BLUE,
+        pos             = drawable_red.pos,
+        z               = 0.2,
+        dim             = drawable_red.dim,
+        texture_data    = texture_data_a,
+        override_colour = false,
+        colour          = BLUE,
     }
 
     drawable_b := Drawable {
-	pos = drawable_green.pos,
-	z = 0.2,
-	dim = drawable_green.dim,
-	texture_data = texture_data_b,
-	override_colour = false,
-	colour = YELLOW,
+        pos             = drawable_green.pos,
+        z               = 0.2,
+        dim             = drawable_green.dim,
+        texture_data    = texture_data_b,
+        override_colour = false,
+        colour          = YELLOW,
     }
 
     drawable_yellow := Drawable {
-	pos = drawable_red.pos,
-	z = 0.15,
-	dim = drawable_red.dim,
-	texture_data = texture_data_yellow,
-	override_colour = false,
-	colour = GREY,
+        pos             = drawable_red.pos,
+        z               = 0.15,
+        dim             = drawable_red.dim,
+        texture_data    = texture_data_yellow,
+        override_colour = false,
+        colour          = GREY,
     }
+
+    drawable_gradient := Drawable {
+        pos = Pos{v = {400, 0}},
+        dim = Dim{v = {400, 400}},
+        z = 0.3,
+        texture_data = texture_data_gradient,
+        override_colour = false,
+        colour = WHITE,
+    }
+
 
     // main loop
     for !glfw.WindowShouldClose(gc.window) {
@@ -173,11 +189,12 @@ main :: proc() {
         glfw.PollEvents()
 
         DRAWABLES[0] = drawable_a
-	DRAWABLES[1] = drawable_red
-	DRAWABLES[2] = drawable_green
-	DRAWABLES[3] = drawable_b
-	DRAWABLES[4] = drawable_yellow
-        DRAWABLES_COUNT = 5
+        DRAWABLES[1] = drawable_red
+        DRAWABLES[2] = drawable_green
+        DRAWABLES[3] = drawable_b
+        DRAWABLES[4] = drawable_yellow
+        DRAWABLES[5] = drawable_gradient
+        DRAWABLES_COUNT = 6
         render_frame(&renderer)
 
         h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)

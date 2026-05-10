@@ -95,37 +95,37 @@ main :: proc() {
     texture_data_red := TextureData {
         base = Pos{v = {0, 32}},
         dim = Dim{v = {32, 32}},
-        tex_idx = SPRITE_TEXTURE_INDEX,
+        tex_idx = texture_to_idx(Texture.Sprite),
     }
 
     texture_data_green := TextureData {
         base = Pos{v = {32, 32}},
         dim = Dim{v = {32, 32}},
-        tex_idx = SPRITE_TEXTURE_INDEX,
+        tex_idx = texture_to_idx(Texture.Sprite),
     }
 
     texture_data_a := TextureData {
         base = Pos{v = {0, 16}},
         dim = Dim{v = {8, 16}},
-        tex_idx = FONT_TEXTURE_INDEX,
+        tex_idx = texture_to_idx(Texture.Font),
     }
 
     texture_data_b := TextureData {
         base = Pos{v = {8, 16}},
         dim = Dim{v = {8, 16}},
-        tex_idx = FONT_TEXTURE_INDEX,
+        tex_idx = texture_to_idx(Texture.Font),
     }
 
     texture_data_yellow := TextureData {
         base = Pos{v = {0, 128}},
         dim = Dim{v = {128, 128}},
-        tex_idx = YELLOW_TEXTURE_INDEX,
+        tex_idx = texture_to_idx(Texture.Yellow),
     }
 
     texture_data_gradient := TextureData {
         base = Pos{v = {0, 128}},
         dim = Dim{v = {128, 128}},
-        tex_idx = GRADIENT_TEXTURE_INDEX,
+        tex_idx = texture_to_idx(Texture.Gradient),
     }
 
     drawable_red := Drawable {

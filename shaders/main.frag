@@ -6,7 +6,7 @@ layout(location = 0) in vec4 fragColour;
 layout(location = 1) in vec2 texCoord;
 layout(location = 2) in flat int texIdx;
 
-layout(binding = 0) uniform sampler2D texSamplers[2];
+layout(binding = 0) uniform sampler2D texSamplers[4];
 
 layout(location = 0) out vec4 outColour;
 

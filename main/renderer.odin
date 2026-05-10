@@ -24,13 +24,25 @@ REQUIRED_DEVICE_EXTENSIONS := []cstring {
 
 VERTEX_SHADER_PATH :: "build/vert.spv"
 FRAGMENT_SHADER_PATH :: "build/frag.spv"
-TEXTURE_PATHS :: [?]cstring{"assets/font.png", "assets/spritesheet.png", "assets/yellow.png", "assets/gradient.png"}
+
+Texture :: enum {
+    Sprite,
+    Font,
+    Gradient,
+    Yellow,
+}
+texture_to_idx :: proc(t: Texture) -> i32 {
+    return cast(i32)t
+}
+TEXTURE_PATHS :: [Texture]cstring{
+	.Sprite = "assets/spritesheet.png",
+	.Font = "assets/font.png",
+	.Gradient = "assets/gradient.png",
+	.Yellow = "assets/yellow.png",
+}
 TEXTURE_ASSETS_COUNT :: len(TEXTURE_PATHS)
-// TODO - can we infer these from the texture paths constant in a more clever way? map path to index maybe?
-FONT_TEXTURE_INDEX :: 0
-SPRITE_TEXTURE_INDEX :: 1
-YELLOW_TEXTURE_INDEX :: 2
-GRADIENT_TEXTURE_INDEX :: 3
+FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT :: 4
+#assert(TEXTURE_ASSETS_COUNT == FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT, "fragment shader hardcodes expected number of texture samplers it can handle, if this fails because we've changed the number of texture assets, we need to remember to update the fragment shader too")
 
 VERTEX_BUFFER_SIZE :: 10_000
 VERTEX_BUFFER := [VERTEX_BUFFER_SIZE]Vertex{}

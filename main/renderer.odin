@@ -86,7 +86,7 @@ Renderer :: struct {
     texture_images:              [TEXTURE_ASSETS_COUNT]vulkan.Image,
     texture_image_memories:      [TEXTURE_ASSETS_COUNT]vulkan.DeviceMemory,
     texture_image_views:         [TEXTURE_ASSETS_COUNT]vulkan.ImageView,
-    texture_samplers:            [TEXTURE_ASSETS_COUNT]vulkan.Sampler, // TODO can we just reuse one sampler?
+    texture_sampler:            vulkan.Sampler,
     descriptor_pool:             vulkan.DescriptorPool,
     descriptor_set:              vulkan.DescriptorSet,
     descriptor_set_layout:       vulkan.DescriptorSetLayout,
@@ -285,9 +285,9 @@ init_renderer :: proc() -> (renderer: Renderer) {
     for path, idx in TEXTURE_PATHS {
         renderer.texture_images[idx], renderer.texture_image_memories[idx], renderer.texture_image_views[idx] =
             create_texture_from_file(renderer, path)
-        renderer.texture_samplers[idx] = create_sampler(renderer)
     }
 
+    renderer.texture_sampler = create_sampler(renderer)
     create_depth_image_and_view(&renderer)
 
     {     // create vertex buffer
@@ -411,7 +411,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
         sampler_descriptor_images: [TEXTURE_ASSETS_COUNT]vulkan.DescriptorImageInfo
         for i in 0 ..< TEXTURE_ASSETS_COUNT {
             sampler_descriptor_images[i] = vulkan.DescriptorImageInfo {
-                sampler     = renderer.texture_samplers[i],
+                sampler     = renderer.texture_sampler,
                 imageView   = renderer.texture_image_views[i],
                 imageLayout = .SHADER_READ_ONLY_OPTIMAL,
             }

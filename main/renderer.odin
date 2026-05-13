@@ -607,7 +607,7 @@ render_frame :: proc(renderer: ^Renderer) {
         imageLayout = .DEPTH_ATTACHMENT_OPTIMAL,
         resolveMode = {},
         loadOp      = .CLEAR,
-        storeOp     = .STORE, // TODO: can this be DONT_CARE?
+        storeOp     = .STORE,
     }
 
     {     // memory barrier transition to fragment shader output writable

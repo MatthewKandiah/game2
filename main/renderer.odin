@@ -34,15 +34,18 @@ Texture :: enum {
 texture_to_idx :: proc(t: Texture) -> i32 {
     return cast(i32)t
 }
-TEXTURE_PATHS :: [Texture]cstring{
-	.Sprite = "assets/spritesheet.png",
-	.Font = "assets/font.png",
-	.Gradient = "assets/gradient.png",
-	.Yellow = "assets/yellow.png",
+TEXTURE_PATHS :: [Texture]cstring {
+    .Sprite   = "assets/spritesheet.png",
+    .Font     = "assets/font.png",
+    .Gradient = "assets/gradient.png",
+    .Yellow   = "assets/yellow.png",
 }
 TEXTURE_ASSETS_COUNT :: len(TEXTURE_PATHS)
 FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT :: 4
-#assert(TEXTURE_ASSETS_COUNT == FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT, "fragment shader hardcodes expected number of texture samplers it can handle, if this fails because we've changed the number of texture assets, we need to remember to update the fragment shader too")
+#assert(
+    TEXTURE_ASSETS_COUNT == FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT,
+    "fragment shader hardcodes expected number of texture samplers it can handle, if this fails because we've changed the number of texture assets, we need to remember to update the fragment shader too",
+)
 
 VERTEX_BUFFER_SIZE :: 10_000
 VERTEX_BUFFER := [VERTEX_BUFFER_SIZE]Vertex{}
@@ -52,6 +55,10 @@ INDEX_BUFFER := [INDEX_BUFFER_SIZE]u32{}
 DRAWABLES_SIZE :: 10_000
 DRAWABLES_COUNT := 0
 DRAWABLES := [DRAWABLES_SIZE]Drawable{}
+push_drawable :: proc(d: Drawable) {
+    DRAWABLES[DRAWABLES_COUNT] = d
+    DRAWABLES_COUNT += 1
+}
 
 Renderer :: struct {
     physical_device:             vulkan.PhysicalDevice,
@@ -76,10 +83,10 @@ Renderer :: struct {
     semaphores_draw_finished:    []vulkan.Semaphore,
     fence_image_acquired:        vulkan.Fence,
     fence_frame_finished:        vulkan.Fence,
-    texture_images: [TEXTURE_ASSETS_COUNT]vulkan.Image,
-    texture_image_memories:   [TEXTURE_ASSETS_COUNT]vulkan.DeviceMemory,
-    texture_image_views:     [TEXTURE_ASSETS_COUNT]vulkan.ImageView,
-    texture_samplers:        [TEXTURE_ASSETS_COUNT]vulkan.Sampler, // TODO can we just reuse one sampler?
+    texture_images:              [TEXTURE_ASSETS_COUNT]vulkan.Image,
+    texture_image_memories:      [TEXTURE_ASSETS_COUNT]vulkan.DeviceMemory,
+    texture_image_views:         [TEXTURE_ASSETS_COUNT]vulkan.ImageView,
+    texture_samplers:            [TEXTURE_ASSETS_COUNT]vulkan.Sampler, // TODO can we just reuse one sampler?
     descriptor_pool:             vulkan.DescriptorPool,
     descriptor_set:              vulkan.DescriptorSet,
     descriptor_set_layout:       vulkan.DescriptorSetLayout,
@@ -143,6 +150,7 @@ draw_drawables :: proc() {
         INDEX_BUFFER[index_base_idx + 4] = cast(u32)(vertex_base_idx + 1)
         INDEX_BUFFER[index_base_idx + 5] = cast(u32)(vertex_base_idx + 3)
     }
+    DRAWABLES_COUNT = 0
 }
 
 init_renderer :: proc() -> (renderer: Renderer) {
@@ -275,8 +283,9 @@ init_renderer :: proc() -> (renderer: Renderer) {
     }
 
     for path, idx in TEXTURE_PATHS {
-	renderer.texture_images[idx], renderer.texture_image_memories[idx], renderer.texture_image_views[idx] = create_texture_from_file(renderer, path)
-	renderer.texture_samplers[idx] = create_sampler(renderer)
+        renderer.texture_images[idx], renderer.texture_image_memories[idx], renderer.texture_image_views[idx] =
+            create_texture_from_file(renderer, path)
+        renderer.texture_samplers[idx] = create_sampler(renderer)
     }
 
     create_depth_image_and_view(&renderer)
@@ -399,15 +408,15 @@ init_renderer :: proc() -> (renderer: Renderer) {
     }
 
     {     // update descriptor set
-        sampler_descriptor_images : [TEXTURE_ASSETS_COUNT]vulkan.DescriptorImageInfo
-	for i in 0..< TEXTURE_ASSETS_COUNT {
-	    sampler_descriptor_images[i] = vulkan.DescriptorImageInfo {
-		sampler = renderer.texture_samplers[i],
-		imageView = renderer.texture_image_views[i],
-		imageLayout = .SHADER_READ_ONLY_OPTIMAL,
-	    }
-	}
-	
+        sampler_descriptor_images: [TEXTURE_ASSETS_COUNT]vulkan.DescriptorImageInfo
+        for i in 0 ..< TEXTURE_ASSETS_COUNT {
+            sampler_descriptor_images[i] = vulkan.DescriptorImageInfo {
+                sampler     = renderer.texture_samplers[i],
+                imageView   = renderer.texture_image_views[i],
+                imageLayout = .SHADER_READ_ONLY_OPTIMAL,
+            }
+        }
+
         descriptor_write := vulkan.WriteDescriptorSet {
             sType           = .WRITE_DESCRIPTOR_SET,
             dstSet          = renderer.descriptor_set,
@@ -499,14 +508,8 @@ deinit_renderer :: proc(r: ^Renderer) {
 }
 
 render_frame :: proc(renderer: ^Renderer) {
-    if gc.window_resized {
-        handle_screen_resized(renderer)
-        DRAWABLES_COUNT = 0
-        return
-    } else {
-        draw_drawables()
-        DRAWABLES_COUNT = 0
-    }
+    draw_drawables()
+    should_recreate_swapchain := false
 
     {     // copy vertex data into vertex buffer
         intrinsics.mem_copy_non_overlapping(
@@ -558,8 +561,12 @@ render_frame :: proc(renderer: ^Renderer) {
             renderer.fence_image_acquired,
             &swapchain_image_index,
         )
-        if res == .ERROR_OUT_OF_DATE_KHR || res == .SUBOPTIMAL_KHR {
-            log.info("swapchain out of date / suboptimal on acquire next image")
+        if res == .ERROR_OUT_OF_DATE_KHR {
+            should_recreate_swapchain = true
+            log.warn("acquire next image - error out of date khr")
+        } else if res == .SUBOPTIMAL_KHR {
+            should_recreate_swapchain = true
+            log.warn("acquire next image - suboptimal khr")
         } else if vk.not_success(res) {
             vk.fatal("failed to get next swapchain image", res)
         }
@@ -734,11 +741,20 @@ render_frame :: proc(renderer: ^Renderer) {
             pResults           = nil,
         }
         res := vulkan.QueuePresentKHR(renderer.queue, &present_info)
-        if res == .ERROR_OUT_OF_DATE_KHR || res == .SUBOPTIMAL_KHR {
-            log.info("swapchain out of date / suboptimal on queue present")
+        if res == .ERROR_OUT_OF_DATE_KHR {
+            should_recreate_swapchain = true
+            log.warn("present - error out of date khr")
+        } else if res == .SUBOPTIMAL_KHR {
+            should_recreate_swapchain = true
+            log.warn("present - suboptimal khr")
         } else if vk.not_success(res) {
             vk.fatal("failed to present image", res)
         }
+    }
+
+    if should_recreate_swapchain {
+        log.info("recreating swapchain")
+        handle_screen_resized(renderer)
     }
 }
 
@@ -990,6 +1006,7 @@ create_graphics_pipeline :: proc(renderer: ^Renderer) {
 }
 
 handle_screen_resized :: proc(renderer: ^Renderer) {
+    log.info("handle_screen_resized")
     wait_res := vulkan.DeviceWaitIdle(renderer.device)
     if vk.not_success(wait_res) {
         vk.fatal("failed wait for idle", wait_res)
@@ -1011,8 +1028,6 @@ handle_screen_resized :: proc(renderer: ^Renderer) {
     create_swapchain_image_views(renderer)
     create_graphics_pipeline(renderer)
     create_depth_image_and_view(renderer)
-
-    gc.window_resized = false
 }
 
 create_depth_image_and_view :: proc(renderer: ^Renderer) {

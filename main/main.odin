@@ -16,18 +16,20 @@ GlobalContext :: struct {
     vk_instance:    vulkan.Instance,
     surface_extent: vulkan.Extent2D,
     cursor_pos:     Pos,
+    logger:         runtime.Logger,
 }
 gc: GlobalContext
 
 main :: proc() {
-    console_logger := log.create_console_logger(lowest = .Warning)
+    console_logger := log.create_console_logger(lowest = .Error)
     log_file, log_file_err := os.create("game2_logs.txt")
     if log_file_err != nil {
         log.fatal(log_file_err)
         panic("Failed to create log file")
     }
     file_logger := log.create_file_logger(log_file, lowest = .Info)
-    context.logger = log.create_multi_logger(file_logger, console_logger)
+    gc.logger = log.create_multi_logger(file_logger, console_logger)
+    context.logger = gc.logger
 
     {     // glfw init
         glfw.SetErrorCallback(error_callback)
@@ -188,13 +190,12 @@ main :: proc() {
         time.stopwatch_start(&stopwatch)
         glfw.PollEvents()
 
-        DRAWABLES[0] = drawable_a
-        DRAWABLES[1] = drawable_red
-        DRAWABLES[2] = drawable_green
-        DRAWABLES[3] = drawable_b
-        DRAWABLES[4] = drawable_yellow
-        DRAWABLES[5] = drawable_gradient
-        DRAWABLES_COUNT = 6
+        push_drawable(drawable_a)
+        push_drawable(drawable_red)
+        push_drawable(drawable_green)
+        push_drawable(drawable_b)
+        push_drawable(drawable_yellow)
+        push_drawable(drawable_gradient)
         render_frame(&renderer)
 
         h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
@@ -212,7 +213,8 @@ error_callback :: proc "c" (error: i32, description: cstring) {
 
 window_size_callback :: proc "c" (window: glfw.WindowHandle, width: i32, height: i32) {
     context = runtime.default_context()
-    gc.window_resized = true
+    context.logger = gc.logger
+    log.info("glfw - window resize")
 }
 
 get_proc_address :: proc(p: rawptr, name: cstring) {

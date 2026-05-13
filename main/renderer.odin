@@ -671,6 +671,21 @@ render_frame :: proc(renderer: ^Renderer) {
         pipeline = renderer.graphics_pipeline,
     )
 
+    viewport := vulkan.Viewport {
+	x = 0,
+	y = 0,
+	width = cast(f32)gc.surface_extent.width,
+	height = cast(f32)gc.surface_extent.height,
+	minDepth = 0,
+	maxDepth = 1,
+    }
+    scissor : =vulkan.Rect2D {
+	offset = {x = 0, y = 0},
+	extent = gc.surface_extent,
+    }
+    vulkan.CmdSetViewport(renderer.command_buffer, 0, 1, &viewport);
+    vulkan.CmdSetScissor(renderer.command_buffer, 0, 1, &scissor);
+
     offsets := []vulkan.DeviceSize{0}
     vulkan.CmdBindVertexBuffers(
         commandBuffer = renderer.command_buffer,
@@ -895,24 +910,17 @@ create_graphics_pipeline :: proc(renderer: ^Renderer) {
         topology = .TRIANGLE_LIST,
     }
 
-    viewport := vulkan.Viewport {
-        x        = 0,
-        y        = 0,
-        width    = cast(f32)gc.surface_extent.width,
-        height   = cast(f32)gc.surface_extent.height,
-        minDepth = 0,
-        maxDepth = 1,
-    }
-    scissor := vulkan.Rect2D {
-        offset = {x = 0, y = 0},
-        extent = gc.surface_extent,
-    }
     viewport_state_create_info := vulkan.PipelineViewportStateCreateInfo {
         sType         = .PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         viewportCount = 1,
-        pViewports    = &viewport,
         scissorCount  = 1,
-        pScissors     = &scissor,
+    }
+
+    dynamic_states := []vulkan.DynamicState{.VIEWPORT, .SCISSOR}
+    dynamic_state_create_info := vulkan.PipelineDynamicStateCreateInfo {
+	sType = .PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+	dynamicStateCount = cast(u32)len(dynamic_states),
+	pDynamicStates = raw_data(dynamic_states),
     }
 
     rasterization_state_create_info := vulkan.PipelineRasterizationStateCreateInfo {
@@ -998,6 +1006,7 @@ create_graphics_pipeline :: proc(renderer: ^Renderer) {
         pMultisampleState   = &multisample_state_create_info,
         pColorBlendState    = &color_blend_state_create_info,
         pDepthStencilState  = &depth_stencil_state_create_info,
+	pDynamicState       = &dynamic_state_create_info,
         layout              = renderer.pipeline_layout,
         renderPass          = {},
         subpass             = 0,
@@ -1018,7 +1027,6 @@ handle_screen_resized :: proc(renderer: ^Renderer) {
     delete(renderer.swapchain_image_views)
     delete(renderer.swapchain_images)
     vulkan.DestroySwapchainKHR(renderer.device, renderer.swapchain, nil)
-    vulkan.DestroyPipeline(renderer.device, renderer.graphics_pipeline, nil)
     vulkan.DestroyImageView(renderer.device, renderer.depth_image_view, nil)
     vulkan.DestroyImage(renderer.device, renderer.depth_image, nil)
     vulkan.FreeMemory(renderer.device, renderer.depth_image_memory, nil)
@@ -1026,7 +1034,6 @@ handle_screen_resized :: proc(renderer: ^Renderer) {
     create_swapchain(renderer)
     create_swapchain_images(renderer)
     create_swapchain_image_views(renderer)
-    create_graphics_pipeline(renderer)
     create_depth_image_and_view(renderer)
 }
 

@@ -48,6 +48,7 @@ create_font_atlas :: proc(path: string, font_atlas_info: FontAtlasInfo) -> (outp
   descent = cast(i32)math.round(cast(f32)descent * scale)
 
   x: i32 = 0
+  base_y: i32 = 0
   for c, i in font_atlas_info.chars {
     advance_width, left_side_bearing: i32
     tt.GetCodepointHMetrics(&info, c, &advance_width, &left_side_bearing)
@@ -57,7 +58,12 @@ create_font_atlas :: proc(path: string, font_atlas_info: FontAtlasInfo) -> (outp
     x1, y1, x2, y2: i32
     tt.GetCodepointBitmapBox(&info, c, scale, scale, &x1, &y1, &x2, &y2)
 
-    y := ascent + y1
+    if x + left_side_bearing + (x2 - x1) >= font_atlas_info.output_width {
+      x = 0
+      base_y += ascent - descent + linegap
+    }
+
+    y := base_y + ascent + y1
     byte_offset := x + left_side_bearing + (y * font_atlas_info.output_width)
     tt.MakeCodepointBitmap(&info, &output[byte_offset], x2 - x1, y2 - y1, font_atlas_info.output_width, scale, scale, c)
 

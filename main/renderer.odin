@@ -175,7 +175,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
     for ft in FontTexture {
       info := FontAtlasInfo {
         size_pixels = 16,
-        chars       = "hey guys",
+        chars       = "hey guys this is a LONG phrase",
 	output_width = 128,
 	output_height = 128,
       }

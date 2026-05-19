@@ -175,9 +175,9 @@ init_renderer :: proc() -> (renderer: Renderer) {
     for ft in FontTexture {
       info := FontAtlasInfo {
         size_pixels = 16,
-        chars       = "hey guys this is a LONG phrase",
+        chars       = "hey guys this is a LONG phrase with too many words to fit in the output so we expect a crash at a bitmap height of 128 because it will run out of room",
 	output_width = 128,
-	output_height = 128,
+	output_height = 256,
       }
       data := create_font_atlas(FONT_TEXTURE_PATHS[ft], info)
       img.write_png(FONT_IMAGE_OUT_PATHS[ft], info.output_width, info.output_height, 1, data, info.output_width)

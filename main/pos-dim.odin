@@ -5,6 +5,16 @@ import "vendor:vulkan"
 Vec2f :: distinct [2]f32
 Vec2i :: distinct [2]i32
 
+Rect :: struct {
+  pos: Pos,
+  dim: Dim,
+}
+
+GridRect :: struct {
+  pos: GridPos,
+  dim: GridDim,
+}
+
 Pos :: struct #raw_union {
     v:       Vec2f,
     using _: struct {

@@ -15,14 +15,19 @@ FontAtlasInfo :: struct {
   chars: string,
   output_width: i32,
   output_height: i32,
-
 }
 
-create_font_atlas :: proc(path: string, font_atlas_info: FontAtlasInfo) -> (output: []u8) {
+FontAtlas :: struct {
+  char_map : map[rune]GridRect
+}
+
+create_font_atlas :: proc(path: string, font_atlas_info: FontAtlasInfo) -> (output: []u8, atlas: FontAtlas) {
   local_fatal :: proc(args: ..any) {
     log.fatal(..args)
     panic("FATAL - Font atlas error")
   }
+
+  atlas.char_map = make(map[rune]GridRect)
 
   file_data, err := os.read_entire_file(path, context.allocator)
   if err != nil {
@@ -66,6 +71,10 @@ create_font_atlas :: proc(path: string, font_atlas_info: FontAtlasInfo) -> (outp
     y := base_y + ascent + y1
     byte_offset := x + left_side_bearing + (y * font_atlas_info.output_width)
     tt.MakeCodepointBitmap(&info, &output[byte_offset], x2 - x1, y2 - y1, font_atlas_info.output_width, scale, scale, c)
+    atlas.char_map[c] = GridRect{
+      dim = GridDim{v = {x2 - x1, y2 - y1}},
+      pos = GridPos{v = {x, y}},
+    }
 
     x += advance_width
   }

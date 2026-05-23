@@ -10,67 +10,68 @@ import "img"
 
 // TODO - write a wrapper for the truetype functions
 
-FontAtlasInfo :: struct {
+FontAtlas :: struct {
   size_pixels: f32,
   chars: string,
   output_width: i32,
   output_height: i32,
+  output: []u8,
+  char_map : map[rune]GridRect,
+  font_info: tt.fontinfo,
+  font_file_data: []u8,
 }
 
-FontAtlas :: struct {
-  char_map : map[rune]GridRect
-}
-
-create_font_atlas :: proc(path: string, font_atlas_info: FontAtlasInfo) -> (output: []u8, atlas: FontAtlas) {
+create_font_atlas :: proc(path: string, size_pixels: f32, chars: string, output_width: i32, output_height: i32) -> (atlas: FontAtlas) {
   local_fatal :: proc(args: ..any) {
     log.fatal(..args)
     panic("FATAL - Font atlas error")
   }
 
+  atlas.size_pixels = size_pixels
+  atlas.chars = chars
+  atlas.output_width = output_width
+  atlas.output_height = output_height
   atlas.char_map = make(map[rune]GridRect)
 
   file_data, err := os.read_entire_file(path, context.allocator)
   if err != nil {
     local_fatal("Failed to read file", path)
   }
-  // TODO - can we defer delete(data, context.allocator) here? Depends if we want kerning for strings in the app
-
-  info: tt.fontinfo
-  if !tt.InitFont(&info, raw_data(file_data), 0) {
+  atlas.font_file_data = file_data
+  
+  if !tt.InitFont(&atlas.font_info, raw_data(file_data), 0) {
     local_fatal("Failed to initialise font", path)
   }
 
   bytes_per_pixel :: 1
-  output = make([]u8, font_atlas_info.output_width * font_atlas_info.output_height * bytes_per_pixel)
+  atlas.output = make([]u8, output_width * output_height * bytes_per_pixel)
   
-  line_height: i32 = 32
-
-  scale := tt.ScaleForPixelHeight(&info, font_atlas_info.size_pixels)
+  scale := tt.ScaleForPixelHeight(&atlas.font_info, size_pixels)
 
   ascent, descent, linegap: i32
-  tt.GetFontVMetrics(&info, &ascent, &descent, &linegap)
+  tt.GetFontVMetrics(&atlas.font_info, &ascent, &descent, &linegap)
   ascent = cast(i32)math.round(cast(f32)ascent * scale)
   descent = cast(i32)math.round(cast(f32)descent * scale)
 
   x: i32 = 0
   base_y: i32 = 0
-  for c, i in font_atlas_info.chars {
+  for c, i in chars {
     advance_width, left_side_bearing: i32
-    tt.GetCodepointHMetrics(&info, c, &advance_width, &left_side_bearing)
+    tt.GetCodepointHMetrics(&atlas.font_info, c, &advance_width, &left_side_bearing)
     advance_width = cast(i32)(cast(f32)advance_width * scale)
     left_side_bearing = cast(i32)(cast(f32)left_side_bearing * scale)
     
     x1, y1, x2, y2: i32
-    tt.GetCodepointBitmapBox(&info, c, scale, scale, &x1, &y1, &x2, &y2)
+    tt.GetCodepointBitmapBox(&atlas.font_info, c, scale, scale, &x1, &y1, &x2, &y2)
 
-    if x + left_side_bearing + (x2 - x1) >= font_atlas_info.output_width {
+    if x + left_side_bearing + (x2 - x1) >= output_width {
       x = 0
       base_y += ascent - descent + linegap
     }
 
     y := base_y + ascent + y1
-    byte_offset := x + left_side_bearing + (y * font_atlas_info.output_width)
-    tt.MakeCodepointBitmap(&info, &output[byte_offset], x2 - x1, y2 - y1, font_atlas_info.output_width, scale, scale, c)
+    byte_offset := x + left_side_bearing + (y * output_width)
+    tt.MakeCodepointBitmap(&atlas.font_info, &atlas.output[byte_offset], x2 - x1, y2 - y1, output_width, scale, scale, c)
     atlas.char_map[c] = GridRect{
       dim = GridDim{v = {x2 - x1, y2 - y1}},
       pos = GridPos{v = {x, y}},

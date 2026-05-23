@@ -172,30 +172,25 @@ draw_drawables :: proc() {
 }
 
 init_renderer :: proc() -> (renderer: Renderer) {
+  chars := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%"
   {   // init font assets
     for ft in FontTexture {
-      info := FontAtlasInfo {
-        size_pixels   = 16,
-        chars         = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%",
-        output_width  = 128,
-        output_height = 256,
-      }
-      data, atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], info)
-      img.write_png(FONT_IMAGE_OUT_PATHS[ft], info.output_width, info.output_height, 1, data, info.output_width)
+      atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 16, chars, 128, 256)
+      img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.output_width, atlas.output_height, 1, atlas.output, atlas.output_width)
 
-      char_debug :: proc(c: rune, atlas: FontAtlas, info: FontAtlasInfo, data: []u8, out_path: cstring) {
+      char_debug :: proc(c: rune, atlas: FontAtlas, out_path: cstring) {
         debug_width := atlas.char_map[c].dim.w
         debug_height := atlas.char_map[c].dim.h
         debug_pos := atlas.char_map[c].pos
         debug_channel_count :: 1
-        debug_stride_in_bytes := info.output_width
+        debug_stride_in_bytes := atlas.output_width
         debug_byte_offset := debug_pos.x + (debug_pos.y * debug_stride_in_bytes)
         img.write_png(
           out_path,
           debug_width,
           debug_height,
           debug_channel_count,
-          data[debug_byte_offset:],
+          atlas.output[debug_byte_offset:],
           debug_stride_in_bytes,
         )
       }
@@ -207,12 +202,12 @@ init_renderer :: proc() -> (renderer: Renderer) {
       out_name :: proc(c: rune, f: FontTexture) -> cstring {
         return strings.clone_to_cstring(fmt.tprintf("build/%s_debug_%c.png", f, c))
       }
-      char_debug('a', atlas, info, data, out_name('a', ft))
-      char_debug('1', atlas, info, data, out_name('1', ft))
-      char_debug('Q', atlas, info, data, out_name('Q', ft))
-      char_debug('@', atlas, info, data, out_name('@', ft))
-      char_debug('#', atlas, info, data, out_name('#', ft))
-      char_debug('%', atlas, info, data, out_name('%', ft))
+      char_debug('a', atlas, out_name('a', ft))
+      char_debug('1', atlas, out_name('1', ft))
+      char_debug('Q', atlas, out_name('Q', ft))
+      char_debug('@', atlas, out_name('@', ft))
+      char_debug('#', atlas, out_name('#', ft))
+      char_debug('%', atlas, out_name('%', ft))
     }
   }
 

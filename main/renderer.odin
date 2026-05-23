@@ -176,29 +176,25 @@ init_renderer :: proc() -> (renderer: Renderer) {
   {   // init font assets
     for ft in FontTexture {
       atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 16, chars, 128, 256)
-      img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.output_width, atlas.output_height, 1, atlas.output, atlas.output_width)
+      img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.image_dim.w, atlas.image_dim.h, 1, atlas.image, atlas.image_dim.w)
 
       char_debug :: proc(c: rune, atlas: FontAtlas, out_path: cstring) {
-        debug_width := atlas.char_map[c].dim.w
-        debug_height := atlas.char_map[c].dim.h
-        debug_pos := atlas.char_map[c].pos
+        debug_width := atlas.char_map[c].bounding_box.dim.w
+        debug_height := atlas.char_map[c].bounding_box.dim.h
+        debug_pos := atlas.char_map[c].bounding_box.pos
         debug_channel_count :: 1
-        debug_stride_in_bytes := atlas.output_width
+        debug_stride_in_bytes := atlas.image_dim.w
         debug_byte_offset := debug_pos.x + (debug_pos.y * debug_stride_in_bytes)
         img.write_png(
           out_path,
           debug_width,
           debug_height,
           debug_channel_count,
-          atlas.output[debug_byte_offset:],
+          atlas.image[debug_byte_offset:],
           debug_stride_in_bytes,
         )
       }
 
-      // TODO - is bitmap bounding box the best thing to use for char dimensions?
-      //        e.g. surprising that mono width font outputs different sized characters like this
-      //        suppose the alternative is to include left-side-bearing and the advance to the next character in the char, which seems pointlessly confusing
-      //        guess we'll need the left side bearing and advance for each of these to position text nicely for writing a string
       out_name :: proc(c: rune, f: FontTexture) -> cstring {
         return strings.clone_to_cstring(fmt.tprintf("build/%s_debug_%c.png", f, c))
       }

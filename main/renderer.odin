@@ -24,7 +24,8 @@ REQUIRED_DEVICE_EXTENSIONS := []cstring {
 }
 
 VERTEX_SHADER_PATH :: "build/vert.spv"
-FRAGMENT_SHADER_PATH :: "build/frag.spv"
+SPRITE_FRAGMENT_SHADER_PATH :: "build/sprite-frag.spv"
+MASK_FRAGMENT_SHADER_PATH :: "build/mask-frag.spv"
 
 FontTexture :: enum {
   Ubuntu,
@@ -42,7 +43,11 @@ FONT_IMAGE_OUT_PATHS := [FontTexture]cstring {
   .UbuntuMono = "build/UbuntuMono-R.png",
 }
 FONT_TEXTURE_ASSETS_COUNT :: len(FONT_TEXTURE_PATHS)
-
+MASK_FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT :: 2
+#assert(
+  FONT_TEXTURE_ASSETS_COUNT == MASK_FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT,
+  "fragment shader hardcodes expected number of texture samplers it can handle, if this fails because we've changed the number of texture assets, we need to remember to update the fragment shader too",
+)
 Texture :: enum {
   Sprite,
   Font,
@@ -59,9 +64,9 @@ TEXTURE_PATHS :: [Texture]cstring {
   .Yellow   = "assets/yellow.png",
 }
 TEXTURE_ASSETS_COUNT :: len(TEXTURE_PATHS)
-FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT :: 4
+SPRITE_FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT :: 4
 #assert(
-  TEXTURE_ASSETS_COUNT == FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT,
+  TEXTURE_ASSETS_COUNT == SPRITE_FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT,
   "fragment shader hardcodes expected number of texture samplers it can handle, if this fails because we've changed the number of texture assets, we need to remember to update the fragment shader too",
 )
 
@@ -70,6 +75,7 @@ VERTEX_BUFFER := [VERTEX_BUFFER_SIZE]Vertex{}
 INDEX_BUFFER_SIZE :: 10_000
 INDEX_BUFFER := [INDEX_BUFFER_SIZE]u32{}
 
+// TODO - think we're going to need to split SPRITE_DRAWABLES and MASK_DRAWABLES so we can construct the primitives in separate blocks
 DRAWABLES_SIZE :: 10_000
 DRAWABLES_COUNT := 0
 DRAWABLES := [DRAWABLES_SIZE]Drawable{}
@@ -79,39 +85,44 @@ push_drawable :: proc(d: Drawable) {
 }
 
 Renderer :: struct {
-  physical_device:             vulkan.PhysicalDevice,
-  queue_family_index:          u32,
-  queue:                       vulkan.Queue,
-  device:                      vulkan.Device,
-  swapchain:                   vulkan.SwapchainKHR,
-  swapchain_images:            []vulkan.Image,
-  swapchain_image_views:       []vulkan.ImageView,
-  swapchain_image_format:      vulkan.Format,
-  vertex_buffer:               vulkan.Buffer,
-  vertex_buffer_memory:        vulkan.DeviceMemory,
-  vertex_buffer_memory_mapped: rawptr,
-  index_buffer:                vulkan.Buffer,
-  index_buffer_memory:         vulkan.DeviceMemory,
-  index_buffer_memory_mapped:  rawptr,
-  fragment_shader_module:      vulkan.ShaderModule,
-  vertex_shader_module:        vulkan.ShaderModule,
-  graphics_pipeline:           vulkan.Pipeline,
-  command_pool:                vulkan.CommandPool,
-  command_buffer:              vulkan.CommandBuffer,
-  semaphores_draw_finished:    []vulkan.Semaphore,
-  fence_image_acquired:        vulkan.Fence,
-  fence_frame_finished:        vulkan.Fence,
-  texture_images:              [TEXTURE_ASSETS_COUNT]vulkan.Image,
-  texture_image_memories:      [TEXTURE_ASSETS_COUNT]vulkan.DeviceMemory,
-  texture_image_views:         [TEXTURE_ASSETS_COUNT]vulkan.ImageView,
-  texture_sampler:             vulkan.Sampler,
-  descriptor_pool:             vulkan.DescriptorPool,
-  descriptor_set:              vulkan.DescriptorSet,
-  descriptor_set_layout:       vulkan.DescriptorSetLayout,
-  pipeline_layout:             vulkan.PipelineLayout,
-  depth_image:                 vulkan.Image,
-  depth_image_memory:          vulkan.DeviceMemory,
-  depth_image_view:            vulkan.ImageView,
+  physical_device:               vulkan.PhysicalDevice,
+  queue_family_index:            u32,
+  queue:                         vulkan.Queue,
+  device:                        vulkan.Device,
+  swapchain:                     vulkan.SwapchainKHR,
+  swapchain_images:              []vulkan.Image,
+  swapchain_image_views:         []vulkan.ImageView,
+  swapchain_image_format:        vulkan.Format,
+  vertex_buffer:                 vulkan.Buffer,
+  vertex_buffer_memory:          vulkan.DeviceMemory,
+  vertex_buffer_memory_mapped:   rawptr,
+  index_buffer:                  vulkan.Buffer,
+  index_buffer_memory:           vulkan.DeviceMemory,
+  index_buffer_memory_mapped:    rawptr,
+  sprite_fragment_shader_module: vulkan.ShaderModule,
+  mask_fragment_shader_module:   vulkan.ShaderModule,
+  vertex_shader_module:          vulkan.ShaderModule,
+  sprite_graphics_pipeline:      vulkan.Pipeline,
+  mask_graphics_pipeline:        vulkan.Pipeline,
+  command_pool:                  vulkan.CommandPool,
+  command_buffer:                vulkan.CommandBuffer,
+  semaphores_draw_finished:      []vulkan.Semaphore,
+  fence_image_acquired:          vulkan.Fence,
+  fence_frame_finished:          vulkan.Fence,
+  sprite_texture_images:         [TEXTURE_ASSETS_COUNT]vulkan.Image,
+  sprite_texture_image_memories: [TEXTURE_ASSETS_COUNT]vulkan.DeviceMemory,
+  sprite_texture_image_views:    [TEXTURE_ASSETS_COUNT]vulkan.ImageView,
+  mask_texture_images:           [FONT_TEXTURE_ASSETS_COUNT]vulkan.Image,
+  mask_texture_image_memories:   [FONT_TEXTURE_ASSETS_COUNT]vulkan.DeviceMemory,
+  mask_texture_image_views:      [FONT_TEXTURE_ASSETS_COUNT]vulkan.ImageView,
+  texture_sampler:               vulkan.Sampler,
+  descriptor_pool:               vulkan.DescriptorPool,
+  descriptor_set:                vulkan.DescriptorSet,
+  descriptor_set_layout:         vulkan.DescriptorSetLayout,
+  pipeline_layout:               vulkan.PipelineLayout,
+  depth_image:                   vulkan.Image,
+  depth_image_memory:            vulkan.DeviceMemory,
+  depth_image_view:              vulkan.ImageView,
 }
 
 drawable_dim_to_screen_dim :: proc(dim: Dim) -> Dim {
@@ -171,6 +182,7 @@ draw_drawables :: proc() {
   DRAWABLES_COUNT = 0
 }
 
+// TODO - I think a bunch of state on renderer can really just be local variables in this function e.g. the shader modules shouldn't be needed again outside this scope. Might be able to simplify Renderer significantly
 init_renderer :: proc() -> (renderer: Renderer) {
   chars := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%"
   {   // init font assets
@@ -318,7 +330,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
   {   // create descriptor pool
     descriptor_pool_size := vulkan.DescriptorPoolSize {
       type            = .COMBINED_IMAGE_SAMPLER,
-      descriptorCount = TEXTURE_ASSETS_COUNT,
+      descriptorCount = TEXTURE_ASSETS_COUNT + FONT_TEXTURE_ASSETS_COUNT,
     }
 
     create_info := vulkan.DescriptorPoolCreateInfo {
@@ -335,10 +347,13 @@ init_renderer :: proc() -> (renderer: Renderer) {
   }
 
   for path, idx in TEXTURE_PATHS {
-    renderer.texture_images[idx], renderer.texture_image_memories[idx], renderer.texture_image_views[idx] =
-      create_texture_from_file(renderer, path)
+    renderer.sprite_texture_images[idx], renderer.sprite_texture_image_memories[idx], renderer.sprite_texture_image_views[idx] =
+      create_texture_from_file(renderer, path, 4, .R8G8B8A8_SRGB)
   }
-
+  for path, idx in FONT_IMAGE_OUT_PATHS {
+    renderer.mask_texture_images[idx], renderer.mask_texture_image_memories[idx], renderer.mask_texture_image_views[idx] =
+      create_texture_from_file(renderer, path, 1, .R8_SRGB)
+  }
   renderer.texture_sampler = create_sampler(renderer)
   create_depth_image_and_view(&renderer)
 
@@ -398,53 +413,36 @@ init_renderer :: proc() -> (renderer: Renderer) {
     renderer.index_buffer_memory_mapped = index_buffer_memory_mapped
   }
 
-  {   // create vertex shader module
-    data, err := os.read_entire_file_from_path(VERTEX_SHADER_PATH, context.allocator)
-    if err != nil {
-      log.fatal("Error reading vertex shader file", err)
-      panic("Failed to read vertex shader file")
-    }
-    create_info := vulkan.ShaderModuleCreateInfo {
-      sType    = .SHADER_MODULE_CREATE_INFO,
-      codeSize = len(data),
-      pCode    = cast(^u32)raw_data(data),
-    }
-    res := vulkan.CreateShaderModule(renderer.device, &create_info, nil, &renderer.vertex_shader_module)
-    if vk.not_success(res) {
-      vk.fatal("failed to create vertex shader module", res)
-    }
-  }
-
-  {   // create fragment shader module
-    data, err := os.read_entire_file_from_path(FRAGMENT_SHADER_PATH, context.allocator)
-    if err != nil {
-      log.fatal("Error reading fragment shader file", err)
-      panic("Failed to read fragment shader file")
-    }
-    create_info := vulkan.ShaderModuleCreateInfo {
-      sType    = .SHADER_MODULE_CREATE_INFO,
-      codeSize = len(data),
-      pCode    = cast(^u32)raw_data(data),
-    }
-    res := vulkan.CreateShaderModule(renderer.device, &create_info, nil, &renderer.fragment_shader_module)
-    if vk.not_success(res) {
-      vk.fatal("failed to create fragment shader module", res)
-    }
+  {   // create shader modules
+    renderer.vertex_shader_module = create_shader_module(renderer, VERTEX_SHADER_PATH)
+    renderer.sprite_fragment_shader_module = create_shader_module(renderer, SPRITE_FRAGMENT_SHADER_PATH)
+    renderer.mask_fragment_shader_module = create_shader_module(renderer, MASK_FRAGMENT_SHADER_PATH)
   }
 
   {   // create descriptor set layout
-    texture_combined_samplers_binding := vulkan.DescriptorSetLayoutBinding {
+    sprite_texture_combined_samplers_binding := vulkan.DescriptorSetLayoutBinding {
       binding            = 0,
       descriptorType     = .COMBINED_IMAGE_SAMPLER,
       descriptorCount    = TEXTURE_ASSETS_COUNT,
       stageFlags         = {.FRAGMENT},
       pImmutableSamplers = nil,
     }
+    mask_texture_combined_samplers_binding := vulkan.DescriptorSetLayoutBinding {
+      binding            = 1,
+      descriptorType     = .COMBINED_IMAGE_SAMPLER,
+      descriptorCount    = FONT_TEXTURE_ASSETS_COUNT,
+      stageFlags         = {.FRAGMENT},
+      pImmutableSamplers = nil,
+    }
+    bindings := []vulkan.DescriptorSetLayoutBinding {
+      sprite_texture_combined_samplers_binding,
+      mask_texture_combined_samplers_binding,
+    }
     create_info := vulkan.DescriptorSetLayoutCreateInfo {
       sType        = .DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
       flags        = {},
-      bindingCount = 1,
-      pBindings    = &texture_combined_samplers_binding,
+      bindingCount = 2,
+      pBindings    = raw_data(bindings),
     }
     res := vulkan.CreateDescriptorSetLayout(renderer.device, &create_info, nil, &renderer.descriptor_set_layout)
   }
@@ -460,28 +458,65 @@ init_renderer :: proc() -> (renderer: Renderer) {
   }
 
   {   // update descriptor set
-    sampler_descriptor_images: [TEXTURE_ASSETS_COUNT]vulkan.DescriptorImageInfo
+    sprite_sampler_descriptor_images: [TEXTURE_ASSETS_COUNT]vulkan.DescriptorImageInfo
     for i in 0 ..< TEXTURE_ASSETS_COUNT {
-      sampler_descriptor_images[i] = vulkan.DescriptorImageInfo {
+      sprite_sampler_descriptor_images[i] = vulkan.DescriptorImageInfo {
         sampler     = renderer.texture_sampler,
-        imageView   = renderer.texture_image_views[i],
+        imageView   = renderer.sprite_texture_image_views[i],
+        imageLayout = .SHADER_READ_ONLY_OPTIMAL,
+      }
+    }
+    mask_sampler_descriptor_images: [FONT_TEXTURE_ASSETS_COUNT]vulkan.DescriptorImageInfo
+    for i in 0 ..< FONT_TEXTURE_ASSETS_COUNT {
+      mask_sampler_descriptor_images[i] = vulkan.DescriptorImageInfo {
+        sampler     = renderer.texture_sampler,
+        imageView   = renderer.mask_texture_image_views[i],
         imageLayout = .SHADER_READ_ONLY_OPTIMAL,
       }
     }
 
-    descriptor_write := vulkan.WriteDescriptorSet {
-      sType           = .WRITE_DESCRIPTOR_SET,
-      dstSet          = renderer.descriptor_set,
-      dstBinding      = 0,
-      dstArrayElement = 0,
-      descriptorCount = TEXTURE_ASSETS_COUNT,
-      descriptorType  = .COMBINED_IMAGE_SAMPLER,
-      pImageInfo      = &sampler_descriptor_images[0],
+    descriptor_writes := []vulkan.WriteDescriptorSet {
+      vulkan.WriteDescriptorSet {
+        sType = .WRITE_DESCRIPTOR_SET,
+        dstSet = renderer.descriptor_set,
+        dstBinding = 0,
+        dstArrayElement = 0,
+        descriptorCount = TEXTURE_ASSETS_COUNT,
+        descriptorType = .COMBINED_IMAGE_SAMPLER,
+        pImageInfo = &sprite_sampler_descriptor_images[0],
+      },
+      vulkan.WriteDescriptorSet {
+        sType = .WRITE_DESCRIPTOR_SET,
+        dstSet = renderer.descriptor_set,
+        dstBinding = 1,
+        dstArrayElement = 0,
+        descriptorCount = FONT_TEXTURE_ASSETS_COUNT,
+        descriptorType = .COMBINED_IMAGE_SAMPLER,
+        pImageInfo = &mask_sampler_descriptor_images[0],
+      },
     }
-    vulkan.UpdateDescriptorSets(renderer.device, 1, &descriptor_write, 0, nil)
+    vulkan.UpdateDescriptorSets(renderer.device, 2, raw_data(descriptor_writes), 0, nil)
   }
 
-  create_graphics_pipeline(&renderer)
+  {   // create pipeline layout
+    pipeline_layout_create_info := vulkan.PipelineLayoutCreateInfo {
+      sType                  = .PIPELINE_LAYOUT_CREATE_INFO,
+      flags                  = {},
+      setLayoutCount         = 1,
+      pSetLayouts            = &renderer.descriptor_set_layout,
+      pushConstantRangeCount = 0,
+      pPushConstantRanges    = nil,
+    }
+    res := vulkan.CreatePipelineLayout(renderer.device, &pipeline_layout_create_info, nil, &renderer.pipeline_layout)
+    if vk.not_success(res) {
+      vk.fatal("failed to create pipeline layout", res)
+    }
+  }
+
+  {   // create graphics pipelines
+    renderer.sprite_graphics_pipeline = create_graphics_pipeline(renderer, renderer.sprite_fragment_shader_module)
+    renderer.mask_graphics_pipeline = create_graphics_pipeline(renderer, renderer.mask_fragment_shader_module)
+  }
 
   {   // create synchronisation objects
     semaphore_create_info := vulkan.SemaphoreCreateInfo {
@@ -717,12 +752,6 @@ render_frame :: proc(renderer: ^Renderer) {
   }
   vulkan.CmdBeginRendering(commandBuffer = renderer.command_buffer, pRenderingInfo = &rendering_info)
 
-  vulkan.CmdBindPipeline(
-    commandBuffer = renderer.command_buffer,
-    pipelineBindPoint = .GRAPHICS,
-    pipeline = renderer.graphics_pipeline,
-  )
-
   viewport := vulkan.Viewport {
     x        = 0,
     y        = 0,
@@ -765,14 +794,26 @@ render_frame :: proc(renderer: ^Renderer) {
     pDynamicOffsets = nil,
   )
 
-  vulkan.CmdDrawIndexed(
-    commandBuffer = renderer.command_buffer,
-    indexCount = INDEX_BUFFER_SIZE,
-    instanceCount = 1,
-    firstIndex = 0,
-    vertexOffset = 0,
-    firstInstance = 0,
-  )
+  {   // render sprites
+    vulkan.CmdBindPipeline(
+      commandBuffer = renderer.command_buffer,
+      pipelineBindPoint = .GRAPHICS,
+      pipeline = renderer.sprite_graphics_pipeline,
+    )
+
+    vulkan.CmdDrawIndexed(
+      commandBuffer = renderer.command_buffer,
+      indexCount = INDEX_BUFFER_SIZE,
+      instanceCount = 1,
+      firstIndex = 0,
+      vertexOffset = 0,
+      firstInstance = 0,
+    )
+  }
+
+  // TODO pipeline barrier to synchronise pipeline dependency usage
+
+  // TODO render masks
 
   vulkan.CmdEndRendering(renderer.command_buffer)
 
@@ -925,147 +966,6 @@ create_swapchain_image_views :: proc(renderer: ^Renderer) {
     }
   }}
 
-create_graphics_pipeline :: proc(renderer: ^Renderer) {
-  vertex_shader_stage_create_info := vulkan.PipelineShaderStageCreateInfo {
-    sType  = .PIPELINE_SHADER_STAGE_CREATE_INFO,
-    flags  = {},
-    stage  = {.VERTEX},
-    module = renderer.vertex_shader_module,
-    pName  = "main",
-  }
-
-  fragment_shader_stage_create_info := vulkan.PipelineShaderStageCreateInfo {
-    sType  = .PIPELINE_SHADER_STAGE_CREATE_INFO,
-    flags  = {},
-    stage  = {.FRAGMENT},
-    module = renderer.fragment_shader_module,
-    pName  = "main",
-  }
-
-  pipeline_shader_stages := []vulkan.PipelineShaderStageCreateInfo {
-    vertex_shader_stage_create_info,
-    fragment_shader_stage_create_info,
-  }
-
-  vertex_input_state_create_info := vulkan.PipelineVertexInputStateCreateInfo {
-    sType                           = .PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-    flags                           = {},
-    vertexBindingDescriptionCount   = 1,
-    pVertexBindingDescriptions      = &vertex_input_binding_description,
-    vertexAttributeDescriptionCount = cast(u32)len(vertex_input_attribute_descriptions),
-    pVertexAttributeDescriptions    = raw_data(vertex_input_attribute_descriptions),
-  }
-
-  input_assembly_state_create_info := vulkan.PipelineInputAssemblyStateCreateInfo {
-    sType    = .PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-    flags    = {},
-    topology = .TRIANGLE_LIST,
-  }
-
-  viewport_state_create_info := vulkan.PipelineViewportStateCreateInfo {
-    sType         = .PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-    viewportCount = 1,
-    scissorCount  = 1,
-  }
-
-  dynamic_states := []vulkan.DynamicState{.VIEWPORT, .SCISSOR}
-  dynamic_state_create_info := vulkan.PipelineDynamicStateCreateInfo {
-    sType             = .PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-    dynamicStateCount = cast(u32)len(dynamic_states),
-    pDynamicStates    = raw_data(dynamic_states),
-  }
-
-  rasterization_state_create_info := vulkan.PipelineRasterizationStateCreateInfo {
-    sType            = .PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-    depthClampEnable = false,
-    polygonMode      = .FILL,
-    cullMode         = {.BACK},
-    frontFace        = .CLOCKWISE,
-    lineWidth        = 1,
-  }
-
-  multisample_state_create_info := vulkan.PipelineMultisampleStateCreateInfo {
-    sType                = .PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-    sampleShadingEnable  = false,
-    rasterizationSamples = vulkan.SampleCountFlags{._1},
-  }
-
-  pipeline_layout_create_info := vulkan.PipelineLayoutCreateInfo {
-    sType                  = .PIPELINE_LAYOUT_CREATE_INFO,
-    flags                  = {},
-    setLayoutCount         = 1,
-    pSetLayouts            = &renderer.descriptor_set_layout,
-    pushConstantRangeCount = 0,
-    pPushConstantRanges    = nil,
-  }
-  pipeline_layout_create_res := vulkan.CreatePipelineLayout(
-    renderer.device,
-    &pipeline_layout_create_info,
-    nil,
-    &renderer.pipeline_layout,
-  )
-  if vk.not_success(pipeline_layout_create_res) {
-    vk.fatal("failed to create pipeline layout", pipeline_layout_create_res)
-  }
-  pipeline_rendering_create_info := vulkan.PipelineRenderingCreateInfo {
-    sType                   = .PIPELINE_RENDERING_CREATE_INFO,
-    viewMask                = 0,
-    colorAttachmentCount    = 1,
-    pColorAttachmentFormats = &renderer.swapchain_image_format,
-    depthAttachmentFormat   = .D32_SFLOAT,
-  }
-
-  // Note: alpha = 0 => fully transparent
-  pipeline_color_blend_attachment_state := vulkan.PipelineColorBlendAttachmentState {
-    blendEnable         = true,
-    colorWriteMask      = {.R, .G, .B, .A},
-    colorBlendOp        = .ADD,
-    alphaBlendOp        = .MAX,
-    srcColorBlendFactor = .SRC_ALPHA,
-    dstColorBlendFactor = .ONE_MINUS_SRC_ALPHA,
-    srcAlphaBlendFactor = .ONE,
-    dstAlphaBlendFactor = .ONE,
-  }
-
-  color_blend_state_create_info := vulkan.PipelineColorBlendStateCreateInfo {
-    sType           = .PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-    flags           = {},
-    logicOpEnable   = false,
-    attachmentCount = 1,
-    pAttachments    = &pipeline_color_blend_attachment_state,
-  }
-
-  depth_stencil_state_create_info := vulkan.PipelineDepthStencilStateCreateInfo {
-    sType                 = .PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-    flags                 = {},
-    depthTestEnable       = true,
-    depthWriteEnable      = true,
-    depthCompareOp        = .GREATER_OR_EQUAL,
-    depthBoundsTestEnable = false,
-    stencilTestEnable     = false,
-  }
-
-  create_info := vulkan.GraphicsPipelineCreateInfo {
-    sType               = .GRAPHICS_PIPELINE_CREATE_INFO,
-    pNext               = &pipeline_rendering_create_info,
-    flags               = {},
-    stageCount          = cast(u32)len(pipeline_shader_stages),
-    pStages             = raw_data(pipeline_shader_stages),
-    pVertexInputState   = &vertex_input_state_create_info,
-    pInputAssemblyState = &input_assembly_state_create_info,
-    pViewportState      = &viewport_state_create_info,
-    pRasterizationState = &rasterization_state_create_info,
-    pMultisampleState   = &multisample_state_create_info,
-    pColorBlendState    = &color_blend_state_create_info,
-    pDepthStencilState  = &depth_stencil_state_create_info,
-    pDynamicState       = &dynamic_state_create_info,
-    layout              = renderer.pipeline_layout,
-    renderPass          = {},
-    subpass             = 0,
-  }
-  res := vulkan.CreateGraphicsPipelines(renderer.device, {}, 1, &create_info, nil, &renderer.graphics_pipeline)
-}
-
 handle_screen_resized :: proc(renderer: ^Renderer) {
   log.info("handle_screen_resized")
   wait_res := vulkan.DeviceWaitIdle(renderer.device)
@@ -1188,13 +1088,15 @@ create_depth_image_and_view :: proc(renderer: ^Renderer) {
 create_texture_from_file :: proc(
   renderer: Renderer,
   path: cstring,
+  channel_count: i32,
+  format: vulkan.Format,
 ) -> (
   texture_image: vulkan.Image,
   texture_image_memory: vulkan.DeviceMemory,
   texture_image_view: vulkan.ImageView,
 ) {   // create texture font image resource
   renderer := renderer
-  ok, x, y, channels_in_file, data := img.load(path, 4)
+  ok, x, y, channels_in_file, data := img.load(path, channel_count)
   if !ok {
     img.fatal("failed to load texture image from file", path, x, y, channels_in_file)
   }
@@ -1235,7 +1137,7 @@ create_texture_from_file :: proc(
   create_image_info := vulkan.ImageCreateInfo {
     sType = .IMAGE_CREATE_INFO,
     imageType = .D2,
-    format = .R8G8B8A8_SRGB,
+    format = format,
     extent = vulkan.Extent3D{width = cast(u32)x, height = cast(u32)y, depth = 1},
     mipLevels = 1,
     arrayLayers = 1,
@@ -1347,7 +1249,7 @@ create_texture_from_file :: proc(
     create_info := vulkan.ImageViewCreateInfo {
       sType = .IMAGE_VIEW_CREATE_INFO,
       viewType = .D2,
-      format = .R8G8B8A8_SRGB,
+      format = format,
       image = texture_image,
       flags = {},
       components = {r = .IDENTITY, g = .IDENTITY, b = .IDENTITY, a = .IDENTITY},
@@ -1389,5 +1291,156 @@ create_sampler :: proc(renderer: Renderer) -> (texture_sampler: vulkan.Sampler) 
   if vk.not_success(res) {
     vk.fatal("failed to create texture sampler", res)
   }
+  return
+}
+
+create_shader_module :: proc(renderer: Renderer, path: string) -> (shader_module: vulkan.ShaderModule) {
+  data, err := os.read_entire_file_from_path(path, context.allocator)
+  if err != nil {
+    log.fatal("Error reading vertex shader file", err)
+    panic("Failed to read vertex shader file")
+  }
+  defer delete(data)
+
+  create_info := vulkan.ShaderModuleCreateInfo {
+    sType    = .SHADER_MODULE_CREATE_INFO,
+    codeSize = len(data),
+    pCode    = cast(^u32)raw_data(data),
+  }
+  res := vulkan.CreateShaderModule(renderer.device, &create_info, nil, &shader_module)
+  if vk.not_success(res) {
+    vk.fatal("failed to create vertex shader module", res)
+  }
+  return
+}
+
+create_graphics_pipeline :: proc(
+  renderer: Renderer,
+  fragment_shader_module: vulkan.ShaderModule,
+) -> (
+  pipeline: vulkan.Pipeline,
+) {
+  renderer := renderer
+  vertex_shader_stage_create_info := vulkan.PipelineShaderStageCreateInfo {
+    sType  = .PIPELINE_SHADER_STAGE_CREATE_INFO,
+    flags  = {},
+    stage  = {.VERTEX},
+    module = renderer.vertex_shader_module,
+    pName  = "main",
+  }
+
+  fragment_shader_stage_create_info := vulkan.PipelineShaderStageCreateInfo {
+    sType  = .PIPELINE_SHADER_STAGE_CREATE_INFO,
+    flags  = {},
+    stage  = {.FRAGMENT},
+    module = fragment_shader_module,
+    pName  = "main",
+  }
+
+  pipeline_shader_stages := []vulkan.PipelineShaderStageCreateInfo {
+    vertex_shader_stage_create_info,
+    fragment_shader_stage_create_info,
+  }
+
+  vertex_input_state_create_info := vulkan.PipelineVertexInputStateCreateInfo {
+    sType                           = .PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+    flags                           = {},
+    vertexBindingDescriptionCount   = 1,
+    pVertexBindingDescriptions      = &vertex_input_binding_description,
+    vertexAttributeDescriptionCount = cast(u32)len(vertex_input_attribute_descriptions),
+    pVertexAttributeDescriptions    = raw_data(vertex_input_attribute_descriptions),
+  }
+
+  input_assembly_state_create_info := vulkan.PipelineInputAssemblyStateCreateInfo {
+    sType    = .PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+    flags    = {},
+    topology = .TRIANGLE_LIST,
+  }
+
+  viewport_state_create_info := vulkan.PipelineViewportStateCreateInfo {
+    sType         = .PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+    viewportCount = 1,
+    scissorCount  = 1,
+  }
+
+  dynamic_states := []vulkan.DynamicState{.VIEWPORT, .SCISSOR}
+  dynamic_state_create_info := vulkan.PipelineDynamicStateCreateInfo {
+    sType             = .PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+    dynamicStateCount = cast(u32)len(dynamic_states),
+    pDynamicStates    = raw_data(dynamic_states),
+  }
+
+  rasterization_state_create_info := vulkan.PipelineRasterizationStateCreateInfo {
+    sType            = .PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+    depthClampEnable = false,
+    polygonMode      = .FILL,
+    cullMode         = {.BACK},
+    frontFace        = .CLOCKWISE,
+    lineWidth        = 1,
+  }
+
+  multisample_state_create_info := vulkan.PipelineMultisampleStateCreateInfo {
+    sType                = .PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+    sampleShadingEnable  = false,
+    rasterizationSamples = vulkan.SampleCountFlags{._1},
+  }
+
+  pipeline_rendering_create_info := vulkan.PipelineRenderingCreateInfo {
+    sType                   = .PIPELINE_RENDERING_CREATE_INFO,
+    viewMask                = 0,
+    colorAttachmentCount    = 1,
+    pColorAttachmentFormats = &renderer.swapchain_image_format,
+    depthAttachmentFormat   = .D32_SFLOAT,
+  }
+
+  // Note: alpha = 0 => fully transparent
+  pipeline_color_blend_attachment_state := vulkan.PipelineColorBlendAttachmentState {
+    blendEnable         = true,
+    colorWriteMask      = {.R, .G, .B, .A},
+    colorBlendOp        = .ADD,
+    alphaBlendOp        = .MAX,
+    srcColorBlendFactor = .SRC_ALPHA,
+    dstColorBlendFactor = .ONE_MINUS_SRC_ALPHA,
+    srcAlphaBlendFactor = .ONE,
+    dstAlphaBlendFactor = .ONE,
+  }
+
+  color_blend_state_create_info := vulkan.PipelineColorBlendStateCreateInfo {
+    sType           = .PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+    flags           = {},
+    logicOpEnable   = false,
+    attachmentCount = 1,
+    pAttachments    = &pipeline_color_blend_attachment_state,
+  }
+
+  depth_stencil_state_create_info := vulkan.PipelineDepthStencilStateCreateInfo {
+    sType                 = .PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+    flags                 = {},
+    depthTestEnable       = true,
+    depthWriteEnable      = true,
+    depthCompareOp        = .GREATER_OR_EQUAL,
+    depthBoundsTestEnable = false,
+    stencilTestEnable     = false,
+  }
+
+  create_info := vulkan.GraphicsPipelineCreateInfo {
+    sType               = .GRAPHICS_PIPELINE_CREATE_INFO,
+    pNext               = &pipeline_rendering_create_info,
+    flags               = {},
+    stageCount          = cast(u32)len(pipeline_shader_stages),
+    pStages             = raw_data(pipeline_shader_stages),
+    pVertexInputState   = &vertex_input_state_create_info,
+    pInputAssemblyState = &input_assembly_state_create_info,
+    pViewportState      = &viewport_state_create_info,
+    pRasterizationState = &rasterization_state_create_info,
+    pMultisampleState   = &multisample_state_create_info,
+    pColorBlendState    = &color_blend_state_create_info,
+    pDepthStencilState  = &depth_stencil_state_create_info,
+    pDynamicState       = &dynamic_state_create_info,
+    layout              = renderer.pipeline_layout,
+    renderPass          = {},
+    subpass             = 0,
+  }
+  res := vulkan.CreateGraphicsPipelines(renderer.device, {}, 1, &create_info, nil, &pipeline)
   return
 }

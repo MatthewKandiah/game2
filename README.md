@@ -23,8 +23,10 @@ LLM's summary diagram:
 
 # In progress - experiment with better font rendering
 - [x] use stb_truetype to rasterize characters from ttf file and generate font atlas
-- [ ] create texture resources for these font atlases
-- [ ] update shaders to allow font drawing - want to be able to draw a character in any colour with transparent background (don't think we need to set a background colour / font, it seems unlikely that we'll ever want to texture the background of a character's bounding box, we probably want to set a background around a larger area which we can already do with another quad at a lower z-value)
+- [x] create texture resources for these font atlases
+- [x] update shaders to allow font drawing - want to be able to draw a character in any colour with transparent background (don't think we need to set a background colour / font, it seems unlikely that we'll ever want to texture the background of a character's bounding box, we probably want to set a background around a larger area which we can already do with another quad at a lower z-value)
+- [ ] draw a character without stretching it terribly
+- [ ] draw a string of characters like proper text (using advance, left-side-bearing, and kerning)
 
 # TODO - preliminary refactoring
 - container-child layout algorithm -> position rectangles within each other more nicely

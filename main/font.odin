@@ -10,7 +10,7 @@ import "tt"
 import stbtt "vendor:stb/truetype"
 
 GlyphInfo :: struct {
-  bounding_box:      GridRect,
+  bounding_box:      Rect,
   advance_width:     i32,
   left_side_bearing: i32,
 }
@@ -92,9 +92,9 @@ create_font_atlas :: proc(
       scale,
       c,
     )
-    bounding_box := GridRect {
-      dim = GridDim{v = {x2 - x1, y2 - y1}},
-      pos = GridPos{v = {x + left_side_bearing, y + (y2 - y1)}},
+    bounding_box := Rect {
+      dim = Dim{v = {cast(f32)(x2 - x1), cast(f32)(y2 - y1)}},
+      pos = Pos{v = {cast(f32)(x + left_side_bearing), cast(f32)(y + (y2 - y1))}},
     }
     atlas.char_map[c] = GlyphInfo {
       bounding_box      = bounding_box,

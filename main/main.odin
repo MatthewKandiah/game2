@@ -108,28 +108,29 @@ main :: proc() {
     tex_idx = texture_to_idx(Texture.Sprite),
   }
 
-  ubuntu_a_glyph_info, ubuntu_a_ok := fonts[FontTexture.Ubuntu].char_map['a']
+  a_font := FontTexture.UbuntuMono
+  ubuntu_a_glyph_info, ubuntu_a_ok := fonts[a_font].char_map['a']
   if !ubuntu_a_ok {
     panic("'a' not found in font atlas")
   }
   ubuntu_a_box := ubuntu_a_glyph_info.bounding_box
   texture_data_a := TextureData {
-    // TODO - should these values on GlyphInfo just be floats then?
-    base = Pos{v = {cast(f32)ubuntu_a_box.pos.x, cast(f32)ubuntu_a_box.pos.y}},
-    dim = Dim{v = {cast(f32)ubuntu_a_box.dim.w, cast(f32)ubuntu_a_box.dim.h}},
-    tex_idx = font_texture_to_idx(FontTexture.Ubuntu),
+    base = ubuntu_a_box.pos,
+    dim = ubuntu_a_box.dim,
+    tex_idx = font_texture_to_idx(a_font),
     type = .Mask,
   }
 
-  ubuntu_b_glyph_info, ubuntu_b_ok := fonts[FontTexture.Ubuntu].char_map['b']
+  b_font := FontTexture.Ubuntu
+  ubuntu_b_glyph_info, ubuntu_b_ok := fonts[b_font].char_map['b']
   if !ubuntu_b_ok {
     panic("'b' not found in font atlas")
   }
   ubuntu_b_box := ubuntu_b_glyph_info.bounding_box
   texture_data_b := TextureData {
-    base = Pos{v = {cast(f32)ubuntu_b_box.pos.x, cast(f32)ubuntu_b_box.pos.y}},
-    dim = Dim{v = {cast(f32)ubuntu_b_box.dim.w, cast(f32)ubuntu_b_box.dim.h}},
-    tex_idx = font_texture_to_idx(FontTexture.Ubuntu),
+    base = ubuntu_b_box.pos,
+    dim = ubuntu_b_box.dim,
+    tex_idx = font_texture_to_idx(b_font),
     type = .Mask,
   }
 

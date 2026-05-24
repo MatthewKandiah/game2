@@ -75,13 +75,25 @@ VERTEX_BUFFER := [VERTEX_BUFFER_SIZE]Vertex{}
 INDEX_BUFFER_SIZE :: 10_000
 INDEX_BUFFER := [INDEX_BUFFER_SIZE]u32{}
 
-// TODO - think we're going to need to split SPRITE_DRAWABLES and MASK_DRAWABLES so we can construct the primitives in separate blocks
-DRAWABLES_SIZE :: 10_000
-DRAWABLES_COUNT := 0
-DRAWABLES := [DRAWABLES_SIZE]Drawable{}
+SPRITE_DRAWABLES_SIZE :: 10_000
+MASK_DRAWABLES_SIZE :: 10_000
+SPRITE_DRAWABLES_COUNT := 0
+MASK_DRAWABLES_COUNT := 0
+SPRITE_DRAWABLES := [SPRITE_DRAWABLES_SIZE]Drawable{}
+MASK_DRAWABLES := [MASK_DRAWABLES_SIZE]Drawable{}
 push_drawable :: proc(d: Drawable) {
-  DRAWABLES[DRAWABLES_COUNT] = d
-  DRAWABLES_COUNT += 1
+  switch (d.texture_data.type) {
+  case .Sprite:
+    {
+      SPRITE_DRAWABLES[SPRITE_DRAWABLES_COUNT] = d
+      SPRITE_DRAWABLES_COUNT += 1
+    }
+  case .Mask:
+    {
+      MASK_DRAWABLES[MASK_DRAWABLES_COUNT] = d
+      MASK_DRAWABLES_COUNT += 1
+    }
+  }
 }
 
 Renderer :: struct {
@@ -135,10 +147,13 @@ drawable_pos_to_screen_pos :: proc(pos: Pos) -> Pos {
   }
 }
 
-draw_drawables :: proc() {
-  for drawable, idx in DRAWABLES[:DRAWABLES_COUNT] {
-    vertex_base_idx := idx * 4
-    index_base_idx := idx * 6
+VERTICES_PER_DRAWABLE :: 4
+INDICES_PER_DRAWABLE :: 6
+
+generate_graphics_primitives :: proc(drawables: []Drawable, drawables_already_generated: int) {
+  for drawable, idx in drawables {
+    vertex_base_idx := (drawables_already_generated + idx) * VERTICES_PER_DRAWABLE
+    index_base_idx := (drawables_already_generated + idx) * INDICES_PER_DRAWABLE
     alpha: f32 = 1 if drawable.override_colour else 0
 
     pos := drawable_pos_to_screen_pos(drawable.pos)
@@ -179,46 +194,28 @@ draw_drawables :: proc() {
     INDEX_BUFFER[index_base_idx + 4] = cast(u32)(vertex_base_idx + 1)
     INDEX_BUFFER[index_base_idx + 5] = cast(u32)(vertex_base_idx + 3)
   }
-  DRAWABLES_COUNT = 0
 }
+
+draw_drawables :: proc() {
+  generate_graphics_primitives(SPRITE_DRAWABLES[:SPRITE_DRAWABLES_COUNT], 0)
+  generate_graphics_primitives(MASK_DRAWABLES[:MASK_DRAWABLES_COUNT], SPRITE_DRAWABLES_COUNT)
+  SPRITE_DRAWABLES_COUNT = 0
+  MASK_DRAWABLES_COUNT = 0
+}
+
+init_fonts :: proc(chars: string) -> (output: []FontAtlas) {
+  output = make([]FontAtlas, FONT_TEXTURE_ASSETS_COUNT)
+  for ft, idx in FontTexture {
+    atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 16, chars, 128, 256)
+    img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.image_dim.w, atlas.image_dim.h, 1, atlas.image, atlas.image_dim.w)
+    output[idx] = atlas
+  }
+  return
+}
+
 
 // TODO - I think a bunch of state on renderer can really just be local variables in this function e.g. the shader modules shouldn't be needed again outside this scope. Might be able to simplify Renderer significantly
 init_renderer :: proc() -> (renderer: Renderer) {
-  chars := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%"
-  {   // init font assets
-    for ft in FontTexture {
-      atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 16, chars, 128, 256)
-      img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.image_dim.w, atlas.image_dim.h, 1, atlas.image, atlas.image_dim.w)
-
-      char_debug :: proc(c: rune, atlas: FontAtlas, out_path: cstring) {
-        debug_width := atlas.char_map[c].bounding_box.dim.w
-        debug_height := atlas.char_map[c].bounding_box.dim.h
-        debug_pos := atlas.char_map[c].bounding_box.pos
-        debug_channel_count :: 1
-        debug_stride_in_bytes := atlas.image_dim.w
-        debug_byte_offset := debug_pos.x + (debug_pos.y * debug_stride_in_bytes)
-        img.write_png(
-          out_path,
-          debug_width,
-          debug_height,
-          debug_channel_count,
-          atlas.image[debug_byte_offset:],
-          debug_stride_in_bytes,
-        )
-      }
-
-      out_name :: proc(c: rune, f: FontTexture) -> cstring {
-        return strings.clone_to_cstring(fmt.tprintf("build/%s_debug_%c.png", f, c))
-      }
-      char_debug('a', atlas, out_name('a', ft))
-      char_debug('1', atlas, out_name('1', ft))
-      char_debug('Q', atlas, out_name('Q', ft))
-      char_debug('@', atlas, out_name('@', ft))
-      char_debug('#', atlas, out_name('#', ft))
-      char_debug('%', atlas, out_name('%', ft))
-    }
-  }
-
   {   // pick a physical device
     res, count, physical_devices := vk.enumerate_physical_devices(gc.vk_instance)
     if vk.not_success(res) {
@@ -270,9 +267,15 @@ init_renderer :: proc() -> (renderer: Renderer) {
       pQueuePriorities = raw_data(priorities),
     }
 
+    synchronization2_features := vulkan.PhysicalDeviceSynchronization2Features {
+      sType            = .PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+      synchronization2 = true,
+      pNext            = nil,
+    }
+
     dynamic_rendering_local_read := vulkan.PhysicalDeviceDynamicRenderingLocalReadFeatures {
       sType                     = .PHYSICAL_DEVICE_DYNAMIC_RENDERING_LOCAL_READ_FEATURES,
-      pNext                     = nil,
+      pNext                     = &synchronization2_features,
       dynamicRenderingLocalRead = true,
     }
 
@@ -595,6 +598,8 @@ deinit_renderer :: proc(r: ^Renderer) {
 }
 
 render_frame :: proc(renderer: ^Renderer) {
+  sprite_drawables_drawn_this_frame := cast(u32)SPRITE_DRAWABLES_COUNT
+  mask_drawables_drawn_this_frame := cast(u32)MASK_DRAWABLES_COUNT
   draw_drawables()
   should_recreate_swapchain := false
 
@@ -794,7 +799,7 @@ render_frame :: proc(renderer: ^Renderer) {
     pDynamicOffsets = nil,
   )
 
-  {   // render sprites
+  {   // render sprites graphics
     vulkan.CmdBindPipeline(
       commandBuffer = renderer.command_buffer,
       pipelineBindPoint = .GRAPHICS,
@@ -803,7 +808,7 @@ render_frame :: proc(renderer: ^Renderer) {
 
     vulkan.CmdDrawIndexed(
       commandBuffer = renderer.command_buffer,
-      indexCount = INDEX_BUFFER_SIZE,
+      indexCount = sprite_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
       instanceCount = 1,
       firstIndex = 0,
       vertexOffset = 0,
@@ -811,9 +816,40 @@ render_frame :: proc(renderer: ^Renderer) {
     )
   }
 
-  // TODO pipeline barrier to synchronise pipeline dependency usage
+  {   // pipeline barrier to synchronise colour and depth attachment usage
+    memory_barrier := vulkan.MemoryBarrier2 {
+      sType         = .MEMORY_BARRIER_2,
+      srcStageMask  = {.COLOR_ATTACHMENT_OUTPUT, .LATE_FRAGMENT_TESTS},
+      srcAccessMask = {.COLOR_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_WRITE},
+      dstStageMask  = {.COLOR_ATTACHMENT_OUTPUT, .EARLY_FRAGMENT_TESTS},
+      dstAccessMask = {.COLOR_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_READ},
+    }
+    dependency_info := vulkan.DependencyInfo {
+      sType              = .DEPENDENCY_INFO,
+      dependencyFlags    = {.BY_REGION},
+      memoryBarrierCount = 1,
+      pMemoryBarriers    = &memory_barrier,
+    }
+    vulkan.CmdPipelineBarrier2(renderer.command_buffer, &dependency_info)
+  }
 
-  // TODO render masks
+
+  {   // render mask graphics
+    vulkan.CmdBindPipeline(
+      commandBuffer = renderer.command_buffer,
+      pipelineBindPoint = .GRAPHICS,
+      pipeline = renderer.mask_graphics_pipeline,
+    )
+
+    vulkan.CmdDrawIndexed(
+      commandBuffer = renderer.command_buffer,
+      indexCount = mask_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
+      instanceCount = 1,
+      firstIndex = sprite_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
+      vertexOffset = 0,
+      firstInstance = 0,
+    )
+  }
 
   vulkan.CmdEndRendering(renderer.command_buffer)
 

@@ -10,15 +10,19 @@ layout(binding = 1) uniform sampler2D texSamplers[2];
 
 layout(location = 0) out vec4 outColour;
 
-const int THRESHOLD = 100;
+const float THRESHOLD = 0.10; // tweak to determine how much of the anti-aliasing shows
 
 void main() {
   if (fragColour.a == 1) {
     outColour = fragColour;
     return;
   }
-  outColour = textureLod(nonuniformEXT(texSamplers[texIdx]), texCoord, 0);
-  if (outColour.a < 1 || outColour.r < THRESHOLD) {
+  vec4 sampledColour = textureLod(nonuniformEXT(texSamplers[texIdx]), texCoord, 0);
+  if (sampledColour.a < 1 || sampledColour.r < THRESHOLD) {
     discard;
   }
+  outColour.r = 1;
+  outColour.g = 1;
+  outColour.b = 1;
+  outColour.a = 1;
 }

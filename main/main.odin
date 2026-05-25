@@ -167,7 +167,7 @@ main :: proc() {
   drawable_a := Drawable {
     pos             = drawable_red.pos,
     z               = 0.2,
-    dim             = drawable_red.dim,
+    dim             = Dim{v = {drawable_red.dim.h * 7 / 9, drawable_red.dim.h}},
     texture_data    = texture_data_a,
     override_colour = false,
     colour          = BLUE,
@@ -176,7 +176,7 @@ main :: proc() {
   drawable_b := Drawable {
     pos             = drawable_green.pos,
     z               = 0.2,
-    dim             = drawable_green.dim,
+    dim             = Dim{v = {drawable_green.dim.h * 7 / 9, drawable_green.dim.h}},
     texture_data    = texture_data_b,
     override_colour = false,
     colour          = YELLOW,

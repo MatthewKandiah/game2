@@ -206,7 +206,7 @@ draw_drawables :: proc() {
 init_fonts :: proc(chars: string) -> (output: []FontAtlas) {
   output = make([]FontAtlas, FONT_TEXTURE_ASSETS_COUNT)
   for ft, idx in FontTexture {
-    atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 16, chars, 128, 256)
+    atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 32, chars, 256, 256)
     img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.image_dim.w, atlas.image_dim.h, 1, atlas.image, atlas.image_dim.w)
     output[idx] = atlas
   }

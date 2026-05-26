@@ -179,7 +179,7 @@ main :: proc() {
     dim             = Dim{v = {drawable_green.dim.h * 7 / 9, drawable_green.dim.h}},
     texture_data    = texture_data_b,
     override_colour = false,
-    colour          = YELLOW,
+    colour          = Colour{r = 0.4, g = 0.4, b = 0.4},
   }
 
   drawable_yellow := Drawable {

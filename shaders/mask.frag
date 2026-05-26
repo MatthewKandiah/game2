@@ -21,8 +21,6 @@ void main() {
   if (sampledColour.a < 1 || sampledColour.r < THRESHOLD) {
     discard;
   }
-  outColour.r = 1;
-  outColour.g = 1;
-  outColour.b = 1;
+  outColour.rgb = fragColour.rgb;
   outColour.a = 1;
 }

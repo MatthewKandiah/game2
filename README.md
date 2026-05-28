@@ -1,33 +1,29 @@
 # GAME 2
 
-# Notes - rough LLM-assisted plan, not confirmed carefully with the docs yet
-- Need to add a second graphics pipeline -> spritePipeline and maskPipeline
-- For best performance, you want to dump all the vertices and indices into a single big buffer, and use offsets into those buffers for drawing them with the correct pipeline (i.e. all sprite vertices and indices grouped, then all font data grouped) - this looks easy to do, the draw calls take offset arguments
-- Probably use the exact same Vertex data structure and vertex shader for both pipelines
-- Both pipelines write to the same colour attachment and depth attachment, so we'll need a pipeline barrier between the two draws to synchronise resource use. We don't want to start drawing font primitives before the sprite draws have finished writing to the depth attachment
+# Notes
 
-LLM's summary diagram:
-[Start Dynamic Rendering]
-         │
-         ▼
- 1. Bind Sprite Pipeline ──► 2. Draw Sprite Indices (Offset 0)
-         │
-         ▼
- 3. Pipeline Barrier (Wait for depth writes to finish)
-         │
-         ▼
- 4. Bind Font Pipeline   ──► 5. Draw Font Indices (Offset X)
-         │
-         ▼
-[End Dynamic Rendering]
-
-# In progress - experiment with better font rendering
-- [x] use stb_truetype to rasterize characters from ttf file and generate font atlas
-- [x] create texture resources for these font atlases
-- [x] update shaders to allow font drawing - want to be able to draw a character in any colour with transparent background (don't think we need to set a background colour / font, it seems unlikely that we'll ever want to texture the background of a character's bounding box, we probably want to set a background around a larger area which we can already do with another quad at a lower z-value)
-- [ ] draw a character without stretching it terribly
+# In progress - how do we want to handle UI layout
+- Avoid overcomplicating this, I don't need a full flexbox implementation. But I do want something that's easier to read/write than just explicitly calculating every pos and dim every time.
+- [ ] container-child layout algorithm -> position rectangles within each other more nicely
 - [ ] draw a string of characters like proper text (using advance, left-side-bearing, and kerning)
+- [ ] draw a grid of characters
+- [ ] implement mouse interactions - onMouseDown, onMouseUp, onHover, etc. If we get this right, we'll save a lot of effort later!
+
+# References
+- A bunch of Casey Muratori's old blogs look useful. This series of blogs explains starting with a simple component which handles layout very explicitly, and walks through how he refactored and extended it. 
+  - https://caseymuratori.com/blog_0015
+  - https://caseymuratori.com/blog_0016
+  - https://caseymuratori.com/blog_0017
+  - https://caseymuratori.com/blog_0018
+  - https://caseymuratori.com/blog_0019
+  - https://caseymuratori.com/blog_0020
+  - https://caseymuratori.com/blog_0021
+  - https://caseymuratori.com/blog_0022
+  - https://caseymuratori.com/blog_0023
+  - https://caseymuratori.com/blog_0024
+- Tangentially related - how to use a bad API https://caseymuratori.com/blog_0025
+- More Casey simping - Handmade Hero Day 265 "Cleaning up the UI Layout Code" https://guide.handmadehero.org/code/day265/
 
 # TODO - preliminary refactoring
-- container-child layout algorithm -> position rectangles within each other more nicely
+- tinting - I think we'll get a lot of use out of this. Add a tint vertex attribute. Multiply the current pixel colour by it (possibly weighted by the tint's alpha? so we can tweak the amount of tinting to get it looking nice). Allow us to flash an enemy red, or highlight the hovered button, etc.
 - track memory usage & frame timing for performance checking & experiment with package core:prof/spall

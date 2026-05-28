@@ -11,11 +11,6 @@ import "vendor:stb/image"
 import "vendor:vulkan"
 import "vk"
 
-WINDOW_WIDTH :: 640
-WINDOW_HEIGHT :: 480
-MIN_WINDOW_WIDTH :: 640
-MIN_WINDOW_HEIGHT :: 480
-APP_NAME :: "Game2"
 ENABLED_LAYERS :: []cstring{"VK_LAYER_KHRONOS_validation"}
 REQUIRED_DEVICE_EXTENSIONS := []cstring {
   vulkan.KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -27,70 +22,13 @@ VERTEX_SHADER_PATH :: "build/vert.spv"
 SPRITE_FRAGMENT_SHADER_PATH :: "build/sprite-frag.spv"
 MASK_FRAGMENT_SHADER_PATH :: "build/mask-frag.spv"
 
-FontTexture :: enum {
-  Ubuntu,
-  UbuntuMono,
-}
-font_texture_to_idx :: proc(ft: FontTexture) -> i32 {
-  return cast(i32)ft
-}
-FONT_TEXTURE_PATHS := [FontTexture]string {
-  .Ubuntu     = "assets/Ubuntu-R.ttf",
-  .UbuntuMono = "assets/UbuntuMono-R.ttf",
-}
-FONT_IMAGE_OUT_PATHS := [FontTexture]cstring {
-  .Ubuntu     = "build/Ubuntu-R.png",
-  .UbuntuMono = "build/UbuntuMono-R.png",
-}
-FONT_TEXTURE_ASSETS_COUNT :: len(FONT_TEXTURE_PATHS)
-MASK_FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT :: 2
-#assert(
-  FONT_TEXTURE_ASSETS_COUNT == MASK_FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT,
-  "fragment shader hardcodes expected number of texture samplers it can handle, if this fails because we've changed the number of texture assets, we need to remember to update the fragment shader too",
-)
-Texture :: enum {
-  Gradient,
-  Yellow,
-}
-texture_to_idx :: proc(t: Texture) -> i32 {
-  return cast(i32)t
-}
-TEXTURE_PATHS :: [Texture]cstring {
-  .Gradient = "assets/gradient.png",
-  .Yellow   = "assets/yellow.png",
-}
-TEXTURE_ASSETS_COUNT :: len(TEXTURE_PATHS)
-SPRITE_FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT :: 2
-#assert(
-  TEXTURE_ASSETS_COUNT == SPRITE_FRAGMENT_SHADER_EXPECTED_TEXTURE_COUNT,
-  "fragment shader hardcodes expected number of texture samplers it can handle, if this fails because we've changed the number of texture assets, we need to remember to update the fragment shader too",
-)
-
 VERTEX_BUFFER_SIZE :: 10_000
 VERTEX_BUFFER := [VERTEX_BUFFER_SIZE]Vertex{}
 INDEX_BUFFER_SIZE :: 10_000
 INDEX_BUFFER := [INDEX_BUFFER_SIZE]u32{}
 
-SPRITE_DRAWABLES_SIZE :: 10_000
-MASK_DRAWABLES_SIZE :: 10_000
-SPRITE_DRAWABLES_COUNT := 0
-MASK_DRAWABLES_COUNT := 0
-SPRITE_DRAWABLES := [SPRITE_DRAWABLES_SIZE]Drawable{}
-MASK_DRAWABLES := [MASK_DRAWABLES_SIZE]Drawable{}
-push_drawable :: proc(d: Drawable) {
-  switch (d.texture_data.type) {
-  case .Sprite:
-    {
-      SPRITE_DRAWABLES[SPRITE_DRAWABLES_COUNT] = d
-      SPRITE_DRAWABLES_COUNT += 1
-    }
-  case .Mask:
-    {
-      MASK_DRAWABLES[MASK_DRAWABLES_COUNT] = d
-      MASK_DRAWABLES_COUNT += 1
-    }
-  }
-}
+VERTICES_PER_DRAWABLE :: 4
+INDICES_PER_DRAWABLE :: 6
 
 Renderer :: struct {
   physical_device:               vulkan.PhysicalDevice,
@@ -132,83 +70,6 @@ Renderer :: struct {
   depth_image_memory:            vulkan.DeviceMemory,
   depth_image_view:              vulkan.ImageView,
 }
-
-drawable_dim_to_screen_dim :: proc(dim: Dim) -> Dim {
-  return Dim{v = {2 * dim.w / cast(f32)gc.surface_extent.width, 2 * dim.h / cast(f32)gc.surface_extent.height}}
-}
-
-drawable_pos_to_screen_pos :: proc(pos: Pos) -> Pos {
-  return Pos {
-    v = {(2 * pos.x) / cast(f32)gc.surface_extent.width - 1, 1 - (2 * pos.y) / cast(f32)gc.surface_extent.height},
-  }
-}
-
-VERTICES_PER_DRAWABLE :: 4
-INDICES_PER_DRAWABLE :: 6
-
-generate_graphics_primitives :: proc(drawables: []Drawable, drawables_already_generated: int) {
-  for drawable, idx in drawables {
-    vertex_base_idx := (drawables_already_generated + idx) * VERTICES_PER_DRAWABLE
-    index_base_idx := (drawables_already_generated + idx) * INDICES_PER_DRAWABLE
-    alpha: f32 = 1 if drawable.override_colour else 0
-
-    pos := drawable_pos_to_screen_pos(drawable.pos)
-    dim := drawable_dim_to_screen_dim(drawable.dim)
-
-    VERTEX_BUFFER[vertex_base_idx + 0] = {
-      {pos.x, pos.y, drawable.z},
-      {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
-      {drawable.texture_data.base.x, drawable.texture_data.base.y},
-      drawable.texture_data.tex_idx,
-    }
-    VERTEX_BUFFER[vertex_base_idx + 1] = {
-      {pos.x, pos.y - dim.h, drawable.z},
-      {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
-      {drawable.texture_data.base.x, drawable.texture_data.base.y - drawable.texture_data.dim.h},
-      drawable.texture_data.tex_idx,
-    }
-    VERTEX_BUFFER[vertex_base_idx + 2] = {
-      {pos.x + dim.w, pos.y, drawable.z},
-      {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
-      {drawable.texture_data.base.x + drawable.texture_data.dim.w, drawable.texture_data.base.y},
-      drawable.texture_data.tex_idx,
-    }
-    VERTEX_BUFFER[vertex_base_idx + 3] = {
-      {pos.x + dim.w, pos.y - dim.h, drawable.z},
-      {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
-      {
-        drawable.texture_data.base.x + drawable.texture_data.dim.w,
-        drawable.texture_data.base.y - drawable.texture_data.dim.h,
-      },
-      drawable.texture_data.tex_idx,
-    }
-
-    INDEX_BUFFER[index_base_idx + 0] = cast(u32)(vertex_base_idx + 0)
-    INDEX_BUFFER[index_base_idx + 1] = cast(u32)(vertex_base_idx + 1)
-    INDEX_BUFFER[index_base_idx + 2] = cast(u32)(vertex_base_idx + 2)
-    INDEX_BUFFER[index_base_idx + 3] = cast(u32)(vertex_base_idx + 2)
-    INDEX_BUFFER[index_base_idx + 4] = cast(u32)(vertex_base_idx + 1)
-    INDEX_BUFFER[index_base_idx + 5] = cast(u32)(vertex_base_idx + 3)
-  }
-}
-
-draw_drawables :: proc() {
-  generate_graphics_primitives(SPRITE_DRAWABLES[:SPRITE_DRAWABLES_COUNT], 0)
-  generate_graphics_primitives(MASK_DRAWABLES[:MASK_DRAWABLES_COUNT], SPRITE_DRAWABLES_COUNT)
-  SPRITE_DRAWABLES_COUNT = 0
-  MASK_DRAWABLES_COUNT = 0
-}
-
-init_fonts :: proc(chars: string) -> (output: []FontAtlas) {
-  output = make([]FontAtlas, FONT_TEXTURE_ASSETS_COUNT)
-  for ft, idx in FontTexture {
-    atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 32, chars, 256, 256)
-    img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.image_dim.w, atlas.image_dim.h, 1, atlas.image, atlas.image_dim.w)
-    output[idx] = atlas
-  }
-  return
-}
-
 
 // TODO - I think a bunch of state on renderer can really just be local variables in this function e.g. the shader modules shouldn't be needed again outside this scope. Might be able to simplify Renderer significantly
 init_renderer :: proc() -> (renderer: Renderer) {
@@ -742,112 +603,114 @@ render_frame :: proc(renderer: ^Renderer) {
     )
   }
 
-  rendering_info := vulkan.RenderingInfo {
-    sType = .RENDERING_INFO,
-    renderArea = vulkan.Rect2D{offset = vulkan.Offset2D{0, 0}, extent = gc.surface_extent},
-    layerCount = 1,
-    viewMask = 0,
-    colorAttachmentCount = 1,
-    pColorAttachments = &color_attachment,
-    pDepthAttachment = &depth_attachment,
-  }
-  vulkan.CmdBeginRendering(commandBuffer = renderer.command_buffer, pRenderingInfo = &rendering_info)
+  {   // render
+    rendering_info := vulkan.RenderingInfo {
+      sType = .RENDERING_INFO,
+      renderArea = vulkan.Rect2D{offset = vulkan.Offset2D{0, 0}, extent = gc.surface_extent},
+      layerCount = 1,
+      viewMask = 0,
+      colorAttachmentCount = 1,
+      pColorAttachments = &color_attachment,
+      pDepthAttachment = &depth_attachment,
+    }
+    vulkan.CmdBeginRendering(commandBuffer = renderer.command_buffer, pRenderingInfo = &rendering_info)
 
-  viewport := vulkan.Viewport {
-    x        = 0,
-    y        = 0,
-    width    = cast(f32)gc.surface_extent.width,
-    height   = cast(f32)gc.surface_extent.height,
-    minDepth = 0,
-    maxDepth = 1,
-  }
-  scissor := vulkan.Rect2D {
-    offset = {x = 0, y = 0},
-    extent = gc.surface_extent,
-  }
-  vulkan.CmdSetViewport(renderer.command_buffer, 0, 1, &viewport)
-  vulkan.CmdSetScissor(renderer.command_buffer, 0, 1, &scissor)
+    viewport := vulkan.Viewport {
+      x        = 0,
+      y        = 0,
+      width    = cast(f32)gc.surface_extent.width,
+      height   = cast(f32)gc.surface_extent.height,
+      minDepth = 0,
+      maxDepth = 1,
+    }
+    scissor := vulkan.Rect2D {
+      offset = {x = 0, y = 0},
+      extent = gc.surface_extent,
+    }
+    vulkan.CmdSetViewport(renderer.command_buffer, 0, 1, &viewport)
+    vulkan.CmdSetScissor(renderer.command_buffer, 0, 1, &scissor)
 
-  offsets := []vulkan.DeviceSize{0}
-  vulkan.CmdBindVertexBuffers(
-    commandBuffer = renderer.command_buffer,
-    firstBinding = 0,
-    bindingCount = 1,
-    pBuffers = &renderer.vertex_buffer,
-    pOffsets = raw_data(offsets),
-  )
+    offsets := []vulkan.DeviceSize{0}
+    vulkan.CmdBindVertexBuffers(
+      commandBuffer = renderer.command_buffer,
+      firstBinding = 0,
+      bindingCount = 1,
+      pBuffers = &renderer.vertex_buffer,
+      pOffsets = raw_data(offsets),
+    )
 
-  vulkan.CmdBindIndexBuffer(
-    commandBuffer = renderer.command_buffer,
-    buffer = renderer.index_buffer,
-    offset = 0,
-    indexType = .UINT32,
-  )
+    vulkan.CmdBindIndexBuffer(
+      commandBuffer = renderer.command_buffer,
+      buffer = renderer.index_buffer,
+      offset = 0,
+      indexType = .UINT32,
+    )
 
-  vulkan.CmdBindDescriptorSets(
-    commandBuffer = renderer.command_buffer,
-    pipelineBindPoint = .GRAPHICS,
-    layout = renderer.pipeline_layout,
-    firstSet = 0,
-    descriptorSetCount = 1,
-    pDescriptorSets = &renderer.descriptor_set,
-    dynamicOffsetCount = 0,
-    pDynamicOffsets = nil,
-  )
-
-  {   // render sprites graphics
-    vulkan.CmdBindPipeline(
+    vulkan.CmdBindDescriptorSets(
       commandBuffer = renderer.command_buffer,
       pipelineBindPoint = .GRAPHICS,
-      pipeline = renderer.sprite_graphics_pipeline,
+      layout = renderer.pipeline_layout,
+      firstSet = 0,
+      descriptorSetCount = 1,
+      pDescriptorSets = &renderer.descriptor_set,
+      dynamicOffsetCount = 0,
+      pDynamicOffsets = nil,
     )
 
-    vulkan.CmdDrawIndexed(
-      commandBuffer = renderer.command_buffer,
-      indexCount = sprite_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
-      instanceCount = 1,
-      firstIndex = 0,
-      vertexOffset = 0,
-      firstInstance = 0,
-    )
-  }
+    {   // render sprites graphics
+      vulkan.CmdBindPipeline(
+        commandBuffer = renderer.command_buffer,
+        pipelineBindPoint = .GRAPHICS,
+        pipeline = renderer.sprite_graphics_pipeline,
+      )
 
-  {   // pipeline barrier to synchronise colour and depth attachment usage
-    memory_barrier := vulkan.MemoryBarrier2 {
-      sType         = .MEMORY_BARRIER_2,
-      srcStageMask  = {.COLOR_ATTACHMENT_OUTPUT, .LATE_FRAGMENT_TESTS},
-      srcAccessMask = {.COLOR_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_WRITE},
-      dstStageMask  = {.COLOR_ATTACHMENT_OUTPUT, .EARLY_FRAGMENT_TESTS},
-      dstAccessMask = {.COLOR_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_READ},
+      vulkan.CmdDrawIndexed(
+        commandBuffer = renderer.command_buffer,
+        indexCount = sprite_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
+        instanceCount = 1,
+        firstIndex = 0,
+        vertexOffset = 0,
+        firstInstance = 0,
+      )
     }
-    dependency_info := vulkan.DependencyInfo {
-      sType              = .DEPENDENCY_INFO,
-      dependencyFlags    = {.BY_REGION},
-      memoryBarrierCount = 1,
-      pMemoryBarriers    = &memory_barrier,
+
+    {   // pipeline barrier to synchronise colour and depth attachment usage
+      memory_barrier := vulkan.MemoryBarrier2 {
+        sType         = .MEMORY_BARRIER_2,
+        srcStageMask  = {.COLOR_ATTACHMENT_OUTPUT, .LATE_FRAGMENT_TESTS},
+        srcAccessMask = {.COLOR_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_WRITE},
+        dstStageMask  = {.COLOR_ATTACHMENT_OUTPUT, .EARLY_FRAGMENT_TESTS},
+        dstAccessMask = {.COLOR_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_WRITE, .DEPTH_STENCIL_ATTACHMENT_READ},
+      }
+      dependency_info := vulkan.DependencyInfo {
+        sType              = .DEPENDENCY_INFO,
+        dependencyFlags    = {.BY_REGION},
+        memoryBarrierCount = 1,
+        pMemoryBarriers    = &memory_barrier,
+      }
+      vulkan.CmdPipelineBarrier2(renderer.command_buffer, &dependency_info)
     }
-    vulkan.CmdPipelineBarrier2(renderer.command_buffer, &dependency_info)
+
+
+    {   // render mask graphics
+      vulkan.CmdBindPipeline(
+        commandBuffer = renderer.command_buffer,
+        pipelineBindPoint = .GRAPHICS,
+        pipeline = renderer.mask_graphics_pipeline,
+      )
+
+      vulkan.CmdDrawIndexed(
+        commandBuffer = renderer.command_buffer,
+        indexCount = mask_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
+        instanceCount = 1,
+        firstIndex = sprite_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
+        vertexOffset = 0,
+        firstInstance = 0,
+      )
+    }
+
+    vulkan.CmdEndRendering(renderer.command_buffer)
   }
-
-
-  {   // render mask graphics
-    vulkan.CmdBindPipeline(
-      commandBuffer = renderer.command_buffer,
-      pipelineBindPoint = .GRAPHICS,
-      pipeline = renderer.mask_graphics_pipeline,
-    )
-
-    vulkan.CmdDrawIndexed(
-      commandBuffer = renderer.command_buffer,
-      indexCount = mask_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
-      instanceCount = 1,
-      firstIndex = sprite_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
-      vertexOffset = 0,
-      firstInstance = 0,
-    )
-  }
-
-  vulkan.CmdEndRendering(renderer.command_buffer)
 
   {   // end recording command buffer
     res := vulkan.EndCommandBuffer(renderer.command_buffer)
@@ -1327,6 +1190,7 @@ create_sampler :: proc(renderer: Renderer) -> (texture_sampler: vulkan.Sampler) 
 }
 
 create_shader_module :: proc(renderer: Renderer, path: string) -> (shader_module: vulkan.ShaderModule) {
+  
   data, err := os.read_entire_file_from_path(path, context.allocator)
   if err != nil {
     log.fatal("Error reading vertex shader file", err)

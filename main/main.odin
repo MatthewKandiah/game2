@@ -9,6 +9,12 @@ import "vendor:glfw"
 import "vendor:vulkan"
 import "vk"
 
+WINDOW_WIDTH :: 640
+WINDOW_HEIGHT :: 480
+MIN_WINDOW_WIDTH :: 640
+MIN_WINDOW_HEIGHT :: 480
+APP_NAME :: "Game2"
+
 GlobalContext :: struct {
   window:         glfw.WindowHandle,
   window_resized: bool,
@@ -22,7 +28,7 @@ gc: GlobalContext
 
 main :: proc() {
   console_logger := log.create_console_logger(lowest = .Error)
-  log_file, log_file_err := os.create("game2_logs.txt")
+  log_file, log_file_err := os.create("./build/game2_logs.txt")
   if log_file_err != nil {
     log.fatal(log_file_err)
     panic("Failed to create log file")

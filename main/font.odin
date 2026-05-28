@@ -110,3 +110,14 @@ create_font_atlas :: proc(
 scale_int :: proc(v: i32, s: f32) -> (scaled_v: i32) {
   return cast(i32)math.floor(cast(f32)v * s)
 }
+
+init_fonts :: proc(chars: string) -> (output: []FontAtlas) {
+  output = make([]FontAtlas, FONT_TEXTURE_ASSETS_COUNT)
+  for ft, idx in FontTexture {
+    atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 32, chars, 256, 256)
+    img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.image_dim.w, atlas.image_dim.h, 1, atlas.image, atlas.image_dim.w)
+    output[idx] = atlas
+  }
+  return
+}
+

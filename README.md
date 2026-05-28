@@ -8,6 +8,7 @@
 - [ ] draw a string of characters like proper text (using advance, left-side-bearing, and kerning)
 - [ ] draw a grid of characters
 - [ ] implement mouse interactions - onMouseDown, onMouseUp, onHover, etc. If we get this right, we'll save a lot of effort later!
+- [ ] draw a grid of interactive cells with a button layered over the top of it. Everything should handle hover, mouse down, and mouse up. If we can do that, I think we've got everything covered that we'll need for the game
 
 # References
 - A bunch of Casey Muratori's old blogs look useful. This series of blogs explains starting with a simple component which handles layout very explicitly, and walks through how he refactored and extended it. 

@@ -96,18 +96,6 @@ main :: proc() {
   renderer := init_renderer()
   stopwatch := time.Stopwatch{}
 
-  texture_data_red := TextureData {
-    base = Pos{v = {0, 32}},
-    dim = Dim{v = {32, 32}},
-    tex_idx = texture_to_idx(Texture.Sprite),
-  }
-
-  texture_data_green := TextureData {
-    base = Pos{v = {32, 32}},
-    dim = Dim{v = {32, 32}},
-    tex_idx = texture_to_idx(Texture.Sprite),
-  }
-
   a_font := FontTexture.UbuntuMono
   ubuntu_a_glyph_info, ubuntu_a_ok := fonts[a_font].char_map['a']
   if !ubuntu_a_ok {
@@ -115,10 +103,10 @@ main :: proc() {
   }
   ubuntu_a_box := ubuntu_a_glyph_info.bounding_box
   texture_data_a := TextureData {
-    base = ubuntu_a_box.pos,
-    dim = ubuntu_a_box.dim,
+    base    = ubuntu_a_box.pos,
+    dim     = ubuntu_a_box.dim,
     tex_idx = font_texture_to_idx(a_font),
-    type = .Mask,
+    type    = .Mask,
   }
 
   b_font := FontTexture.Ubuntu
@@ -128,10 +116,10 @@ main :: proc() {
   }
   ubuntu_b_box := ubuntu_b_glyph_info.bounding_box
   texture_data_b := TextureData {
-    base = ubuntu_b_box.pos,
-    dim = ubuntu_b_box.dim,
+    base    = ubuntu_b_box.pos,
+    dim     = ubuntu_b_box.dim,
     tex_idx = font_texture_to_idx(b_font),
-    type = .Mask,
+    type    = .Mask,
   }
 
   texture_data_yellow := TextureData {
@@ -146,46 +134,28 @@ main :: proc() {
     tex_idx = texture_to_idx(Texture.Gradient),
   }
 
-  drawable_red := Drawable {
-    pos = Pos{v = {0, 0}},
-    z = 0.1,
-    dim = Dim{v = {360, 360}},
-    texture_data = texture_data_red,
-    override_colour = false,
-    colour = RED,
-  }
-
-  drawable_green := Drawable {
-    pos = Pos{v = {360, 360}},
-    z = 0.1,
-    dim = Dim{v = {100, 100}},
-    texture_data = texture_data_green,
-    override_colour = false,
-    colour = GREEN,
-  }
-
   drawable_a := Drawable {
-    pos             = drawable_red.pos,
-    z               = 0.2,
-    dim             = Dim{v = {drawable_red.dim.h * 7 / 9, drawable_red.dim.h}},
-    texture_data    = texture_data_a,
+    pos = Pos{v = {0, 0}},
+    z = 0.2,
+    dim = Dim{v = {360 * 7 / 9, 360}},
+    texture_data = texture_data_a,
     override_colour = false,
-    colour          = BLUE,
+    colour = BLUE,
   }
 
   drawable_b := Drawable {
-    pos             = drawable_green.pos,
-    z               = 0.2,
-    dim             = Dim{v = {drawable_green.dim.h * 7 / 9, drawable_green.dim.h}},
-    texture_data    = texture_data_b,
+    pos = Pos{v = {360, 360}},
+    z = 0.2,
+    dim = Dim{v = {200 * 7 / 9, 200}},
+    texture_data = texture_data_b,
     override_colour = false,
-    colour          = Colour{r = 0.4, g = 0.4, b = 0.4},
+    colour = Colour{r = 0.4, g = 0.4, b = 0.4},
   }
 
   drawable_yellow := Drawable {
-    pos             = drawable_red.pos,
+    pos             = drawable_a.pos,
     z               = 0.15,
-    dim             = drawable_red.dim,
+    dim             = drawable_a.dim,
     texture_data    = texture_data_yellow,
     override_colour = false,
     colour          = GREY,
@@ -207,8 +177,6 @@ main :: proc() {
     glfw.PollEvents()
 
     push_drawable(drawable_a)
-    push_drawable(drawable_red)
-    push_drawable(drawable_green)
     push_drawable(drawable_b)
     push_drawable(drawable_yellow)
     push_drawable(drawable_gradient)

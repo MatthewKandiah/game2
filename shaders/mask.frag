@@ -10,7 +10,7 @@ layout(binding = 1) uniform sampler2D texSamplers[2];
 
 layout(location = 0) out vec4 outColour;
 
-const float THRESHOLD = 0.10; // tweak to determine how much of the anti-aliasing shows
+const float THRESHOLD = 0.05; // tweak to determine how much of the anti-aliasing shows
 
 void main() {
   if (fragColour.a == 1) {

@@ -9,11 +9,7 @@ import "img"
 import "tt"
 import stbtt "vendor:stb/truetype"
 
-GlyphInfo :: struct {
-  bounding_box:      Rect,
-  advance_width:     i32,
-  left_side_bearing: i32,
-}
+FONTS := [FontTexture]FontAtlas{}
 
 FontAtlas :: struct {
   font_size_pixels: f32,
@@ -25,6 +21,13 @@ FontAtlas :: struct {
   char_map:         map[rune]GlyphInfo,
   font_info:        stbtt.fontinfo,
   font_file_data:   []u8,
+}
+
+GlyphInfo :: struct {
+  bounding_box:      Rect,
+  advance_width:     i32,
+  left_side_bearing: i32,
+  descent:           i32,
 }
 
 create_font_atlas :: proc(
@@ -100,6 +103,7 @@ create_font_atlas :: proc(
       bounding_box      = bounding_box,
       advance_width     = advance_width,
       left_side_bearing = left_side_bearing,
+      descent = y2,
     }
 
     x += advance_width
@@ -111,13 +115,11 @@ scale_int :: proc(v: i32, s: f32) -> (scaled_v: i32) {
   return cast(i32)math.floor(cast(f32)v * s)
 }
 
-init_fonts :: proc(chars: string) -> (output: []FontAtlas) {
-  output = make([]FontAtlas, FONT_TEXTURE_ASSETS_COUNT)
-  for ft, idx in FontTexture {
+init_fonts :: proc(chars: string) {
+  for ft in FontTexture {
     atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 32, chars, 256, 256)
     img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.image_dim.w, atlas.image_dim.h, 1, atlas.image, atlas.image_dim.w)
-    output[idx] = atlas
+    FONTS[ft] = atlas
   }
   return
 }
-

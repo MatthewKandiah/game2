@@ -8,6 +8,7 @@ import "core:time"
 import "vendor:glfw"
 import "vendor:vulkan"
 import "vk"
+import stbtt "vendor:stb/truetype"
 
 WINDOW_WIDTH :: 640
 WINDOW_HEIGHT :: 480
@@ -97,95 +98,21 @@ main :: proc() {
     }
   }
 
-  chars := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%"
-  fonts := init_fonts(chars)
+  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%"
+  init_fonts(chars)
   renderer := init_renderer()
   stopwatch := time.Stopwatch{}
-
-  a_font := FontTexture.UbuntuMono
-  ubuntu_a_glyph_info, ubuntu_a_ok := fonts[a_font].char_map['a']
-  if !ubuntu_a_ok {
-    panic("'a' not found in font atlas")
-  }
-  ubuntu_a_box := ubuntu_a_glyph_info.bounding_box
-  texture_data_a := TextureData {
-    base    = ubuntu_a_box.pos,
-    dim     = ubuntu_a_box.dim,
-    tex_idx = font_texture_to_idx(a_font),
-    type    = .Mask,
-  }
-
-  b_font := FontTexture.Ubuntu
-  ubuntu_b_glyph_info, ubuntu_b_ok := fonts[b_font].char_map['b']
-  if !ubuntu_b_ok {
-    panic("'b' not found in font atlas")
-  }
-  ubuntu_b_box := ubuntu_b_glyph_info.bounding_box
-  texture_data_b := TextureData {
-    base    = ubuntu_b_box.pos,
-    dim     = ubuntu_b_box.dim,
-    tex_idx = font_texture_to_idx(b_font),
-    type    = .Mask,
-  }
-
-  texture_data_yellow := TextureData {
-    base = Pos{v = {0, 128}},
-    dim = Dim{v = {128, 128}},
-    tex_idx = texture_to_idx(Texture.Yellow),
-  }
-
-  texture_data_gradient := TextureData {
-    base = Pos{v = {0, 128}},
-    dim = Dim{v = {128, 128}},
-    tex_idx = texture_to_idx(Texture.Gradient),
-  }
-
-  drawable_a := Drawable {
-    pos = Pos{v = {0, 0}},
-    z = 0.2,
-    dim = Dim{v = {360 * 7 / 9, 360}},
-    texture_data = texture_data_a,
-    override_colour = false,
-    colour = BLUE,
-  }
-
-  drawable_b := Drawable {
-    pos = Pos{v = {360, 360}},
-    z = 0.2,
-    dim = Dim{v = {200 * 7 / 9, 200}},
-    texture_data = texture_data_b,
-    override_colour = false,
-    colour = Colour{r = 0.4, g = 0.4, b = 0.4},
-  }
-
-  drawable_yellow := Drawable {
-    pos             = drawable_a.pos,
-    z               = 0.15,
-    dim             = drawable_a.dim,
-    texture_data    = texture_data_yellow,
-    override_colour = false,
-    colour          = GREY,
-  }
-
-  drawable_gradient := Drawable {
-    pos = Pos{v = {400, 0}},
-    dim = Dim{v = {400, 400}},
-    z = 0.3,
-    texture_data = texture_data_gradient,
-    override_colour = false,
-    colour = WHITE,
-  }
-
 
   // main loop
   for !glfw.WindowShouldClose(gc.window) {
     time.stopwatch_start(&stopwatch)
     glfw.PollEvents()
 
-    push_drawable(drawable_a)
-    push_drawable(drawable_b)
-    push_drawable(drawable_yellow)
-    push_drawable(drawable_gradient)
+    hello_world := "Hello World! lglglg"
+    // bottom - with kerning
+    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 150}}, 0.8, true)
+    // top - without kerning
+    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 350}}, 0.8, false)
     render_frame(&renderer)
 
     h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
@@ -209,4 +136,46 @@ window_size_callback :: proc "c" (window: glfw.WindowHandle, width: i32, height:
 
 get_proc_address :: proc(p: rawptr, name: cstring) {
   (cast(^rawptr)p)^ = glfw.GetInstanceProcAddress(gc.vk_instance, name)
+}
+
+/* TODO
+ * - should this take in a box, and just draw as much text as fits inside that box? or should it take text and a position, and report back its height and width?
+ * - kerning seems to be doing nothing? maybe I've made a mistake and called it wrong? tempting to drop it, then we don't need to hold on to the fontinfo data past initialisation either
+ * - scaling up/down by a lot looks (predictably) bad, do we just live with this for now? Other options are move to linear interpolation instead of nearest neighbour filtering, or creating small/medium/large textures for fonts to avoid up-/down-scaling too much
+ * - draw a box directly beneath the string position. is the position defining the bottom of the max-descent, so our characters float above that box? or is it the baseline, so our characters descend below that and intersect with the box?
+ */
+
+draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32, with_kerning: bool) {
+  font_atlas := FONTS[font]
+  x := pos.x
+  prev_c: rune
+  for c, i in chars {
+    glyph_info, ok := font_atlas.char_map[c]
+    if !ok {
+      fmt.eprintln("c =", c)
+      panic("Missing char")
+    }
+    char_texture_data: TextureData = {
+      type    = .Mask,
+      base    = glyph_info.bounding_box.pos,
+      dim     = glyph_info.bounding_box.dim,
+      tex_idx = font_texture_to_idx(font),
+    }
+    if with_kerning && prev_c != 0 {
+      kern := stbtt.GetCodepointKernAdvance(&font_atlas.font_info, prev_c, c)
+      fmt.println(prev_c, c, kern)
+      x += cast(f32)kern
+    }
+    char_drawable: Drawable = {
+      colour = BLACK,
+      dim = mul(scale, glyph_info.bounding_box.dim),
+      pos = Pos{v = {x + scale * cast(f32)glyph_info.left_side_bearing, pos.y - scale * cast(f32)glyph_info.descent}},
+      z = 0.5,
+      override_colour = false,
+      texture_data = char_texture_data,
+    }
+    push_drawable(char_drawable)
+    x += scale * cast(f32)glyph_info.advance_width
+    prev_c = c
+  }
 }

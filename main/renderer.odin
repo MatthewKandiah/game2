@@ -71,7 +71,6 @@ Renderer :: struct {
   depth_image_view:              vulkan.ImageView,
 }
 
-// TODO - I think a bunch of state on renderer can really just be local variables in this function e.g. the shader modules shouldn't be needed again outside this scope. Might be able to simplify Renderer significantly
 init_renderer :: proc() -> (renderer: Renderer) {
   {   // pick a physical device
     res, count, physical_devices := vk.enumerate_physical_devices(gc.vk_instance)
@@ -425,33 +424,6 @@ init_renderer :: proc() -> (renderer: Renderer) {
   }
 
   return renderer
-}
-
-deinit_renderer :: proc(r: ^Renderer) {
-  for i in 0 ..< len(r.swapchain_images) {
-    vulkan.DestroySemaphore(r.device, r.semaphores_draw_finished[i], nil)
-  }
-  delete(r.semaphores_draw_finished)
-  vulkan.DestroyFence(r.device, r.fence_image_acquired, nil)
-  vulkan.DestroyFence(r.device, r.fence_frame_finished, nil)
-  vulkan.DestroyCommandPool(r.device, r.command_pool, nil)
-  vulkan.DestroyShaderModule(r.device, r.vertex_shader_module, nil)
-  vulkan.DestroyBuffer(r.device, r.vertex_buffer, nil)
-  vulkan.DestroyBuffer(r.device, r.index_buffer, nil)
-  r.vertex_buffer_memory_mapped = nil
-  r.index_buffer_memory_mapped = nil
-  vulkan.UnmapMemory(r.device, r.vertex_buffer_memory)
-  vulkan.UnmapMemory(r.device, r.index_buffer_memory)
-  vulkan.FreeMemory(r.device, r.vertex_buffer_memory, nil)
-  vulkan.FreeMemory(r.device, r.index_buffer_memory, nil)
-  for image_view in r.swapchain_image_views {
-    vulkan.DestroyImageView(r.device, image_view, nil)
-  }
-  delete(r.swapchain_image_views)
-  delete(r.swapchain_images)
-  vulkan.DestroySwapchainKHR(r.device, r.swapchain, nil)
-  vulkan.DestroySurfaceKHR(gc.vk_instance, gc.vk_surface, nil)
-  vulkan.DestroyDevice(r.device, nil)
 }
 
 render_frame :: proc(renderer: ^Renderer) {

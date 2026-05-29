@@ -509,7 +509,7 @@ render_frame :: proc(renderer: ^Renderer) {
 
 
   clear_value := vulkan.ClearColorValue {
-    float32 = [4]f32{1, 0, 1, 1},
+    float32 = [4]f32{0, 0, 0, 1},
   }
 
   color_attachment := vulkan.RenderingAttachmentInfo {

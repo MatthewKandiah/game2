@@ -53,7 +53,7 @@ create_font_atlas :: proc(
     local_fatal("Failed to read file", path)
   }
   defer delete(file_data)
-  
+
   font_info: stbtt.fontinfo
   if !stbtt.InitFont(&font_info, raw_data(file_data), 0) {
     local_fatal("Failed to initialise font", path)
@@ -84,16 +84,7 @@ create_font_atlas :: proc(
 
     y := base_y + atlas.ascent + y1
     byte_offset := x + left_side_bearing + (y * output_width)
-    stbtt.MakeCodepointBitmap(
-      &font_info,
-      &atlas.image[byte_offset],
-      x2 - x1,
-      y2 - y1,
-      output_width,
-      scale,
-      scale,
-      c,
-    )
+    stbtt.MakeCodepointBitmap(&font_info, &atlas.image[byte_offset], x2 - x1, y2 - y1, output_width, scale, scale, c)
     bounding_box := Rect {
       dim = Dim{v = {cast(f32)(x2 - x1), cast(f32)(y2 - y1)}},
       pos = Pos{v = {cast(f32)(x + left_side_bearing), cast(f32)(y + (y2 - y1))}},
@@ -102,7 +93,7 @@ create_font_atlas :: proc(
       bounding_box      = bounding_box,
       advance_width     = advance_width,
       left_side_bearing = left_side_bearing,
-      descent = y2,
+      descent           = y2,
     }
 
     x += advance_width
@@ -116,7 +107,7 @@ scale_int :: proc(v: i32, s: f32) -> (scaled_v: i32) {
 
 init_fonts :: proc(chars: string) {
   for ft in FontTexture {
-    atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 32, chars, 256, 256)
+    atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 64, chars, 512, 512)
     img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.image_dim.w, atlas.image_dim.h, 1, atlas.image, atlas.image_dim.w)
     FONTS[ft] = atlas
   }

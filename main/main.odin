@@ -6,9 +6,9 @@ import "core:log"
 import "core:os"
 import "core:time"
 import "vendor:glfw"
+import stbtt "vendor:stb/truetype"
 import "vendor:vulkan"
 import "vk"
-import stbtt "vendor:stb/truetype"
 
 WINDOW_WIDTH :: 640
 WINDOW_HEIGHT :: 480
@@ -108,10 +108,49 @@ main :: proc() {
     time.stopwatch_start(&stopwatch)
     glfw.PollEvents()
 
-    hello_world := "Hello World! lglglg"
-    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 150}}, 0.8)
-    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 250}}, 1)
-    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 350}}, 2)
+    hello_world := "Hellg World! lglglg @#!"
+    font: FontTexture = .Ubuntu
+    scale: f32 = 0.2
+    draw_string(hello_world, font, Pos{v = {100, 150}}, scale, GREY)
+    draw_rect(Pos{v = {100, 140}}, Dim{v = {1000, 10}}, PINK)
+    draw_rect(
+      Pos{v = {100, 150 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
+      Dim{v = {1000, 10}},
+      DARK_GREY,
+    )
+    scale = 0.125
+    draw_string(hello_world, font, Pos{v = {100, 250}}, scale, BLUE)
+    draw_rect(Pos{v = {100, 240}}, Dim{v = {1000, 10}}, PINK)
+    draw_rect(
+      Pos{v = {100, 250 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
+      Dim{v = {1000, 10}},
+      DARK_GREY,
+    )
+    scale = 0.5
+    draw_string(hello_world, font, Pos{v = {100, 350}}, scale, GREEN)
+    draw_rect(Pos{v = {100, 340}}, Dim{v = {1000, 10}}, PINK)
+    draw_rect(
+      Pos{v = {100, 350 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
+      Dim{v = {1000, 10}},
+      DARK_GREY,
+    )
+    scale = 1
+    draw_string(hello_world, font, Pos{v = {100, 450}}, scale, WHITE)
+    draw_rect(Pos{v = {100, 440}}, Dim{v = {1000, 10}}, PINK)
+    draw_rect(
+      Pos{v = {100, 450 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
+      Dim{v = {1000, 10}},
+      DARK_GREY,
+    )
+    scale = 5
+    draw_string(hello_world, font, Pos{v = {100, 550}}, scale, WHITE)
+    draw_rect(Pos{v = {100, 540}}, Dim{v = {1000, 10}}, PINK)
+    draw_rect(
+      Pos{v = {100, 550 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
+      Dim{v = {1000, 10}},
+      DARK_GREY,
+    )
+
     render_frame(&renderer)
 
     h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
@@ -138,13 +177,12 @@ get_proc_address :: proc(p: rawptr, name: cstring) {
 }
 
 /* TODO
- * - should this take in a box, and just draw as much text as fits inside that box? or should it take text and a position, and report back its height and width?
- * - kerning seems to be doing nothing? maybe I've made a mistake and called it wrong? tempting to drop it, then we don't need to hold on to the fontinfo data past initialisation either
- * - scaling up/down by a lot looks (predictably) bad, do we just live with this for now? Other options are move to linear interpolation instead of nearest neighbour filtering, or creating small/medium/large textures for fonts to avoid up-/down-scaling too much
- * - draw a box directly beneath the string position. is the position defining the bottom of the max-descent, so our characters float above that box? or is it the baseline, so our characters descend below that and intersect with the box?
+ * tweak the signature
+ * think it makes sense to have a `measure_string` function that gets the bounding box for a string drawn at a certain pixel height in a certain font
+ * then `draw_string` should just replace scale with pixel height
  */
 
-draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32) {
+draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32, colour: Colour) {
   font_atlas := FONTS[font]
   x := pos.x
   prev_c: rune
@@ -160,11 +198,16 @@ draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32) {
       dim     = glyph_info.bounding_box.dim,
       tex_idx = font_texture_to_idx(font),
     }
-    
+
     char_drawable: Drawable = {
-      colour = BLACK,
+      colour = colour,
       dim = mul(scale, glyph_info.bounding_box.dim),
-      pos = Pos{v = {x + scale * cast(f32)glyph_info.left_side_bearing, pos.y - scale * cast(f32)glyph_info.descent}},
+      pos = Pos {
+        v = {
+          x + scale * cast(f32)glyph_info.left_side_bearing,
+          pos.y - scale * cast(f32)font_atlas.descent - scale * cast(f32)glyph_info.descent,
+        },
+      },
       z = 0.5,
       override_colour = false,
       texture_data = char_texture_data,
@@ -173,4 +216,16 @@ draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32) {
     x += scale * cast(f32)glyph_info.advance_width
     prev_c = c
   }
+}
+
+draw_rect :: proc(pos: Pos, dim: Dim, colour: Colour) {
+  drawable: Drawable = {
+    colour          = colour,
+    pos             = pos,
+    dim             = dim,
+    override_colour = true,
+    texture_data    = {},
+    z               = 0.4,
+  }
+  push_drawable(drawable)
 }

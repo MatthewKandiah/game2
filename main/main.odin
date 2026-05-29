@@ -109,10 +109,9 @@ main :: proc() {
     glfw.PollEvents()
 
     hello_world := "Hello World! lglglg"
-    // bottom - with kerning
-    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 150}}, 0.8, true)
-    // top - without kerning
-    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 350}}, 0.8, false)
+    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 150}}, 0.8)
+    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 250}}, 1)
+    draw_string(hello_world, .UbuntuMono, Pos{v = {100, 350}}, 2)
     render_frame(&renderer)
 
     h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
@@ -145,7 +144,7 @@ get_proc_address :: proc(p: rawptr, name: cstring) {
  * - draw a box directly beneath the string position. is the position defining the bottom of the max-descent, so our characters float above that box? or is it the baseline, so our characters descend below that and intersect with the box?
  */
 
-draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32, with_kerning: bool) {
+draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32) {
   font_atlas := FONTS[font]
   x := pos.x
   prev_c: rune
@@ -161,11 +160,7 @@ draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32, with
       dim     = glyph_info.bounding_box.dim,
       tex_idx = font_texture_to_idx(font),
     }
-    if with_kerning && prev_c != 0 {
-      kern := stbtt.GetCodepointKernAdvance(&font_atlas.font_info, prev_c, c)
-      fmt.println(prev_c, c, kern)
-      x += cast(f32)kern
-    }
+    
     char_drawable: Drawable = {
       colour = BLACK,
       dim = mul(scale, glyph_info.bounding_box.dim),

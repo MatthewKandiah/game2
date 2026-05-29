@@ -19,8 +19,6 @@ FontAtlas :: struct {
   image_dim:        GridDim,
   image:            []u8,
   char_map:         map[rune]GlyphInfo,
-  font_info:        stbtt.fontinfo,
-  font_file_data:   []u8,
 }
 
 GlyphInfo :: struct {
@@ -54,18 +52,19 @@ create_font_atlas :: proc(
   if err != nil {
     local_fatal("Failed to read file", path)
   }
-  atlas.font_file_data = file_data
-
-  if !stbtt.InitFont(&atlas.font_info, raw_data(file_data), 0) {
+  defer delete(file_data)
+  
+  font_info: stbtt.fontinfo
+  if !stbtt.InitFont(&font_info, raw_data(file_data), 0) {
     local_fatal("Failed to initialise font", path)
   }
 
   bytes_per_pixel :: 1
   atlas.image = make([]u8, output_width * output_height * bytes_per_pixel)
 
-  scale := stbtt.ScaleForPixelHeight(&atlas.font_info, size_pixels)
+  scale := stbtt.ScaleForPixelHeight(&font_info, size_pixels)
 
-  raw_ascent, raw_descent, raw_linegap := tt.get_font_v_metrics(&atlas.font_info)
+  raw_ascent, raw_descent, raw_linegap := tt.get_font_v_metrics(&font_info)
   atlas.ascent = scale_int(raw_ascent, scale)
   atlas.descent = scale_int(raw_descent, scale)
   atlas.linegap = scale_int(raw_linegap, scale)
@@ -73,11 +72,11 @@ create_font_atlas :: proc(
   x: i32 = 0
   base_y: i32 = 0
   for c, i in chars {
-    advance_width, left_side_bearing := tt.get_font_h_metrics(&atlas.font_info, c)
+    advance_width, left_side_bearing := tt.get_font_h_metrics(&font_info, c)
     advance_width = scale_int(advance_width, scale)
     left_side_bearing = scale_int(left_side_bearing, scale)
 
-    x1, y1, x2, y2 := tt.get_font_bitmap_box(&atlas.font_info, c, scale)
+    x1, y1, x2, y2 := tt.get_font_bitmap_box(&font_info, c, scale)
     if x + left_side_bearing + (x2 - x1) >= output_width {
       x = 0
       base_y += atlas.ascent - atlas.descent + atlas.linegap
@@ -86,7 +85,7 @@ create_font_atlas :: proc(
     y := base_y + atlas.ascent + y1
     byte_offset := x + left_side_bearing + (y * output_width)
     stbtt.MakeCodepointBitmap(
-      &atlas.font_info,
+      &font_info,
       &atlas.image[byte_offset],
       x2 - x1,
       y2 - y1,

@@ -22,8 +22,8 @@ GlobalContext :: struct {
   vk_surface:     vulkan.SurfaceKHR,
   vk_instance:    vulkan.Instance,
   surface_extent: vulkan.Extent2D,
-  cursor_pos:     Pos,
   logger:         runtime.Logger,
+  input:          InputState,
 }
 gc: GlobalContext
 
@@ -63,7 +63,8 @@ main :: proc() {
   }
 
   glfw.SetWindowSizeCallback(gc.window, window_size_callback)
-
+  glfw.SetCursorPosCallback(gc.window, cursor_pos_callback)
+  
   {   // initialise Vulkan instance
     vulkan.load_proc_addresses(get_proc_address)
     application_info := vulkan.ApplicationInfo {
@@ -161,15 +162,27 @@ main :: proc() {
   }
 }
 
+get_context :: proc() -> runtime.Context {
+  ctxt := runtime.default_context()
+  ctxt.logger = gc.logger
+  return ctxt
+}
+
 error_callback :: proc "c" (error: i32, description: cstring) {
-  context = runtime.default_context()
+  context = get_context()
   fmt.eprintln("glfw error", error, description)
 }
 
 window_size_callback :: proc "c" (window: glfw.WindowHandle, width: i32, height: i32) {
-  context = runtime.default_context()
-  context.logger = gc.logger
+  context = get_context()
   log.info("glfw - window resize")
+}
+
+cursor_pos_callback :: proc "c" (window: glfw.WindowHandle, x, y: f64) {
+  context = get_context()
+  // glfw uses top-left origin, we use bottom-left origin
+  gc.input.cursor_pos = Pos{v = {cast(f32)x, cast(f32)gc.surface_extent.height - cast(f32)y}}
+  fmt.println("glfw - cursor pos", gc.input.cursor_pos.x, gc.input.cursor_pos.y)
 }
 
 get_proc_address :: proc(p: rawptr, name: cstring) {

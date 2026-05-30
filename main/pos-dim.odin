@@ -15,11 +15,10 @@ GridRect :: struct {
   dim: GridDim,
 }
 
+XY :: struct {x, y: f32}
 Pos :: struct #raw_union {
-    v:       Vec2f,
-    using _: struct {
-        x, y: f32,
-    },
+  v:       Vec2f `fmt:"[2]f32"`, 
+  using xy : XY,
 }
 
 add_pos :: proc(l, r: Pos) -> Pos {

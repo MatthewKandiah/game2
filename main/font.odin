@@ -116,6 +116,10 @@ scale_int :: proc(v: i32, s: f32) -> (scaled_v: i32) {
   return cast(i32)math.floor(cast(f32)v * s)
 }
 
+// TODO - would be better to move this to a separate program and #load font data to include it in the compiled game's data segment
+// rough plan - separate program does what this function does to assemble the bitmap, optionally writes output pngs to disk for debugging, and outputs a binary blob to be included in this program
+// that binary blob needs to start with a way to lookup the offset and size of the font data in the binary blob for each font asset we need
+// can probably rely on a hardcoded order while things are simple? Then just read off pairs of u64 values until you get `0 0` as a sentinel marker for start of real data?
 init_fonts :: proc(chars: string) {
   for ft in FontTexture {
     atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 256, chars, 5120, 5120)

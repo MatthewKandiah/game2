@@ -64,7 +64,7 @@ main :: proc() {
 
   glfw.SetWindowSizeCallback(gc.window, window_size_callback)
   glfw.SetCursorPosCallback(gc.window, cursor_pos_callback)
-  
+
   {   // initialise Vulkan instance
     vulkan.load_proc_addresses(get_proc_address)
     application_info := vulkan.ApplicationInfo {
@@ -111,44 +111,12 @@ main :: proc() {
 
     hello_world := "Hellg World! lglglg @#!"
     font: FontTexture = .Ubuntu
-    scale: f32 = 0.2
-    draw_string(hello_world, font, Pos{v = {100, 150}}, scale, GREY)
-    draw_rect(Pos{v = {100, 140}}, Dim{v = {1000, 10}}, PINK)
+    scale: f32 = 2.5
+    draw_string(hello_world, font, Pos{x = 100, y = 150}, scale, GREY)
+    draw_rect(Pos{x = 100, y = 140}, Dim{w = 1000, h = 10}, PINK)
     draw_rect(
-      Pos{v = {100, 150 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
-      Dim{v = {1000, 10}},
-      DARK_GREY,
-    )
-    scale = 0.125
-    draw_string(hello_world, font, Pos{v = {100, 250}}, scale, BLUE)
-    draw_rect(Pos{v = {100, 240}}, Dim{v = {1000, 10}}, PINK)
-    draw_rect(
-      Pos{v = {100, 250 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
-      Dim{v = {1000, 10}},
-      DARK_GREY,
-    )
-    scale = 0.5
-    draw_string(hello_world, font, Pos{v = {100, 350}}, scale, GREEN)
-    draw_rect(Pos{v = {100, 340}}, Dim{v = {1000, 10}}, PINK)
-    draw_rect(
-      Pos{v = {100, 350 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
-      Dim{v = {1000, 10}},
-      DARK_GREY,
-    )
-    scale = 1
-    draw_string(hello_world, font, Pos{v = {100, 450}}, scale, WHITE)
-    draw_rect(Pos{v = {100, 440}}, Dim{v = {1000, 10}}, PINK)
-    draw_rect(
-      Pos{v = {100, 450 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
-      Dim{v = {1000, 10}},
-      DARK_GREY,
-    )
-    scale = 5
-    draw_string(hello_world, font, Pos{v = {100, 550}}, scale, WHITE)
-    draw_rect(Pos{v = {100, 540}}, Dim{v = {1000, 10}}, PINK)
-    draw_rect(
-      Pos{v = {100, 550 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)}},
-      Dim{v = {1000, 10}},
+      Pos{x = 100, y = 150 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)},
+      Dim{w = 1000, h = 10},
       DARK_GREY,
     )
 
@@ -181,7 +149,10 @@ window_size_callback :: proc "c" (window: glfw.WindowHandle, width: i32, height:
 cursor_pos_callback :: proc "c" (window: glfw.WindowHandle, x, y: f64) {
   context = get_context()
   // glfw uses top-left origin, we use bottom-left origin
-  gc.input.cursor_pos = Pos{v = {cast(f32)x, cast(f32)gc.surface_extent.height - cast(f32)y}}
+  gc.input.cursor_pos = Pos {
+    x = cast(f32)x,
+    y = cast(f32)gc.surface_extent.height - cast(f32)y,
+  }
   fmt.println("glfw - cursor pos", gc.input.cursor_pos.x, gc.input.cursor_pos.y)
 }
 
@@ -214,12 +185,10 @@ draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32, colo
 
     char_drawable: Drawable = {
       colour = colour,
-      dim = mul(scale, glyph_info.bounding_box.dim),
+      dim = Dim{w = scale * glyph_info.bounding_box.dim.w, h = scale * glyph_info.bounding_box.dim.h},
       pos = Pos {
-        v = {
-          x + scale * cast(f32)glyph_info.left_side_bearing,
-          pos.y - scale * cast(f32)font_atlas.descent - scale * cast(f32)glyph_info.descent,
-        },
+        x = x + scale * cast(f32)glyph_info.left_side_bearing,
+        y = pos.y - scale * cast(f32)font_atlas.descent - scale * cast(f32)glyph_info.descent,
       },
       z = 0.5,
       override_colour = false,

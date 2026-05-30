@@ -44,7 +44,8 @@ create_font_atlas :: proc(
 
   atlas.font_size_pixels = size_pixels
   atlas.image_dim = GridDim {
-    v = {output_width, output_height},
+    w = output_width,
+    h = output_height,
   }
   atlas.char_map = make(map[rune]GlyphInfo)
 
@@ -86,8 +87,8 @@ create_font_atlas :: proc(
     byte_offset := x + left_side_bearing + (y * output_width)
     stbtt.MakeCodepointBitmap(&font_info, &atlas.image[byte_offset], x2 - x1, y2 - y1, output_width, scale, scale, c)
     bounding_box := Rect {
-      dim = Dim{v = {cast(f32)(x2 - x1), cast(f32)(y2 - y1)}},
-      pos = Pos{v = {cast(f32)(x + left_side_bearing), cast(f32)(y + (y2 - y1))}},
+      dim = Dim{w = cast(f32)(x2 - x1), h = cast(f32)(y2 - y1)},
+      pos = Pos{x = cast(f32)(x + left_side_bearing), y = cast(f32)(y + (y2 - y1))},
     }
     atlas.char_map[c] = GlyphInfo {
       bounding_box      = bounding_box,

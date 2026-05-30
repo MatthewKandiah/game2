@@ -1,5 +1,7 @@
 package main
 
+import "core:fmt"
+
 Drawable :: struct {
   pos:             Pos,
   z:               f32,
@@ -93,4 +95,50 @@ draw_drawables :: proc() {
   generate_graphics_primitives(MASK_DRAWABLES[:MASK_DRAWABLES_COUNT], SPRITE_DRAWABLES_COUNT)
   SPRITE_DRAWABLES_COUNT = 0
   MASK_DRAWABLES_COUNT = 0
+}
+
+draw_string :: proc(chars: string, font: FontTexture, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
+  assert(font_size_pixels >= 20, "Simple font rendering currently implemented starts visibly breaking below this size")
+  font_atlas := FONTS[font]
+  x := pos.x
+  for c in chars {
+    glyph_info, ok := font_atlas.char_map[c]
+    if !ok {
+      fmt.eprintln("c =", c)
+      panic("Missing char")
+    }
+    char_texture_data: TextureData = {
+      type    = .Mask,
+      base    = glyph_info.bounding_box.pos,
+      dim     = glyph_info.bounding_box.dim,
+      tex_idx = font_texture_to_idx(font),
+    }
+
+    scale := font_size_pixels / font_atlas.font_size_pixels
+    char_drawable: Drawable = {
+      colour = colour,
+      dim = Dim{w = scale * glyph_info.bounding_box.dim.w, h = scale * glyph_info.bounding_box.dim.h},
+      pos = Pos {
+        x = x + scale * cast(f32)glyph_info.left_side_bearing,
+        y = pos.y - scale * cast(f32)font_atlas.descent - scale * cast(f32)glyph_info.descent,
+      },
+      z = z,
+      override_colour = false,
+      texture_data = char_texture_data,
+    }
+    push_drawable(char_drawable)
+    x += scale * cast(f32)glyph_info.advance_width
+  }
+}
+
+draw_rect :: proc(pos: Pos, z: f32, dim: Dim, colour: Colour) {
+  drawable: Drawable = {
+    colour          = colour,
+    pos             = pos,
+    dim             = dim,
+    override_colour = true,
+    texture_data    = {},
+    z               = 0.4,
+  }
+  push_drawable(drawable)
 }

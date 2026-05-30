@@ -128,3 +128,19 @@ init_fonts :: proc(chars: string) {
   }
   return
 }
+
+measure_text :: proc(chars: string, font: FontTexture, font_size_pixels: f32) -> (d: Dim) {
+  font_atlas := FONTS[font]
+  scale := font_size_pixels / font_atlas.font_size_pixels
+  for c in chars {
+    glyph_info, ok := font_atlas.char_map[c]
+    if !ok {
+      fmt.eprintln("c =", c)
+      panic("Missing char")
+    }
+    d.w += scale * cast(f32)glyph_info.advance_width
+  }
+  /* This leaves some vertical breathing room - it's the vertical height that is guaranteed to contain its contents, it doesn't hug the contents tightly */
+  d.h = scale * cast(f32)(font_atlas.ascent - font_atlas.descent)
+  return
+}

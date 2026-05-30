@@ -99,7 +99,7 @@ main :: proc() {
     }
   }
 
-  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%"
+  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,."
   init_fonts(chars)
   renderer := init_renderer()
   stopwatch := time.Stopwatch{}
@@ -109,16 +109,35 @@ main :: proc() {
     time.stopwatch_start(&stopwatch)
     glfw.PollEvents()
 
-    hello_world := "Hellg World! lglglg @#!"
+    hello_world := "@%#Hello, World! The quick brown fox jumped over the lazy dog."
     font: FontTexture = .Ubuntu
-    scale: f32 = 2.5
-    draw_string(hello_world, font, Pos{x = 100, y = 150}, scale, GREY)
-    draw_rect(Pos{x = 100, y = 140}, Dim{w = 1000, h = 10}, PINK)
-    draw_rect(
-      Pos{x = 100, y = 150 + scale * (cast(f32)FONTS[font].ascent - cast(f32)FONTS[font].descent)},
-      Dim{w = 1000, h = 10},
-      DARK_GREY,
-    )
+    y: f32 = 50
+    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_SMALL, GREY)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_MEDIUM, GREY)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_LARGE, GREY)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_HUGE, GREY)
+    y += 100
+    font = .UbuntuMono
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_SMALL, GREY)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_MEDIUM, GREY)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_LARGE, GREY)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_HUGE, GREY)
+    y += 100
+
+    
+    /* TODO
+     * I think this is how the UI drawing should work, lets try to make this code work
+    if button("Say Hello", 20, Pos{x = 200, y = 300}, Dim{w = 500, h = 200}) {
+      fmt.println("Hello")
+    }
+     */
 
     render_frame(&renderer)
 
@@ -153,20 +172,16 @@ cursor_pos_callback :: proc "c" (window: glfw.WindowHandle, x, y: f64) {
     x = cast(f32)x,
     y = cast(f32)gc.surface_extent.height - cast(f32)y,
   }
-  fmt.println("glfw - cursor pos", gc.input.cursor_pos.x, gc.input.cursor_pos.y)
 }
 
 get_proc_address :: proc(p: rawptr, name: cstring) {
   (cast(^rawptr)p)^ = glfw.GetInstanceProcAddress(gc.vk_instance, name)
 }
 
-/* TODO
- * tweak the signature
- * think it makes sense to have a `measure_string` function that gets the bounding box for a string drawn at a certain pixel height in a certain font
- * then `draw_string` should just replace scale with pixel height
- */
+/* TODO - measure_text function */
 
-draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32, colour: Colour) {
+draw_string :: proc(chars: string, font: FontTexture, pos: Pos, font_size_pixels: f32, colour: Colour) {
+  assert(font_size_pixels >= 20, "Simple font rendering currently implemented starts breaking below this size")
   font_atlas := FONTS[font]
   x := pos.x
   prev_c: rune
@@ -183,6 +198,7 @@ draw_string :: proc(chars: string, font: FontTexture, pos: Pos, scale: f32, colo
       tex_idx = font_texture_to_idx(font),
     }
 
+    scale := font_size_pixels / font_atlas.font_size_pixels
     char_drawable: Drawable = {
       colour = colour,
       dim = Dim{w = scale * glyph_info.bounding_box.dim.w, h = scale * glyph_info.bounding_box.dim.h},

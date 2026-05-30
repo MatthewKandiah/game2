@@ -109,29 +109,47 @@ main :: proc() {
     time.stopwatch_start(&stopwatch)
     glfw.PollEvents()
 
-    hello_world := "@%#Hello, World! The quick brown fox jumped over the lazy dog."
+    hello_world := "@%#Hello, World! The quick brown fox jumped over the lazy dog"
+
     font: FontTexture = .Ubuntu
+    small_dim := measure_text(hello_world, font, FONT_SMALL)
+    medium_dim := measure_text(hello_world, font, FONT_MEDIUM)
+    large_dim := measure_text(hello_world, font, FONT_LARGE)
+    huge_dim := measure_text(hello_world, font, FONT_HUGE)
     y: f32 = 50
-    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_SMALL, GREY)
+    draw_string(hello_world, font, Pos{x = 100, y = y}, 0.5, FONT_SMALL, WHITE)
+    draw_rect(Pos{x = 100, y = y}, 0.4, small_dim, RED)
     y += 100
-    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_MEDIUM, GREY)
+    draw_string(hello_world, font, Pos{x = 100, y = y}, 0.5, FONT_MEDIUM, WHITE)
+    draw_rect(Pos{x = 100, y = y}, 0.4, medium_dim, RED)
     y += 100
-    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_LARGE, GREY)
+    draw_string(hello_world, font, Pos{x = 100, y = y}, 0.5, FONT_LARGE, WHITE)
+    draw_rect(Pos{x = 100, y = y}, 0.4, large_dim, RED)
     y += 100
-    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_HUGE, GREY)
-    y += 100
-    font = .UbuntuMono
-    y += 100
-    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_SMALL, GREY)
-    y += 100
-    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_MEDIUM, GREY)
-    y += 100
-    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_LARGE, GREY)
-    y += 100
-    draw_string(hello_world, font, Pos{x = 100, y = y}, FONT_HUGE, GREY)
+    draw_string(hello_world, font, Pos{x = 100, y = y}, 0.5, FONT_HUGE, WHITE)
+    draw_rect(Pos{x = 100, y = y}, 0.4, huge_dim, RED)
     y += 100
 
-    
+    font = .UbuntuMono
+    small_dim = measure_text(hello_world, font, FONT_SMALL)
+    medium_dim = measure_text(hello_world, font, FONT_MEDIUM)
+    large_dim = measure_text(hello_world, font, FONT_LARGE)
+    huge_dim = measure_text(hello_world, font, FONT_HUGE)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, 0.5, FONT_SMALL, WHITE)
+    draw_rect(Pos{x = 100, y = y}, 0.4, small_dim, RED)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, 0.5, FONT_MEDIUM, WHITE)
+    draw_rect(Pos{x = 100, y = y}, 0.4, medium_dim, RED)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, 0.5, FONT_LARGE, WHITE)
+    draw_rect(Pos{x = 100, y = y}, 0.4, large_dim, RED)
+    y += 100
+    draw_string(hello_world, font, Pos{x = 100, y = y}, 0.5, FONT_HUGE, WHITE)
+    draw_rect(Pos{x = 100, y = y}, 0.4, huge_dim, RED)
+    y += 100
+
+
     /* TODO
      * I think this is how the UI drawing should work, lets try to make this code work
     if button("Say Hello", 20, Pos{x = 200, y = 300}, Dim{w = 500, h = 200}) {
@@ -178,14 +196,29 @@ get_proc_address :: proc(p: rawptr, name: cstring) {
   (cast(^rawptr)p)^ = glfw.GetInstanceProcAddress(gc.vk_instance, name)
 }
 
-/* TODO - measure_text function */
+/* TODO - why are characters sticking out above the top of the measured bounding box? Somthing is wrong */
+measure_text :: proc(chars: string, font: FontTexture, font_size_pixels: f32) -> (d: Dim) {
+  font_atlas := FONTS[font]
+  scale := font_size_pixels / font_atlas.font_size_pixels
+  for c in chars {
+    glyph_info, ok := font_atlas.char_map[c]
+    if !ok {
+      fmt.eprintln("c =", c)
+      panic("Missing char")
+    }
+    d.w += scale * cast(f32)glyph_info.advance_width
+    d.h = max(d.h, scale * glyph_info.bounding_box.dim.h)
+  }
+  /* maybe this is the better thing to use? will leave vertical breathing room, but maybe that's fine? */
+  // d.h = scale * cast(f32)(font_atlas.ascent - font_atlas.descent)
+  return
+}
 
-draw_string :: proc(chars: string, font: FontTexture, pos: Pos, font_size_pixels: f32, colour: Colour) {
-  assert(font_size_pixels >= 20, "Simple font rendering currently implemented starts breaking below this size")
+draw_string :: proc(chars: string, font: FontTexture, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
+  assert(font_size_pixels >= 20, "Simple font rendering currently implemented starts visibly breaking below this size")
   font_atlas := FONTS[font]
   x := pos.x
-  prev_c: rune
-  for c, i in chars {
+  for c in chars {
     glyph_info, ok := font_atlas.char_map[c]
     if !ok {
       fmt.eprintln("c =", c)
@@ -206,17 +239,16 @@ draw_string :: proc(chars: string, font: FontTexture, pos: Pos, font_size_pixels
         x = x + scale * cast(f32)glyph_info.left_side_bearing,
         y = pos.y - scale * cast(f32)font_atlas.descent - scale * cast(f32)glyph_info.descent,
       },
-      z = 0.5,
+      z = z,
       override_colour = false,
       texture_data = char_texture_data,
     }
     push_drawable(char_drawable)
     x += scale * cast(f32)glyph_info.advance_width
-    prev_c = c
   }
 }
 
-draw_rect :: proc(pos: Pos, dim: Dim, colour: Colour) {
+draw_rect :: proc(pos: Pos, z: f32, dim: Dim, colour: Colour) {
   drawable: Drawable = {
     colour          = colour,
     pos             = pos,

@@ -64,6 +64,7 @@ main :: proc() {
 
   glfw.SetWindowSizeCallback(gc.window, window_size_callback)
   glfw.SetCursorPosCallback(gc.window, cursor_pos_callback)
+  glfw.SetMouseButtonCallback(gc.window, mouse_button_callback)
 
   {   // initialise Vulkan instance
     vulkan.load_proc_addresses(get_proc_address)
@@ -149,7 +150,6 @@ main :: proc() {
     draw_rect(Pos{x = 100, y = y}, 0.4, huge_dim, RED)
     y += 100
 
-
     /* TODO
      * I think this is how the UI drawing should work, lets try to make this code work
     if button("Say Hello", 20, Pos{x = 200, y = 300}, Dim{w = 500, h = 200}) {
@@ -157,6 +157,7 @@ main :: proc() {
     }
      */
 
+    flush_input_events()
     render_frame(&renderer)
 
     h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
@@ -189,6 +190,18 @@ cursor_pos_callback :: proc "c" (window: glfw.WindowHandle, x, y: f64) {
   gc.input.cursor_pos = Pos {
     x = cast(f32)x,
     y = cast(f32)gc.surface_extent.height - cast(f32)y,
+  }
+}
+
+mouse_button_callback :: proc "c" (window: glfw.WindowHandle, button, action, mods: i32) {
+  context = get_context()
+  left := button == glfw.MOUSE_BUTTON_LEFT
+  down := action == glfw.PRESS
+  up := action == glfw.RELEASE
+  if left && down {
+    push_input_event(.MouseLeftDown)
+  } else if left && up {
+    push_input_event(.MouseLeftUp)
   }
 }
 

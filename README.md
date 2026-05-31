@@ -4,11 +4,14 @@
 
 # In progress - how do we want to handle UI layout
 - Avoid overcomplicating this, I don't need a full flexbox implementation. But I do want something that's easier to read/write than just explicitly calculating every pos and dim every time.
-- [ ] container-child layout algorithm -> position rectangles within each other more nicely
+- [] ~~container-child layout algorithm -> position rectangles within each other more nicely~~
+  - Scratch that, I don't think what I had in mind meshes particularly well with the IMGUI structure I'm using. Prefer to have a `layout` component per chunk of UI, which will track a `cursor` that it moves as things are drawn
 - [x] draw a string of characters like proper text (using advance & left-side-bearing)
-- [ ] draw a grid of characters
-- [ ] implement mouse interactions - onMouseDown, onMouseUp, onHover, etc. If we get this right, we'll save a lot of effort later!
-- [ ] draw a grid of interactive cells with a button that opens a modal layered over the top of it. Everything should handle hover, mouse down, and mouse up. If we can do that, I think we've got everything covered that we'll need for the game
+- [ ] ~~draw a grid of characters~~
+  - scratched, I don't think this is actually hard, it's just more buttons, so not bothering
+- [x] implement mouse interactions - onMouseDown, onMouseUp, onHover, etc. If we get this right, we'll save a lot of effort later!
+- [x] draw a grid of interactive cells with a button that opens a modal layered over the top of it. Everything should handle hover, mouse down, and mouse up. If we can do that, I think we've got everything covered that we'll need for the game
+  - not done a grid, but I have got a button drawn overlapping two other buttons with mouse interactions working as I'd expect!
 
 # References
 - A bunch of Casey Muratori's old blogs look useful. This series of blogs explains starting with a simple component which handles layout very explicitly, and walks through how he refactored and extended it. 

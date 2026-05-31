@@ -4,8 +4,7 @@
 
 # In progress - how do we want to handle UI layout
 - Avoid overcomplicating this, I don't need a full flexbox implementation. But I do want something that's easier to read/write than just explicitly calculating every pos and dim every time.
-
-- [] ~~container-child layout algorithm -> position rectangles within each other more nicely~~
+- [ ] ~~container-child layout algorithm -> position rectangles within each other more nicely~~
   - Scratch that, I don't think what I had in mind meshes particularly well with the IMGUI structure I'm using. Prefer to have a `layout` component per chunk of UI, which will track a `cursor` that it moves as things are drawn
 - [x] draw a string of characters like proper text (using advance & left-side-bearing)
 - [ ] ~~draw a grid of characters~~

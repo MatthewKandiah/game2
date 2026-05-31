@@ -104,9 +104,24 @@ main :: proc() {
   }
 
   chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,."
-  init_fonts(chars)
-  renderer := init_renderer()
   stopwatch := time.Stopwatch{}
+  {   // init fonts
+    time.stopwatch_start(&stopwatch)
+    init_fonts(chars)
+    _, _, secs, nanos := time.precise_clock_from_stopwatch(stopwatch)
+    fmt.println("init_fonts:", secs, "secs,", cast(f32)(nanos) / 1_000_000, "millis")
+    time.stopwatch_reset(&stopwatch)
+  }
+
+  renderer: Renderer
+  {   // init renderer
+    time.stopwatch_start(&stopwatch)
+    renderer = init_renderer()
+    _, _, _, nanos := time.precise_clock_from_stopwatch(stopwatch)
+    fmt.println("init_renderer:", cast(f32)(nanos) / 1_000_000, "millis")
+    time.stopwatch_reset(&stopwatch)
+  }
+
   game := Game {
     mode = .MainMenu,
   }
@@ -192,9 +207,14 @@ main :: proc() {
     render_frame(&renderer)
 
     h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
+    fmt.println("Frame:", cast(f32)(nanos) / 1_000_000, "millis")
+
+    /*
+    // Throttle frame rate to 60FPS
     for nanos < 16_666_000 {
       h, m, s, nanos = time.precise_clock_from_stopwatch(stopwatch)
-    }
+    }'xs
+    */
     time.stopwatch_reset(&stopwatch)
   }
 }

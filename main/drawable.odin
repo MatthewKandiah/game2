@@ -138,7 +138,7 @@ draw_rect :: proc(pos: Pos, z: f32, dim: Dim, colour: Colour) {
     dim             = dim,
     override_colour = true,
     texture_data    = {},
-    z               = 0.4,
+    z               = z,
   }
   push_drawable(drawable)
 }

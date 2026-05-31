@@ -40,3 +40,8 @@ InputEvent :: enum {
 InputState :: struct {
   cursor_pos: Pos,
 }
+
+is_cursor_inside :: proc(pos: Pos, dim: Dim) -> bool {
+  cursor := gc.input.cursor_pos
+  return cursor.x >= pos.x && cursor.x <= pos.x + dim.w && cursor.y >= pos.y && cursor.y <= pos.y + dim.h
+}

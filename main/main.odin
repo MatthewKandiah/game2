@@ -105,6 +105,9 @@ main :: proc() {
   init_fonts(chars)
   renderer := init_renderer()
   stopwatch := time.Stopwatch{}
+  game := Game {
+    mode = .MainMenu,
+  }
 
   // main loop
   for !glfw.WindowShouldClose(gc.window) {
@@ -113,27 +116,52 @@ main :: proc() {
 
     gc.ui.triggered_id = 0
     flush_input_events()
-    
+
     gc.ui.hot_id = gc.ui.next_hot_id
     gc.ui.next_hot_id = 0
     gc.ui.next_hot_z = 0
-    
-    ui_pos := Pos {
-      x = 100,
-      y = 500,
-    }
-    if button(1, &ui_pos, 0.1) { // left button
-      fmt.println("Left button pressed")
-    }
-    ui_pos.x += 10
-    if button(2, &ui_pos, 0.2) { // right button
-      fmt.println("Right button pressed")
-    }
 
-    ui_pos.x -= 550
-    ui_pos.y -= 50
-    if button(3, &ui_pos, 0.3) { // overlay button
-      fmt.println("Top button pressed")
+    button_dim := Dim{w = 300, h = 100}
+    
+    switch game.mode {
+    case .MainMenu:
+      {
+        ui_pos := Pos {
+          x = 100,
+          y = 500,
+        }
+        if button(1, ui_pos, button_dim, 0.1, "START", FONT_LARGE, .Ubuntu) {
+          fmt.println("START")
+	  game.mode = .Playing
+        }
+	ui_pos.x += button_dim.w
+        ui_pos.x += 10
+        if button(2, ui_pos, button_dim, 0.2, "QUIT", FONT_LARGE, .Ubuntu) {
+          fmt.println("QUIT")
+	  os.exit(0)
+        }
+
+        ui_pos.x -= 250
+        ui_pos.y -= 80
+        if button(3, ui_pos, button_dim, 0.3, "TEST", FONT_MEDIUM, .Ubuntu) {
+          fmt.println("Top button pressed")
+        }
+      }
+    case .Playing:
+      {
+        ui_pos := Pos {
+          x = 100,
+          y = 500,
+        }
+        if button(4, ui_pos, button_dim, 0.1, "fun", FONT_SMALL, .UbuntuMono) {
+	  fmt.println("Having fun")
+        }
+	ui_pos.y -= 2 * button_dim.h
+	if button(5, ui_pos, button_dim, 0.1, "exit", FONT_SMALL, .UbuntuMono) {
+	  fmt.println("EXIT")
+	  game.mode = .MainMenu
+	}
+      }
     }
 
     render_frame(&renderer)
@@ -144,26 +172,6 @@ main :: proc() {
     }
     time.stopwatch_reset(&stopwatch)
   }
-}
-
-button :: proc(id: u64, ui_pos: ^Pos, z: f32) -> bool {
-  dim :: Dim{w = 300, h = 200}
-  if (is_cursor_inside(ui_pos^, dim) && gc.ui.active_id == 0 && gc.ui.next_hot_z < z) || (is_cursor_inside(ui_pos^, dim) && gc.ui.active_id == id) {
-    gc.ui.next_hot_id = id
-    gc.ui.next_hot_z = z
-  }
-  colour: Colour
-  if (gc.ui.active_id == id) {
-    colour = DARK_GREY
-  } else if (gc.ui.hot_id == id) {
-    colour = GREY
-  } else {
-    colour = GREEN
-  }
-  draw_rect(ui_pos^, z, dim, colour)
-  ui_pos.x += dim.w
-
-  return gc.ui.triggered_id == id
 }
 
 get_context :: proc() -> runtime.Context {
@@ -205,9 +213,4 @@ mouse_button_callback :: proc "c" (window: glfw.WindowHandle, button, action, mo
 
 get_proc_address :: proc(p: rawptr, name: cstring) {
   (cast(^rawptr)p)^ = glfw.GetInstanceProcAddress(gc.vk_instance, name)
-}
-
-is_cursor_inside :: proc(pos: Pos, dim: Dim) -> bool {
-  cursor := gc.input.cursor_pos
-  return cursor.x >= pos.x && cursor.x <= pos.x + dim.w && cursor.y >= pos.y && cursor.y <= pos.y + dim.h
 }

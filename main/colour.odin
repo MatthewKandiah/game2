@@ -52,7 +52,7 @@ DARK_GREY :: Colour {
   b = 0.1,
 }
 
-PINK :: Colour{
+PINK :: Colour {
   r = 1,
   g = 0,
   b = 1,

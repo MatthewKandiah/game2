@@ -3,15 +3,16 @@ package main
 import "core:hash/xxhash"
 
 UiState :: struct {
-  hot_id: u64,
-  next_hot_id: u64,
-  next_hot_z: f32,
-  active_id: u64,
+  hot_id:       u64,
+  next_hot_id:  u64,
+  next_hot_z:   f32,
+  active_id:    u64,
   triggered_id: u64,
 }
 
 button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, text: string, font_size: f32, font: FontTexture) -> bool {
-  if (is_cursor_inside(pos, dim) && gc.ui.active_id == 0 && gc.ui.next_hot_z < z) || (is_cursor_inside(pos, dim) && gc.ui.active_id == id) {
+  if (is_cursor_inside(pos, dim) && gc.ui.active_id == 0 && gc.ui.next_hot_z < z) ||
+     (is_cursor_inside(pos, dim) && gc.ui.active_id == id) {
     gc.ui.next_hot_id = id
     gc.ui.next_hot_z = z
   }
@@ -36,16 +37,16 @@ button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, text: string, font_size: f32
 center_within_container :: proc(dim: Dim, container_pos: Pos, container_dim: Dim) -> Pos {
   dw := container_dim.w - dim.w
   dh := container_dim.h - dim.h
-  return Pos {
-    x = container_pos.x + dw/2,
-    y = container_pos.y  + dh/2,
-  }
+  return Pos{x = container_pos.x + dw / 2, y = container_pos.y + dh / 2}
 }
 
-get_uid :: proc{get_uid_default, get_uid_with_differentiator}
+get_uid :: proc {
+  get_uid_default,
+  get_uid_with_differentiator,
+}
 get_uid_default :: proc(file: string, line: u64) -> u64 {
   return get_uid_with_differentiator(file, line, 0)
 }
 get_uid_with_differentiator :: proc(file: string, line: u64, d: u64) -> u64 {
-  return xxhash.XXH3_64_with_seed(transmute([]u8)file, line~d)
+  return xxhash.XXH3_64_with_seed(transmute([]u8)file, line ~ d)
 }

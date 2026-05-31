@@ -14,12 +14,12 @@ push_entity :: proc(e: Entity) {
  * We'll have a separate "game state" for information about the game that does not need to know about the screen space and interactions
  */
 Entity :: struct {
-  id: u64,
+  id:   u64,
   type: EntityType,
   data: EntityData,
-  pos: Pos,
-  z: f32,
-  dim: Dim,
+  pos:  Pos,
+  z:    f32,
+  dim:  Dim,
 }
 
 EntityType :: enum {}

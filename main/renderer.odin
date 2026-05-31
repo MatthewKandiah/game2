@@ -1162,7 +1162,7 @@ create_sampler :: proc(renderer: Renderer) -> (texture_sampler: vulkan.Sampler) 
 }
 
 create_shader_module :: proc(renderer: Renderer, path: string) -> (shader_module: vulkan.ShaderModule) {
-  
+
   data, err := os.read_entire_file_from_path(path, context.allocator)
   if err != nil {
     log.fatal("Error reading vertex shader file", err)

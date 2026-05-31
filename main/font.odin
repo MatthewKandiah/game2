@@ -11,7 +11,7 @@ import stbtt "vendor:stb/truetype"
 
 FONTS := [FontTexture]FontAtlas{}
 
-// TODO - function using stbtt.GetFontBoundingBox to get minimum box needed to hold any character -> think we use this to get our character grid sizing 
+// TODO - function using stbtt.GetFontBoundingBox to get minimum box needed to hold any character -> think we use this to get our character grid sizing
 
 /*
  * Font sizes in pixel height - nothing stopping you using other values, but probably looks good to standardise on a small set of values

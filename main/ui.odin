@@ -1,5 +1,7 @@
 package main
 
+import "core:hash/xxhash"
+
 UiState :: struct {
   hot_id: u64,
   next_hot_id: u64,
@@ -38,4 +40,12 @@ center_within_container :: proc(dim: Dim, container_pos: Pos, container_dim: Dim
     x = container_pos.x + dw/2,
     y = container_pos.y  + dh/2,
   }
+}
+
+get_uid :: proc{get_uid_default, get_uid_with_differentiator}
+get_uid_default :: proc(file: string, line: u64) -> u64 {
+  return get_uid_with_differentiator(file, line, 0)
+}
+get_uid_with_differentiator :: proc(file: string, line: u64, d: u64) -> u64 {
+  return xxhash.XXH3_64_with_seed(transmute([]u8)file, line~d)
 }

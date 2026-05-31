@@ -12,6 +12,8 @@ import stbtt "vendor:stb/truetype"
 import "vendor:vulkan"
 import "vk"
 
+PRINT_FPS :: false
+
 WINDOW_WIDTH :: 640
 WINDOW_HEIGHT :: 480
 MIN_WINDOW_WIDTH :: 640
@@ -206,16 +208,17 @@ main :: proc() {
 
     render_frame(&renderer)
 
-    h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
-    fmt.println("Frame:", cast(f32)(nanos) / 1_000_000, "millis")
-
-    /*
+    when PRINT_FPS {
+      h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
+      fmt.println("Frame:", cast(f32)(nanos) / 1_000_000, "millis")
+      /*
     // Throttle frame rate to 60FPS
     for nanos < 16_666_000 {
       h, m, s, nanos = time.precise_clock_from_stopwatch(stopwatch)
     }'xs
     */
-    time.stopwatch_reset(&stopwatch)
+      time.stopwatch_reset(&stopwatch)
+    }
   }
 }
 

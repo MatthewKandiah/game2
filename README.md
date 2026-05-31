@@ -29,5 +29,6 @@
 - More Casey simping - Handmade Hero Day 265 "Cleaning up the UI Layout Code" https://guide.handmadehero.org/code/day265/
 
 # TODO - preliminary refactoring
+- our UI code requires consistent hashes for UI components, currently I'm hard coding these but that will probably get painful fast. Handmade hero uses the file name and position as a way to uniquely identify a particular component, and I think we can include things like the loop index if we have something more complex that is being called programatically generated and need to keep it generic. Question - how to do this in a generic and easy way.
 - tinting - I think we'll get a lot of use out of this. Add a tint vertex attribute. Multiply the current pixel colour by it (possibly weighted by the tint's alpha? so we can tweak the amount of tinting to get it looking nice). Allow us to flash an enemy red, or highlight the hovered button, etc.
 - track memory usage & frame timing for performance checking & experiment with package core:prof/spall

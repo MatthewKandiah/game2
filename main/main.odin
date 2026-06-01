@@ -105,7 +105,7 @@ main :: proc() {
     }
   }
 
-  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,."
+  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,.$"
   stopwatch := time.Stopwatch{}
   {   // init fonts
     time.stopwatch_start(&stopwatch)
@@ -125,7 +125,109 @@ main :: proc() {
   }
 
   game := Game {
-    mode = .MainMenu,
+    mode      = .MainMenu,
+    game_grid = [100]u8 {
+      'a',
+      'b',
+      'c',
+      'd',
+      'e',
+      'f',
+      'g',
+      'h',
+      'i',
+      'j', // 0
+      '0',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9', // 1
+      'A',
+      'B',
+      'C',
+      'D',
+      'E',
+      'F',
+      'G',
+      'H',
+      'I',
+      'J', // 2
+      '.',
+      '.',
+      '.',
+      '.',
+      '.',
+      '.',
+      '.',
+      '.',
+      '.',
+      '.', // 3
+      ',',
+      ',',
+      ',',
+      ',',
+      ',',
+      ',',
+      ',',
+      ',',
+      ',',
+      ',', // 4
+      '#',
+      '#',
+      '#',
+      '#',
+      '#',
+      '#',
+      '#',
+      '#',
+      '#',
+      '#', // 5
+      '%',
+      '%',
+      '%',
+      '%',
+      '%',
+      '%',
+      '%',
+      '%',
+      '%',
+      '%', // 6
+      '$',
+      '$',
+      '$',
+      '$',
+      '$',
+      '$',
+      '$',
+      '$',
+      '$',
+      '$', // 7
+      'a',
+      'b',
+      'c',
+      'd',
+      'e',
+      'f',
+      'g',
+      'h',
+      'i',
+      'j', // 8
+      '0',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9', // 9
+    },
   }
 
   // main loop
@@ -140,68 +242,103 @@ main :: proc() {
     gc.ui.next_hot_id = 0
     gc.ui.next_hot_z = 0
 
-    button_dim := Dim {
-      w = 300,
-      h = 100,
-    }
-
     switch game.mode {
     case .MainMenu:
       {
-        ui_pos := Pos {
-          x = 100,
-          y = 500,
+        screen_dim := extent_to_dim(gc.surface_extent)
+        button_dim := Dim {
+          w = 300,
+          h = 100,
         }
+        gap: f32 = 10
+        button_count :: 2
+
+        ui_pos_top_left := Pos {
+          x = (screen_dim.w - button_dim.w) / 2,
+          y = (screen_dim.h + button_count * button_dim.h + (button_count - 1) * gap) / 2,
+        }
+        ui_pos := Pos {
+          x = ui_pos_top_left.x,
+          y = ui_pos_top_left.y - button_dim.h,
+        }
+
         if button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "START", FONT_LARGE, .Ubuntu) {
           fmt.println("START")
           game.mode = .Playing
         }
-        ui_pos.x += button_dim.w
-        ui_pos.x += 10
+        ui_pos.x = ui_pos_top_left.x
+        ui_pos.y -= gap
+        ui_pos.y -= button_dim.h
         if button(get_uid(#file, #line), ui_pos, button_dim, 0.2, "QUIT", FONT_LARGE, .Ubuntu) {
           fmt.println("QUIT")
           os.exit(0)
         }
-
-        ui_pos.x -= 250
-        ui_pos.y -= 80
-        if button(get_uid(#file, #line), ui_pos, button_dim, 0.3, "TEST", FONT_MEDIUM, .Ubuntu) {
-          fmt.println("Top button pressed")
-        }
       }
     case .Playing:
       {
-        ui_pos := Pos {
-          x = 100,
-          y = 500,
+        button_dim := Dim {
+          w = 300,
+          h = 100,
         }
-        if button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "fun", FONT_SMALL, .UbuntuMono) {
-          fmt.println("Having fun")
-        }
-        ui_pos.y -= 2 * button_dim.h
-        if button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "exit", FONT_SMALL, .UbuntuMono) {
-          fmt.println("EXIT")
-          game.mode = .MainMenu
+        gap: f32 = 10
+
+        {   // draw button column
+          screen_dim := extent_to_dim(gc.surface_extent)
+          ui_pos_top_left := Pos {
+            x = screen_dim.w - 2 * gap - button_dim.w,
+            y = screen_dim.h,
+          }
+          ui_pos := Pos {
+            x = ui_pos_top_left.x + gap,
+            y = ui_pos_top_left.y - gap - button_dim.h,
+          }
+          if button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "fun", FONT_SMALL, .UbuntuMono) {
+            fmt.println("Having fun")
+          }
+          ui_pos.y -= button_dim.h
+          ui_pos.y -= gap
+          if button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "exit", FONT_SMALL, .UbuntuMono) {
+            fmt.println("EXIT")
+            game.mode = .MainMenu
+          }
         }
 
-        ui_pos = Pos {
-          x = 100,
-          y = 500,
-        }
-        square_button_dim := Dim {
-          w = 200,
-          h = 200,
-        }
-        for row_idx in 0 ..< 3 {
-          for col_idx in 0 ..< 3 {
-            d: u64 = cast(u64)row_idx << 8 | cast(u64)col_idx
-            if button(get_uid(#file, #line, d), ui_pos, square_button_dim, 0.05, "", {}, {}) {
-              fmt.println("clicked grid button", row_idx, col_idx)
-            }
-            ui_pos.x += square_button_dim.w + 10
+        {   // draw grid
+          screen_dim := extent_to_dim(gc.surface_extent)
+          grid_dim := Dim {
+            w = screen_dim.w - 2 * gap - button_dim.w - 2 * gap,
+            h = screen_dim.h - 2 * gap,
           }
-          ui_pos.x = 100
-          ui_pos.y -= square_button_dim.h + 10
+          ui_pos_top_left := Pos {
+            x = 0,
+            y = screen_dim.h,
+          }
+          grid_button_dim := Dim {
+            w = grid_dim.w / 10,
+            h = grid_dim.h / 10,
+          }
+          for row_idx in 0 ..< 10 {
+            for col_idx in 0 ..< 10 {
+              d: u64 = cast(u64)row_idx << 8 | cast(u64)col_idx
+              ui_pos := Pos {
+                x = ui_pos_top_left.x + gap + cast(f32)col_idx * grid_button_dim.w,
+                y = ui_pos_top_left.y - gap - cast(f32)(row_idx + 1) * grid_button_dim.h,
+              }
+              // TODO - the game grid probably wants a separate UI component from text buttons
+              grid_idx := row_idx * 10 + col_idx
+              if button(
+                get_uid(#file, #line, d),
+                ui_pos,
+                grid_button_dim,
+                0.05,
+                string(game.game_grid[grid_idx:grid_idx + 1]),
+                FONT_LARGE,
+                .UbuntuMono,
+              ) {
+                fmt.printfln("clicked grid button %c %d %d", game.game_grid[grid_idx], row_idx, col_idx)
+              }
+            }
+          }
         }
       }
     }

@@ -16,19 +16,32 @@ button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, text: string, font_size: f32
     gc.ui.next_hot_id = id
     gc.ui.next_hot_z = z
   }
+
   colour: Colour
+  text_colour: Colour
   if (gc.ui.active_id == id) {
-    colour = DARK_GREY
+    colour = WHITE
+    text_colour = BLACK
   } else if (gc.ui.hot_id == id) {
-    colour = GREY
+    colour = DARK_GREY
+    text_colour = WHITE
   } else {
-    colour = GREEN
+    colour = BLACK
+    text_colour = WHITE
   }
-  draw_rect(pos, z, dim, colour)
+
+  border_width: f32 = 4
+  draw_rect(pos, z, dim, WHITE)
+  draw_rect(
+    {x = pos.x + border_width, y = pos.y + border_width},
+    z,
+    Dim{w = dim.w - border_width * 2, h = dim.h - border_width * 2},
+    colour,
+  )
   if len(text) > 0 {
     text_dim := measure_text(text, font, font_size)
     text_pos := center_within_container(text_dim, pos, dim)
-    draw_string(text, font, text_pos, z, font_size, DARK_GREY)
+    draw_string(text, font, text_pos, z, font_size, text_colour)
   }
 
   return gc.ui.triggered_id == id

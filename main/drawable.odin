@@ -34,14 +34,13 @@ push_drawable :: proc(d: Drawable) {
 }
 
 drawable_dim_to_screen_dim :: proc(dim: Dim) -> Dim {
-  return Dim{w = 2 * dim.w / cast(f32)gc.surface_extent.width, h = 2 * dim.h / cast(f32)gc.surface_extent.height}
+  surface_dim := extent_to_dim(gc.surface_extent)
+  return Dim{w = 2 * dim.w / surface_dim.w, h = 2 * dim.h / surface_dim.h}
 }
 
 drawable_pos_to_screen_pos :: proc(pos: Pos) -> Pos {
-  return Pos {
-    x = (2 * pos.x) / cast(f32)gc.surface_extent.width - 1,
-    y = 1 - (2 * pos.y) / cast(f32)gc.surface_extent.height,
-  }
+  surface_dim := extent_to_dim(gc.surface_extent)
+  return Pos{x = (2 * pos.x) / surface_dim.w - 1, y = 1 - (2 * pos.y) / surface_dim.h}
 }
 
 generate_graphics_primitives :: proc(drawables: []Drawable, drawables_already_generated: int) {

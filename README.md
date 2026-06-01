@@ -8,3 +8,12 @@
 - [x] experiment with core:prof/spall
   - tried, only interesting artifacts I could spot were occasional huge spikes in render_frame duration caused by the instrumentation (actually it hit procedures at random, but the program spends most of its time in render_frame so it hit that most often)
   - probably useful to retry when we decide we actually want to improve performance somewhere, rather than something to run indiscriminately
+
+# TODO
+Some of these are halfway hacked in. Think we should delete that code and do it properly. e.g. my grid is origin top-left, not bottom-left, my grid/player graphics should be separate from my text button graphics, etc.
+- [ ] Generate a level of the game map - boxes and connecting corridors
+- [ ] Put the player in one room
+- [ ] Player movement
+- [ ] Line of sight
+- [ ] Memory of revealed tiles
+- [ ] Minimap

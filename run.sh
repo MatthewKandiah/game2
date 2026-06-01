@@ -2,9 +2,6 @@
 
 set -eu
 
-echo "Formatting code..."
-./format.sh
-
 rm -rf ./build
 mkdir ./build
 

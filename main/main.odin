@@ -125,7 +125,7 @@ main :: proc() {
   }
 
   game := Game {
-    mode      = .MainMenu,
+    mode = .MainMenu,
     game_grid = [100]u8 {
       'a',
       'b',
@@ -228,6 +228,7 @@ main :: proc() {
       '8',
       '9', // 9
     },
+    player_pos = GridPos{x = 5, y = 0},
   }
 
   // main loop
@@ -338,6 +339,16 @@ main :: proc() {
                 fmt.printfln("clicked grid button %c %d %d", game.game_grid[grid_idx], row_idx, col_idx)
               }
             }
+          }
+	  // TODO - do we want to make our game grid work with a top-left or a bottom-left origin? Probably bottom left
+	  // TODO - revisit arithmetic functions for these
+	  // TODO - possibly refactor surface extent to be stored as a float - outside the vulkan code, we basically always want a float!
+          player_ui_pos := Pos {
+            x = ui_pos_top_left.x + gap + cast(f32)game.player_pos.x * grid_button_dim.w,
+            y = ui_pos_top_left.y - gap - (cast(f32)game.player_pos.y + 1) * grid_button_dim.h,
+          }
+          if button(get_uid(#file, #line), player_ui_pos, grid_button_dim, 0.06, "@", FONT_SMALL, .UbuntuMono) {
+            fmt.printfln("clicked player %d %d", game.player_pos.x, game.player_pos.y)
           }
         }
       }

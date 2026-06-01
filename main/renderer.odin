@@ -578,7 +578,7 @@ render_frame :: proc(renderer: ^Renderer) {
   {   // render
     rendering_info := vulkan.RenderingInfo {
       sType = .RENDERING_INFO,
-      renderArea = vulkan.Rect2D{offset = vulkan.Offset2D{0, 0}, extent = gc.surface_extent},
+      renderArea = vulkan.Rect2D{offset = vulkan.Offset2D{0, 0}, extent = dim_to_extent(gc.screen_dim)},
       layerCount = 1,
       viewMask = 0,
       colorAttachmentCount = 1,
@@ -590,14 +590,14 @@ render_frame :: proc(renderer: ^Renderer) {
     viewport := vulkan.Viewport {
       x        = 0,
       y        = 0,
-      width    = cast(f32)gc.surface_extent.width,
-      height   = cast(f32)gc.surface_extent.height,
+      width    = gc.screen_dim.w,
+      height   = gc.screen_dim.h,
       minDepth = 0,
       maxDepth = 1,
     }
     scissor := vulkan.Rect2D {
       offset = {x = 0, y = 0},
-      extent = gc.surface_extent,
+      extent = dim_to_extent(gc.screen_dim),
     }
     vulkan.CmdSetViewport(renderer.command_buffer, 0, 1, &viewport)
     vulkan.CmdSetScissor(renderer.command_buffer, 0, 1, &scissor)
@@ -776,7 +776,7 @@ create_swapchain :: proc(renderer: ^Renderer) {
   }
   surface_image_format := desired_format if desired_format_supported else supported_formats[0]
 
-  gc.surface_extent = surface_capabilities.currentExtent
+  gc.screen_dim = extent_to_dim(surface_capabilities.currentExtent)
 
   create_info := vulkan.SwapchainCreateInfoKHR {
     sType            = .SWAPCHAIN_CREATE_INFO_KHR,
@@ -785,7 +785,7 @@ create_swapchain :: proc(renderer: ^Renderer) {
     minImageCount    = surface_capabilities.minImageCount,
     imageFormat      = surface_image_format.format,
     imageColorSpace  = surface_image_format.colorSpace,
-    imageExtent      = gc.surface_extent,
+    imageExtent      = dim_to_extent(gc.screen_dim),
     imageArrayLayers = 1,
     imageUsage       = vulkan.ImageUsageFlags{.COLOR_ATTACHMENT},
     imageSharingMode = .EXCLUSIVE,
@@ -862,7 +862,7 @@ create_depth_image_and_view :: proc(renderer: ^Renderer) {
       sType = .IMAGE_CREATE_INFO,
       imageType = .D2,
       format = .D32_SFLOAT,
-      extent = vulkan.Extent3D{width = gc.surface_extent.width, height = gc.surface_extent.height, depth = 1},
+      extent = vulkan.Extent3D{width = cast(u32)gc.screen_dim.w, height = cast(u32)gc.screen_dim.h, depth = 1},
       mipLevels = 1,
       arrayLayers = 1,
       tiling = .OPTIMAL,

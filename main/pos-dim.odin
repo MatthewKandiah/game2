@@ -31,6 +31,10 @@ GridDim :: struct {
   w, h: i32,
 }
 
+dim_to_extent :: proc(dim: Dim) -> vulkan.Extent2D {
+  return vulkan.Extent2D{width = cast(u32)dim.w, height = cast(u32)dim.h}
+}
+
 extent_to_dim :: proc(extent: vulkan.Extent2D) -> Dim {
   return Dim{w = cast(f32)extent.width, h = cast(f32)extent.height}
 }

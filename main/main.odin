@@ -25,7 +25,7 @@ GlobalContext :: struct {
   window_resized: bool,
   vk_surface:     vulkan.SurfaceKHR,
   vk_instance:    vulkan.Instance,
-  surface_extent: vulkan.Extent2D,
+  screen_dim: Dim,
   logger:         runtime.Logger,
   input:          InputState,
   ui:             UiState,
@@ -246,7 +246,6 @@ main :: proc() {
     switch game.mode {
     case .MainMenu:
       {
-        screen_dim := extent_to_dim(gc.surface_extent)
         button_dim := Dim {
           w = 300,
           h = 100,
@@ -255,8 +254,8 @@ main :: proc() {
         button_count :: 2
 
         ui_pos_top_left := Pos {
-          x = (screen_dim.w - button_dim.w) / 2,
-          y = (screen_dim.h + button_count * button_dim.h + (button_count - 1) * gap) / 2,
+          x = (gc.screen_dim.w - button_dim.w) / 2,
+          y = (gc.screen_dim.h + button_count * button_dim.h + (button_count - 1) * gap) / 2,
         }
         ui_pos := Pos {
           x = ui_pos_top_left.x,
@@ -284,10 +283,9 @@ main :: proc() {
         gap: f32 = 10
 
         {   // draw button column
-          screen_dim := extent_to_dim(gc.surface_extent)
           ui_pos_top_left := Pos {
-            x = screen_dim.w - 2 * gap - button_dim.w,
-            y = screen_dim.h,
+            x = gc.screen_dim.w - 2 * gap - button_dim.w,
+            y = gc.screen_dim.h,
           }
           ui_pos := Pos {
             x = ui_pos_top_left.x + gap,
@@ -305,14 +303,13 @@ main :: proc() {
         }
 
         {   // draw grid
-          screen_dim := extent_to_dim(gc.surface_extent)
           grid_dim := Dim {
-            w = screen_dim.w - 2 * gap - button_dim.w - 2 * gap,
-            h = screen_dim.h - 2 * gap,
+            w = gc.screen_dim.w - 2 * gap - button_dim.w - 2 * gap,
+            h = gc.screen_dim.h - 2 * gap,
           }
           ui_pos_top_left := Pos {
             x = 0,
-            y = screen_dim.h,
+            y = gc.screen_dim.h,
           }
           grid_button_dim := Dim {
             w = grid_dim.w / 10,
@@ -340,9 +337,7 @@ main :: proc() {
               }
             }
           }
-	  // TODO - do we want to make our game grid work with a top-left or a bottom-left origin? Probably bottom left
-	  // TODO - revisit arithmetic functions for these
-	  // TODO - possibly refactor surface extent to be stored as a float - outside the vulkan code, we basically always want a float!
+          // TODO - do we want to make our game grid work with a top-left or a bottom-left origin? Probably bottom left
           player_ui_pos := Pos {
             x = ui_pos_top_left.x + gap + cast(f32)game.player_pos.x * grid_button_dim.w,
             y = ui_pos_top_left.y - gap - (cast(f32)game.player_pos.y + 1) * grid_button_dim.h,
@@ -391,7 +386,7 @@ cursor_pos_callback :: proc "c" (window: glfw.WindowHandle, x, y: f64) {
   // glfw uses top-left origin, we use bottom-left origin
   gc.input.cursor_pos = Pos {
     x = cast(f32)x,
-    y = cast(f32)gc.surface_extent.height - cast(f32)y,
+    y = gc.screen_dim.h - cast(f32)y,
   }
 }
 

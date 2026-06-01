@@ -25,7 +25,7 @@ GlobalContext :: struct {
   window_resized: bool,
   vk_surface:     vulkan.SurfaceKHR,
   vk_instance:    vulkan.Instance,
-  screen_dim: Dim,
+  screen_dim:     Dim,
   logger:         runtime.Logger,
   input:          InputState,
   ui:             UiState,

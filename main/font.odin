@@ -11,8 +11,6 @@ import stbtt "vendor:stb/truetype"
 
 FONTS := [FontTexture]FontAtlas{}
 
-// TODO - function using stbtt.GetFontBoundingBox to get minimum box needed to hold any character -> think we use this to get our character grid sizing
-
 /*
  * Font sizes in pixel height - nothing stopping you using other values, but probably looks good to standardise on a small set of values
  */
@@ -22,13 +20,14 @@ FONT_LARGE :: 64
 FONT_HUGE :: 128
 
 FontAtlas :: struct {
-  font_size_pixels: f32,
-  ascent:           i32,
-  descent:          i32,
-  linegap:          i32,
-  image_dim:        GridDim,
-  image:            []u8,
-  char_map:         map[rune]GlyphInfo,
+  font_size_pixels:      f32,
+  ascent:                i32,
+  descent:               i32,
+  linegap:               i32,
+  image_dim:             GridDim,
+  image:                 []u8,
+  char_map:              map[rune]GlyphInfo,
+  max_char_bounding_box: Dim,
 }
 
 GlyphInfo :: struct {
@@ -79,6 +78,11 @@ create_font_atlas :: proc(
   atlas.ascent = scale_int(raw_ascent, scale)
   atlas.descent = scale_int(raw_descent, scale)
   atlas.linegap = scale_int(raw_linegap, scale)
+  max_bb_width, max_bb_height := tt.get_font_max_char_bounding_box(&font_info)
+  atlas.max_char_bounding_box = Dim {
+    w = cast(f32)max_bb_width * scale,
+    h = cast(f32)max_bb_height * scale,
+  }
 
   x: i32 = 0
   base_y: i32 = 0

@@ -16,3 +16,11 @@ get_font_bitmap_box :: proc(fontinfo: ^stbtt.fontinfo, codepoint: rune, scale: f
   stbtt.GetCodepointBitmapBox(fontinfo, codepoint, scale, scale, &x0, &y0, &x1, &y1)
   return
 }
+
+get_font_max_char_bounding_box :: proc(fontinfo: ^stbtt.fontinfo) -> (width: i32, height: i32) {
+  x0, y0, x1, y1: i32
+  stbtt.GetFontBoundingBox(fontinfo, &x0, &y0, &x1, &y1)
+  width = x1 - x0
+  height = y1 - y0
+  return
+}

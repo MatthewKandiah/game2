@@ -11,9 +11,14 @@
 
 # TODO
 Some of these are halfway hacked in. Think we should delete that code and do it properly. e.g. my grid is origin top-left, not bottom-left, my grid/player graphics should be separate from my text button graphics, etc.
+- [ ] Draw a grid of floor and walls somewhat sensibly
+  - click handler printing tile value and coordinates to confirm we've got that information easily available
 - [ ] Generate a level of the game map - boxes and connecting corridors
 - [ ] Put the player in one room
 - [ ] Player movement
 - [ ] Line of sight
 - [ ] Memory of revealed tiles
 - [ ] Minimap
+
+# NOTES
+- Need to avoid shortcuts and commit to bottom-left origin everywhere, mixing coordinate systems just makes every little thing way more difficult (hit with the grid layout in memory, the "intuitive" first version I wrote corresponded to a top-left coordinate system, but all our drawing is bottom left)

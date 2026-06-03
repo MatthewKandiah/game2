@@ -20,6 +20,7 @@ FONT_LARGE :: 64
 FONT_HUGE :: 128
 
 FontAtlas :: struct {
+  font:                  FontTexture,
   font_size_pixels:      f32,
   ascent:                i32,
   descent:               i32,
@@ -38,7 +39,7 @@ GlyphInfo :: struct {
 }
 
 create_font_atlas :: proc(
-  path: string,
+  font: FontTexture,
   size_pixels: f32,
   chars: string,
   output_width: i32,
@@ -51,6 +52,7 @@ create_font_atlas :: proc(
     panic("FATAL - Font atlas error")
   }
 
+  atlas.font = font
   atlas.font_size_pixels = size_pixels
   atlas.image_dim = GridDim {
     w = output_width,
@@ -58,6 +60,7 @@ create_font_atlas :: proc(
   }
   atlas.char_map = make(map[rune]GlyphInfo)
 
+  path := string(FONT_TEXTURE_PATHS[font])
   file_data, err := os.read_entire_file(path, context.allocator)
   if err != nil {
     local_fatal("Failed to read file", path)
@@ -126,7 +129,7 @@ scale_int :: proc(v: i32, s: f32) -> (scaled_v: i32) {
 // can probably rely on a hardcoded order while things are simple? Then just read off pairs of u64 values until you get `0 0` as a sentinel marker for start of real data?
 init_fonts :: proc(chars: string) {
   for ft in FontTexture {
-    atlas := create_font_atlas(FONT_TEXTURE_PATHS[ft], 256, chars, 5120, 5120)
+    atlas := create_font_atlas(ft, 256, chars, 5120, 5120)
     img.write_png(FONT_IMAGE_OUT_PATHS[ft], atlas.image_dim.w, atlas.image_dim.h, 1, atlas.image, atlas.image_dim.w)
     FONTS[ft] = atlas
   }

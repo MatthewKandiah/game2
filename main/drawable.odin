@@ -94,9 +94,11 @@ draw_drawables :: proc() {
   MASK_DRAWABLES_COUNT = 0
 }
 
-draw_string :: proc(chars: string, font: FontTexture, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
+// WIP
+draw_char :: proc(char: rune, font_atlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {}
+
+draw_string :: proc(chars: string, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
   assert(font_size_pixels >= 20, "Simple font rendering currently implemented starts visibly breaking below this size")
-  font_atlas := FONTS[font]
   x := pos.x
   for c in chars {
     glyph_info, ok := font_atlas.char_map[c]
@@ -108,7 +110,7 @@ draw_string :: proc(chars: string, font: FontTexture, pos: Pos, z: f32, font_siz
       type    = .Mask,
       base    = glyph_info.bounding_box.pos,
       dim     = glyph_info.bounding_box.dim,
-      tex_idx = font_texture_to_idx(font),
+      tex_idx = font_texture_to_idx(font_atlas.font),
     }
 
     scale := font_size_pixels / font_atlas.font_size_pixels

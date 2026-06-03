@@ -10,7 +10,7 @@ UiState :: struct {
   triggered_id: u64,
 }
 
-button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, text: string, font_size: f32, font: FontTexture) -> bool {
+text_button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, text: string, font_size: f32, font: FontTexture) -> bool {
   if (is_cursor_inside(pos, dim) && gc.ui.active_id == 0 && gc.ui.next_hot_z < z) ||
      (is_cursor_inside(pos, dim) && gc.ui.active_id == id) {
     gc.ui.next_hot_id = id
@@ -41,7 +41,7 @@ button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, text: string, font_size: f32
   if len(text) > 0 {
     text_dim := measure_text(text, font, font_size)
     text_pos := center_within_container(text_dim, pos, dim)
-    draw_string(text, font, text_pos, z, font_size, text_colour)
+    draw_string(text, FONTS[font], text_pos, z, font_size, text_colour)
   }
 
   return gc.ui.triggered_id == id

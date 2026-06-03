@@ -160,14 +160,14 @@ main :: proc() {
           y = ui_pos_top_left.y - button_dim.h,
         }
 
-        if button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "START", FONT_LARGE, .Ubuntu) {
+        if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "START", FONT_LARGE, .Ubuntu) {
           fmt.println("START")
           game.mode = .Playing
         }
         ui_pos.x = ui_pos_top_left.x
         ui_pos.y -= gap
         ui_pos.y -= button_dim.h
-        if button(get_uid(#file, #line), ui_pos, button_dim, 0.2, "QUIT", FONT_LARGE, .Ubuntu) {
+        if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.2, "QUIT", FONT_LARGE, .Ubuntu) {
           fmt.println("QUIT")
           os.exit(0)
         }
@@ -189,12 +189,12 @@ main :: proc() {
             x = ui_pos_top_left.x + gap,
             y = ui_pos_top_left.y - gap - button_dim.h,
           }
-          if button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "fun", FONT_SMALL, .UbuntuMono) {
+          if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "fun", FONT_SMALL, .UbuntuMono) {
             fmt.println("Having fun")
           }
           ui_pos.y -= button_dim.h
           ui_pos.y -= gap
-          if button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "exit", FONT_SMALL, .UbuntuMono) {
+          if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "exit", FONT_SMALL, .UbuntuMono) {
             fmt.println("EXIT")
             game.mode = .MainMenu
           }
@@ -226,7 +226,7 @@ main :: proc() {
 	      draw_info := grid_tile_draw_info[tile]
 	      str_buf := [1]u8{}
 	      str_buf[0] = cast(u8)draw_info.char
-              if button(
+              if text_button(
                 get_uid(#file, #line, d),
                 ui_pos,
                 grid_button_dim,

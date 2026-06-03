@@ -94,13 +94,7 @@ draw_drawables :: proc() {
   MASK_DRAWABLES_COUNT = 0
 }
 
-// WIP
-draw_char :: proc(char: rune, font_atlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {}
-
-draw_string :: proc(chars: string, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
-  assert(font_size_pixels >= 20, "Simple font rendering currently implemented starts visibly breaking below this size")
-  x := pos.x
-  for c in chars {
+draw_char :: proc(c: rune, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
     glyph_info, ok := font_atlas.char_map[c]
     if !ok {
       fmt.eprintln("c =", c)
@@ -118,14 +112,24 @@ draw_string :: proc(chars: string, font_atlas: FontAtlas, pos: Pos, z: f32, font
       colour = colour,
       dim = Dim{w = scale * glyph_info.bounding_box.dim.w, h = scale * glyph_info.bounding_box.dim.h},
       pos = Pos {
-        x = x + scale * cast(f32)glyph_info.left_side_bearing,
+        x = pos.x + scale * cast(f32)glyph_info.left_side_bearing,
         y = pos.y - scale * cast(f32)font_atlas.descent - scale * cast(f32)glyph_info.descent,
       },
       z = z,
       override_colour = false,
       texture_data = char_texture_data,
     }
-    push_drawable(char_drawable)
+    push_drawable(char_drawable)  
+}
+
+draw_string :: proc(chars: string, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
+  assert(font_size_pixels >= 20, "Simple font rendering currently implemented starts visibly breaking below this size")
+  x := pos.x
+  for c in chars {
+    char_pos := Pos{x = x, y = pos.y}
+    draw_char(c, font_atlas, char_pos, z, font_size_pixels, colour)
+    scale := font_size_pixels / font_atlas.font_size_pixels
+    glyph_info := font_atlas.char_map[c]
     x += scale * cast(f32)glyph_info.advance_width
   }
 }

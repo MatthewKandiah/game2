@@ -17,6 +17,7 @@ GameMode :: enum {
 GridTile :: enum {
   Wall,
   Floor,
+  Player,
 }
 
 GridTileDrawInfo :: struct {
@@ -27,6 +28,7 @@ GridTileDrawInfo :: struct {
 grid_tile_draw_info := [GridTile]GridTileDrawInfo {
   .Floor = GridTileDrawInfo{char = '.', colour = GREY},
   .Wall = GridTileDrawInfo{char = '#', colour = WHITE},
+  .Player = GridTileDrawInfo{char = '@', colour = YELLOW},
 }
 
 init_grid_tiles :: proc(tiles: []GridTile) {
@@ -35,12 +37,12 @@ init_grid_tiles :: proc(tiles: []GridTile) {
   }
 
   // bottom row should be floor
-  for i in 0..<GRID_WIDTH {
+  for i in 0 ..< GRID_WIDTH {
     grid_set(tiles, GridPos{x = cast(i32)i, y = 0}, .Floor)
   }
 
   // left column should be floor
-  for i in 0..<GRID_HEIGHT {
+  for i in 0 ..< GRID_HEIGHT {
     grid_set(tiles, GridPos{x = 0, y = cast(i32)i}, .Floor)
   }
 

@@ -1,6 +1,7 @@
 package main
 
 import "core:hash/xxhash"
+import "core:fmt"
 
 UiState :: struct {
   hot_id:       u64,
@@ -18,22 +19,22 @@ update_ui_state :: proc(id: u64, pos: Pos, dim: Dim, z: f32) {
   }
 }
 
-grid_button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, char: rune, font_size: f32, font: FontTexture) -> bool {
+grid_button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, char: rune, font_size: f32, font: FontTexture, colour: Colour) -> bool {
   update_ui_state(id, pos, dim, z)
-  colour: Colour
+  bg_colour: Colour
   text_colour: Colour
   if (gc.ui.active_id == id) {
-    colour = YELLOW
+    bg_colour = colour
     text_colour = BLACK
   } else if (gc.ui.hot_id == id) {
-    colour = DARK_GREY
-    text_colour = YELLOW
+    bg_colour = DARK_GREY
+    text_colour = colour
   } else {
-    colour = BLACK
-    text_colour = YELLOW
+    bg_colour = BLACK
+    text_colour = colour
   }
 
-  draw_rect(pos, z, dim, colour)
+  draw_rect(pos, z, dim, bg_colour)
   font_atlas := FONTS[font]
   scale := font_size / font_atlas.font_size_pixels
   raw_char_dim := Dim {
@@ -94,6 +95,7 @@ get_uid :: proc {
 get_uid_default :: proc(file: string, line: u64) -> u64 {
   return get_uid_with_differentiator(file, line, 0)
 }
+// Not random enough! maybe d just needs to be bigger, so there's more non-zero bits involved?
 get_uid_with_differentiator :: proc(file: string, line: u64, d: u64) -> u64 {
   return xxhash.XXH3_64_with_seed(transmute([]u8)file, line ~ d)
 }

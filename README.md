@@ -19,6 +19,11 @@ Some of these are halfway hacked in. Think we should delete that code and do it 
 - [ ] Line of sight
 - [ ] Memory of revealed tiles
 - [ ] Minimap
+- [ ] Viewport
+  - Want to draw a subset of the grid, not the entire grid
+  - Want to be able to zoom in and out i.e. change height/width of drawn section of the grid
+  - Viewport should follow the player as they move
+  - Should be able to detach viewport from player, then recentre on player
 
 # NOTES
 - Need to avoid shortcuts and commit to bottom-left origin everywhere, mixing coordinate systems just makes every little thing way more difficult (hit with the grid layout in memory, the "intuitive" first version I wrote corresponded to a top-left coordinate system, but all our drawing is bottom left)

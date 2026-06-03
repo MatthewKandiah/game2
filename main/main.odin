@@ -240,7 +240,19 @@ main :: proc() {
                 .UbuntuMono,
                 draw_info.colour,
               ) {
-                fmt.printfln("clicked grid button value:%v, origin bot-left origin: %d %d", tile, row_idx, col_idx)
+                if tile == .Floor &&
+                   (abs(grid_pos.x - game.player_pos.x) <= 1) &&
+                  (abs(grid_pos.y - game.player_pos.y) <= 1) {
+		    // TODO - need to think about order of events here, is it safe and sane to update game state in the middle of drawing it? Won't we end up with a mix of old and new values?
+		    // maybe better to set an enum value saying what action happened, and have a handler run after all the UI drawing has run?
+                  game.player_pos = {
+                    x = grid_pos.x,
+                    y = grid_pos.y,
+                  }
+                  fmt.println("Move to", grid_pos.x, grid_pos.y)
+                } else {
+                  fmt.println("Can't move to", tile, row_idx, col_idx)
+                }
               }
             }
           }

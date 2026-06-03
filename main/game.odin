@@ -46,8 +46,10 @@ init_grid_tiles :: proc(tiles: []GridTile) {
     grid_set(tiles, GridPos{x = 0, y = cast(i32)i}, .Floor)
   }
 
-  // 0-indexed (2, 3) should be floor i.e third column from the left, fourth row from the bottom
+  // diagonal pathway for walking test
   grid_set(tiles, GridPos{x = 2, y = 3}, .Floor)
+  grid_set(tiles, GridPos{x = 1, y = 2}, .Floor)
+  grid_set(tiles, GridPos{x = 1, y = 4}, .Floor)
 }
 
 grid_pos_to_idx :: proc(pos: GridPos) -> i32 {

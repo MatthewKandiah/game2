@@ -238,7 +238,7 @@ main :: proc() {
                 draw_info.char,
                 FONT_MEDIUM,
                 .UbuntuMono,
-                YELLOW,
+                draw_info.colour,
               ) {
                 fmt.printfln("clicked grid button value:%v, origin bot-left origin: %d %d", tile, row_idx, col_idx)
               }
@@ -260,7 +260,7 @@ main :: proc() {
             draw_info.char,
             FONT_MEDIUM,
             .UbuntuMono,
-            GREEN,
+            draw_info.colour,
           ) {
             fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
           }

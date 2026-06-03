@@ -5,7 +5,7 @@ GRID_HEIGHT :: 30
 
 Game :: struct {
   mode:       GameMode,
-  grid:       [GRID_WIDTH * GRID_HEIGHT]GridTile,
+  grid:       []GridTile,
   player_pos: GridPos,
 }
 

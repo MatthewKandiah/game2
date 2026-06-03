@@ -125,10 +125,12 @@ main :: proc() {
     time.stopwatch_reset(&stopwatch)
   }
 
+  game_grid_buf := [GRID_WIDTH * GRID_HEIGHT]GridTile{}
   game := Game {
     mode = .MainMenu,
+    grid = game_grid_buf[:]
   }
-  init_grid_tiles(game.grid[:])
+  init_grid_tiles(game.grid)
 
   // main loop
   for !glfw.WindowShouldClose(gc.window) {

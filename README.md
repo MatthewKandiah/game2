@@ -11,7 +11,7 @@
 
 # TODO
 Some of these are halfway hacked in. Think we should delete that code and do it properly. e.g. my grid is origin top-left, not bottom-left, my grid/player graphics should be separate from my text button graphics, etc.
-- [ ] Draw a grid of floor and walls somewhat sensibly
+- [x] Draw a grid of floor and walls somewhat sensibly
   - click handler printing tile value and coordinates to confirm we've got that information easily available
 - [ ] Generate a level of the game map - boxes and connecting corridors
 - [ ] Put the player in one room

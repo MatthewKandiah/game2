@@ -1,7 +1,7 @@
 package main
 
-GRID_WIDTH :: 10
-GRID_HEIGHT :: 10
+GRID_WIDTH :: 30
+GRID_HEIGHT :: 30
 
 Game :: struct {
   mode:       GameMode,

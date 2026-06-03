@@ -10,13 +10,47 @@ UiState :: struct {
   triggered_id: u64,
 }
 
-text_button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, text: string, font_size: f32, font: FontTexture) -> bool {
+update_ui_state :: proc(id: u64, pos: Pos, dim: Dim, z: f32) {
   if (is_cursor_inside(pos, dim) && gc.ui.active_id == 0 && gc.ui.next_hot_z < z) ||
      (is_cursor_inside(pos, dim) && gc.ui.active_id == id) {
     gc.ui.next_hot_id = id
     gc.ui.next_hot_z = z
   }
+}
 
+grid_button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, char: rune, font_size: f32, font: FontTexture) -> bool {
+  update_ui_state(id, pos, dim, z)
+  colour: Colour
+  text_colour: Colour
+  if (gc.ui.active_id == id) {
+    colour = YELLOW
+    text_colour = BLACK
+  } else if (gc.ui.hot_id == id) {
+    colour = DARK_GREY
+    text_colour = YELLOW
+  } else {
+    colour = BLACK
+    text_colour = YELLOW
+  }
+
+  draw_rect(pos, z, dim, colour)
+  font_atlas := FONTS[font]
+  scale := font_size / font_atlas.font_size_pixels
+  raw_char_dim := Dim {
+    w = cast(f32)font_atlas.char_map[char].advance_width,
+    h = cast(f32)(font_atlas.ascent - font_atlas.descent),
+  }
+  char_dim := Dim {
+    w = raw_char_dim.w * scale,
+    h = raw_char_dim.h * scale,
+  }
+  char_pos := center_within_container(char_dim, pos, dim)
+  draw_char(char, font_atlas, char_pos, z, font_size, text_colour)
+  return gc.ui.triggered_id == id
+}
+
+text_button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, text: string, font_size: f32, font: FontTexture) -> bool {
+  update_ui_state(id, pos, dim, z)
   colour: Colour
   text_colour: Colour
   if (gc.ui.active_id == id) {

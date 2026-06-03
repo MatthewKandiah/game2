@@ -13,6 +13,7 @@ import "vendor:vulkan"
 import "vk"
 
 PRINT_FPS :: false
+PRINT_GRAPHICS_PRIMITIVE_COUNTS :: false
 
 WINDOW_WIDTH :: 640
 WINDOW_HEIGHT :: 480
@@ -220,27 +221,31 @@ main :: proc() {
                 x = ui_pos_bot_left.x + gap + cast(f32)col_idx * grid_button_dim.w,
                 y = ui_pos_bot_left.y + gap + cast(f32)row_idx * grid_button_dim.h,
               }
-              // TODO - the game grid probably wants a separate UI component frm text buttons
-	      grid_pos := GridPos {x = cast(i32)col_idx, y = cast(i32)row_idx}
-	      tile := grid_get(game.grid[:], grid_pos)
-	      draw_info := grid_tile_draw_info[tile]
-	      str_buf := [1]u8{}
-	      str_buf[0] = cast(u8)draw_info.char
-              if text_button(
+              grid_pos := GridPos {
+                x = cast(i32)col_idx,
+                y = cast(i32)row_idx,
+              }
+              tile := grid_get(game.grid[:], grid_pos)
+              draw_info := grid_tile_draw_info[tile]
+              if grid_button(
                 get_uid(#file, #line, d),
                 ui_pos,
                 grid_button_dim,
                 0.05,
-                transmute(string)str_buf[:],
-                FONT_LARGE,
+                draw_info.char,
+                FONT_MEDIUM,
                 .UbuntuMono,
               ) {
-                fmt.printfln("clicked grid button value:%v, origin top-left index: %d %d", tile, row_idx, col_idx)
+                fmt.printfln("clicked grid button value:%v, origin bot-left origin: %d %d", tile, row_idx, col_idx)
               }
             }
           }
         }
       }
+    }
+
+    when PRINT_GRAPHICS_PRIMITIVE_COUNTS {
+      fmt.printf("Sprites: %d, Masks: %d\n", SPRITE_DRAWABLES_COUNT, MASK_DRAWABLES_COUNT)
     }
 
     render_frame(&renderer)

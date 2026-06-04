@@ -13,6 +13,9 @@
 Some of these are halfway hacked in. Think we should delete that code and do it properly. e.g. my grid is origin top-left, not bottom-left, my grid/player graphics should be separate from my text button graphics, etc.
 - [x] Draw a grid of floor and walls somewhat sensibly
   - click handler printing tile value and coordinates to confirm we've got that information easily available
+- [ ] More sane action handling in render loop
+  - just mutating state inside IMGUI `if button {...}` blocks is quick to do, but I think might make our logic more complex. e.g. if I add a monster, and you click to attack it, I need to have finished the player move before drawing the monster and its health bar (or I have to overdraw them or update their buffered drawables)
+  - is this even true? need to get my head around the order of events
 - [ ] Generate a level of the game map - boxes and connecting corridors
 - [ ] Put the player in one room
 - [ ] Player movement
@@ -27,3 +30,6 @@ Some of these are halfway hacked in. Think we should delete that code and do it 
 
 # NOTES
 - Need to avoid shortcuts and commit to bottom-left origin everywhere, mixing coordinate systems just makes every little thing way more difficult (hit with the grid layout in memory, the "intuitive" first version I wrote corresponded to a top-left coordinate system, but all our drawing is bottom left)
+- Order of events in frame render function - flush UI interactions, update state, draw frame, etc.
+- Our unique id isn't unique enough, getting id collisions
+- Handmade hero Day 196 probably worth a more detailed look - implements UI like we're building

@@ -13,7 +13,7 @@
 Some of these are halfway hacked in. Think we should delete that code and do it properly. e.g. my grid is origin top-left, not bottom-left, my grid/player graphics should be separate from my text button graphics, etc.
 - [x] Draw a grid of floor and walls somewhat sensibly
   - click handler printing tile value and coordinates to confirm we've got that information easily available
-- [ ] More sane action handling in render loop
+- [x] More sane action handling in render loop
   - just mutating state inside IMGUI `if button {...}` blocks is quick to do, but I think might make our logic more complex. e.g. if I add a monster, and you click to attack it, I need to have finished the player move before drawing the monster and its health bar (or I have to overdraw them or update their buffered drawables)
   - is this even true? need to get my head around the order of events
 - [ ] Generate a level of the game map - boxes and connecting corridors
@@ -33,3 +33,10 @@ Some of these are halfway hacked in. Think we should delete that code and do it 
 - Order of events in frame render function - flush UI interactions, update state, draw frame, etc.
 - Our unique id isn't unique enough, getting id collisions
 - Handmade hero Day 196 probably worth a more detailed look - implements UI like we're building
+- For complex UI components where interactions are mutating the data that the rest of the component's draws are based on, pull handler code out and have IMGUI code just set data so we know what interaction happened, and handle it after draws are finished
+  - main loop goes
+	1. flush events - use last frames hovered state to set id for triggered component to fire on this pass
+	2. draw calls all do bounds checking and depth test to set next frame's hovered state
+	3. draw calls end by checking if they were triggered, if they were they update action state
+	4. after all draw calls finish, handle action state
+	5. gpu render call, goto 1

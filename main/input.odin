@@ -17,7 +17,11 @@ flush_input_events :: proc() {
     switch (event) {
     case .MouseLeftDown:
       {
-        if gc.ui.hot_id != 0 {gc.ui.active_id = gc.ui.hot_id}
+        if gc.ui.hot_id != 0 {
+          gc.ui.active_id = gc.ui.hot_id
+        } else {
+          gc.ui.active_id = 0xFFFF_FFFF // sentinel value, should match nothing in the UI, makes mouse dead until you release
+        }
       }
     case .MouseLeftUp:
       {

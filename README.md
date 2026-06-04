@@ -18,7 +18,7 @@ Some of these are halfway hacked in. Think we should delete that code and do it 
   - is this even true? need to get my head around the order of events
 - [ ] Generate a level of the game map - boxes and connecting corridors
 - [ ] Put the player in one room
-- [ ] Player movement
+- [x] Player movement (one tile for simplicity)
 - [ ] Line of sight
 - [ ] Memory of revealed tiles
 - [ ] Minimap
@@ -40,3 +40,11 @@ Some of these are halfway hacked in. Think we should delete that code and do it 
 	3. draw calls end by checking if they were triggered, if they were they update action state
 	4. after all draw calls finish, handle action state
 	5. gpu render call, goto 1
+  - If we wanted, we could replace this with something like
+    1. flush events - set state if we registered a click
+	2. order draw calls front-to-back (either statically by just order of the code execution, or with some intermediate data structure and sorting)
+	3. draw calls do bounds checking to set hover state
+	4. draw calls end by checking if they were clicked => set action state and consume the click (since we're drawing front to back, the first thing we see get clicked is the front thing that got clicked)
+	5. after draw calls finish, handle action state
+	6. gpu render call, goto 1
+  Would avoid a frame of input lag. Our loop activates the component if it was hovered and clicked last frame, this would activate the component the same frame we detect the click. Cost is some extra logic though. For our slow-paced roguelike, I'm hoping it feels fine and we get away with the simpler approach. Not having to worry about draw order sounds like a good win!

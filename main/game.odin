@@ -4,9 +4,10 @@ GRID_WIDTH :: 30
 GRID_HEIGHT :: 30
 
 Game :: struct {
-  mode:       GameMode,
-  grid:       []GridTile,
-  player_pos: GridPos,
+  mode:            GameMode,
+  grid:            []GridTile,
+  player_pos:      GridPos,
+  viewport_centre: GridPos,
 }
 
 GameMode :: enum {

@@ -12,6 +12,7 @@ UiState :: struct {
 }
 
 update_ui_state :: proc(id: u64, pos: Pos, dim: Dim, z: f32) {
+  // TODO - this will need to know about trim too, or the pos and dim passed in will need to be updated, not sure which is better
   if (is_cursor_inside(pos, dim) && gc.ui.active_id == 0 && gc.ui.next_hot_z < z) ||
      (is_cursor_inside(pos, dim) && gc.ui.active_id == id) {
     gc.ui.next_hot_id = id

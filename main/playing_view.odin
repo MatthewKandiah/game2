@@ -1,6 +1,7 @@
 package main
 
 import "core:fmt"
+import "core:math"
 
 PlayingViewAction :: struct {
   type: PlayingViewActionType,
@@ -67,30 +68,16 @@ playing_view :: proc(game: ^Game) {
     w = FONT_MEDIUM,
     h = FONT_MEDIUM,
   }
-  // layout debugging
-  draw_rect(grid_ui_pos_bot_left, 0, grid_ui_dim, GREEN)
-  // TODO - move this somewhere reasonable
-  grid_tile_screen_pos :: proc(
-    tile_grid_pos: GridPos,
-    centre_grid_pos: GridPos,
-    grid_ui_pos: Pos,
-    grid_ui_dim: Dim,
-    tile_dim: Dim,
-  ) -> Pos {
-    grid_centre_ui_pos := Pos {
-      x = grid_ui_pos.x + grid_ui_dim.w / 2,
-      y = grid_ui_pos.y + grid_ui_dim.h / 2,
-    }
-
-    return Pos {
-      x = grid_centre_ui_pos.x + (cast(f32)tile_grid_pos.x - cast(f32)centre_grid_pos.x - 0.5) * tile_dim.w,
-      y = grid_centre_ui_pos.y + (cast(f32)tile_grid_pos.y - cast(f32)centre_grid_pos.y - 0.5) * tile_dim.h,
-    }
-  }
 
   {   // draw grid
-    for row_idx in 0 ..< GRID_HEIGHT {
-      for col_idx in 0 ..< GRID_WIDTH {
+    max_tiles_wide := cast(i32)math.ceil(grid_ui_dim.w / grid_button_dim.w) + 2
+    max_tiles_high := cast(i32)math.ceil(grid_ui_dim.h / grid_button_dim.h) + 2
+    row_idx_lower := max(0, game.viewport_centre.y - max_tiles_high / 2)
+    row_idx_upper := min(GRID_HEIGHT, game.viewport_centre.y + max_tiles_high / 2)
+    col_idx_lower := max(0, game.viewport_centre.x - max_tiles_wide / 2)
+    col_idx_upper := min(GRID_WIDTH, game.viewport_centre.x + max_tiles_wide / 2)
+    for row_idx in row_idx_lower ..< row_idx_upper {
+      for col_idx in col_idx_lower ..< col_idx_upper {
         d := cast(u32)(row_idx * GRID_WIDTH + col_idx)
         grid_pos := GridPos {
           x = cast(i32)col_idx,
@@ -103,18 +90,16 @@ playing_view :: proc(game: ^Game) {
           grid_ui_dim,
           grid_button_dim,
         )
-	// TODO - nicer to have partially included buttons trim, instead of excluding them entirely
+
+        // TODO - nicer to have partially included buttons trim, instead of excluding them entirely
         if !contains(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
           continue
         }
-	left_trim := min(grid_ui_pos_bot_left.x - ui_pos.x, 0)
-	right_trim := min(ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w, 0)
-	bot_trim := min(grid_ui_pos_bot_left.y - ui_pos.y, 0)
-	top_trim := min(ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h, 0)
+
         if grid_pos == game.player_pos {
           draw_info := grid_tile_draw_info[.Player]
           if grid_button(
-            get_uid(#file, #line), // get an ID collision with floor tile 0 21
+            get_uid(#file, #line),
             ui_pos,
             grid_button_dim,
             0.06,
@@ -168,15 +153,33 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           y = data.pos.y,
         }
         game.viewport_centre = game.player_pos
-        fmt.println("Move to", data.pos.x, data.pos.y)
+        //fmt.println("Move to", data.pos.x, data.pos.y)
       } else {
-        fmt.println("Can't move to", data.tile, data.pos.x, data.pos.y)
+        //fmt.println("Can't move to", data.tile, data.pos.x, data.pos.y)
       }
 
     }
   case .PlayerClick:
     {
-      fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
+      //fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
     }
+  }
+}
+
+grid_tile_screen_pos :: proc(
+  tile_grid_pos: GridPos,
+  centre_grid_pos: GridPos,
+  grid_ui_pos: Pos,
+  grid_ui_dim: Dim,
+  tile_dim: Dim,
+) -> Pos {
+  grid_centre_ui_pos := Pos {
+    x = grid_ui_pos.x + grid_ui_dim.w / 2,
+    y = grid_ui_pos.y + grid_ui_dim.h / 2,
+  }
+
+  return Pos {
+    x = grid_centre_ui_pos.x + (cast(f32)tile_grid_pos.x - cast(f32)centre_grid_pos.x - 0.5) * tile_dim.w,
+    y = grid_centre_ui_pos.y + (cast(f32)tile_grid_pos.y - cast(f32)centre_grid_pos.y - 0.5) * tile_dim.h,
   }
 }

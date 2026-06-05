@@ -21,7 +21,7 @@ PlayingViewActionData :: union {
 PlayerClickData :: struct {}
 
 GridClickData :: struct {
-  pos: GridPos,
+  pos:  GridPos,
   tile: GridTile,
 }
 
@@ -70,7 +70,7 @@ playing_view :: proc(game: ^Game) {
   {   // draw grid
     for row_idx in 0 ..< GRID_HEIGHT {
       for col_idx in 0 ..< GRID_WIDTH {
-        d: u64 = cast(u64)row_idx << 8 | cast(u64)col_idx
+        d := cast(u32)(row_idx * GRID_WIDTH + col_idx)
         ui_pos := Pos {
           x = grid_ui_pos_bot_left.x + gap + cast(f32)col_idx * grid_button_dim.w,
           y = grid_ui_pos_bot_left.y + gap + cast(f32)row_idx * grid_button_dim.h,
@@ -132,7 +132,9 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
   case .GridClick:
     {
       data := action.data.(GridClickData)
-      if data.tile == .Floor && (abs(data.pos.x - game.player_pos.x) <= 1) && (abs(data.pos.y - game.player_pos.y) <= 1) {
+      if data.tile == .Floor &&
+         (abs(data.pos.x - game.player_pos.x) <= 1) &&
+         (abs(data.pos.y - game.player_pos.y) <= 1) {
         game.player_pos = {
           x = data.pos.x,
           y = data.pos.y,

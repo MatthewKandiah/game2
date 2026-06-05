@@ -1,7 +1,7 @@
 package main
 
-import "core:hash/xxhash"
 import "core:fmt"
+import "core:hash/xxhash"
 
 UiState :: struct {
   hot_id:       u64,
@@ -19,7 +19,16 @@ update_ui_state :: proc(id: u64, pos: Pos, dim: Dim, z: f32) {
   }
 }
 
-grid_button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, char: rune, font_size: f32, font: FontTexture, colour: Colour) -> bool {
+grid_button :: proc(
+  id: u64,
+  pos: Pos,
+  dim: Dim,
+  z: f32,
+  char: rune,
+  font_size: f32,
+  font: FontTexture,
+  colour: Colour,
+) -> bool {
   update_ui_state(id, pos, dim, z)
   bg_colour: Colour
   text_colour: Colour
@@ -92,10 +101,10 @@ get_uid :: proc {
   get_uid_default,
   get_uid_with_differentiator,
 }
-get_uid_default :: proc(file: string, line: u64) -> u64 {
+get_uid_default :: proc(file: string, line: u32) -> u64 {
   return get_uid_with_differentiator(file, line, 0)
 }
-// Not random enough! maybe d just needs to be bigger, so there's more non-zero bits involved?
-get_uid_with_differentiator :: proc(file: string, line: u64, d: u64) -> u64 {
-  return xxhash.XXH3_64_with_seed(transmute([]u8)file, line ~ d)
+get_uid_with_differentiator :: proc(file: string, line: u32, d: u32) -> u64 {
+  seed: u64 = (cast(u64)line << 32) | cast(u64)d
+  return xxhash.XXH3_64_with_seed(transmute([]u8)file, seed)
 }

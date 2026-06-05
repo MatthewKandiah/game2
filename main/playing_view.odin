@@ -103,52 +103,48 @@ playing_view :: proc(game: ^Game) {
           grid_ui_dim,
           grid_button_dim,
         )
-        if !overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
+	// TODO - nicer to have partially included buttons trim, instead of excluding them entirely
+        if !contains(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
           continue
         }
-        tile := grid_get(game.grid[:], grid_pos)
-        draw_info := grid_tile_draw_info[tile]
-        if grid_button(
-          get_uid(#file, #line, d),
-          ui_pos,
-          grid_button_dim,
-          0.05,
-          draw_info.char,
-          FONT_MEDIUM,
-          .UbuntuMono,
-          draw_info.colour,
-        ) {
-          action = {
-            type = .GridClick,
-            data = GridClickData{pos = grid_pos, tile = tile},
+	left_trim := min(grid_ui_pos_bot_left.x - ui_pos.x, 0)
+	right_trim := min(ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w, 0)
+	bot_trim := min(grid_ui_pos_bot_left.y - ui_pos.y, 0)
+	top_trim := min(ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h, 0)
+        if grid_pos == game.player_pos {
+          draw_info := grid_tile_draw_info[.Player]
+          if grid_button(
+            get_uid(#file, #line), // get an ID collision with floor tile 0 21
+            ui_pos,
+            grid_button_dim,
+            0.06,
+            draw_info.char,
+            FONT_MEDIUM,
+            .UbuntuMono,
+            draw_info.colour,
+          ) {
+            action = {
+              type = .PlayerClick,
+            }
           }
-        }
-      }
-    }
-  }
-
-  {   // draw player
-    ui_pos := grid_tile_screen_pos(
-      game.player_pos,
-      game.viewport_centre,
-      grid_ui_pos_bot_left,
-      grid_ui_dim,
-      grid_button_dim,
-    )
-    if overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
-      draw_info := grid_tile_draw_info[.Player]
-      if grid_button(
-        get_uid(#file, #line), // get an ID collision with floor tile 0 21
-        ui_pos,
-        grid_button_dim,
-        0.06,
-        draw_info.char,
-        FONT_MEDIUM,
-        .UbuntuMono,
-        draw_info.colour,
-      ) {
-        action = {
-          type = .PlayerClick,
+        } else {
+          tile := grid_get(game.grid[:], grid_pos)
+          draw_info := grid_tile_draw_info[tile]
+          if grid_button(
+            get_uid(#file, #line, d),
+            ui_pos,
+            grid_button_dim,
+            0.05,
+            draw_info.char,
+            FONT_MEDIUM,
+            .UbuntuMono,
+            draw_info.colour,
+          ) {
+            action = {
+              type = .GridClick,
+              data = GridClickData{pos = grid_pos, tile = tile},
+            }
+          }
         }
       }
     }

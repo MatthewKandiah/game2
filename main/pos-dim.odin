@@ -40,7 +40,21 @@ extent_to_dim :: proc(extent: vulkan.Extent2D) -> Dim {
 }
 
 is_inside :: proc(pos: Pos, container_pos: Pos, container_dim: Dim) -> bool {
-  return pos.x >= container_pos.x && pos.x <= container_pos.x + container_dim.w && pos.y >= container_pos.y && pos.y <= container_pos.y + container_dim.h
+  return(
+    pos.x >= container_pos.x &&
+    pos.x <= container_pos.x + container_dim.w &&
+    pos.y >= container_pos.y &&
+    pos.y <= container_pos.y + container_dim.h \
+  )
+}
+
+contains :: proc(pos: Pos, dim: Dim, container_pos: Pos, container_dim: Dim) -> bool {
+  return(
+    pos.x > container_pos.x &&
+    pos.x + dim.w < container_pos.x + container_dim.w &&
+    pos.y > container_pos.y &&
+    pos.y + dim.h < container_pos.y + container_dim.h \
+  )
 }
 
 overlaps :: proc(pos1: Pos, dim1: Dim, pos2: Pos, dim2: Dim) -> bool {

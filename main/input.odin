@@ -46,6 +46,5 @@ InputState :: struct {
 }
 
 is_cursor_inside :: proc(pos: Pos, dim: Dim) -> bool {
-  cursor := gc.input.cursor_pos
-  return cursor.x >= pos.x && cursor.x <= pos.x + dim.w && cursor.y >= pos.y && cursor.y <= pos.y + dim.h
+  return is_inside(gc.input.cursor_pos, pos, dim)
 }

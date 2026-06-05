@@ -103,6 +103,9 @@ playing_view :: proc(game: ^Game) {
           grid_ui_dim,
           grid_button_dim,
         )
+        if !overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
+          continue
+        }
         tile := grid_get(game.grid[:], grid_pos)
         draw_info := grid_tile_draw_info[tile]
         if grid_button(
@@ -132,19 +135,21 @@ playing_view :: proc(game: ^Game) {
       grid_ui_dim,
       grid_button_dim,
     )
-    draw_info := grid_tile_draw_info[.Player]
-    if grid_button(
-      get_uid(#file, #line), // get an ID collision with floor tile 0 21
-      ui_pos,
-      grid_button_dim,
-      0.06,
-      draw_info.char,
-      FONT_MEDIUM,
-      .UbuntuMono,
-      draw_info.colour,
-    ) {
-      action = {
-        type = .PlayerClick,
+    if overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
+      draw_info := grid_tile_draw_info[.Player]
+      if grid_button(
+        get_uid(#file, #line), // get an ID collision with floor tile 0 21
+        ui_pos,
+        grid_button_dim,
+        0.06,
+        draw_info.char,
+        FONT_MEDIUM,
+        .UbuntuMono,
+        draw_info.colour,
+      ) {
+        action = {
+          type = .PlayerClick,
+        }
       }
     }
   }
@@ -166,7 +171,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           x = data.pos.x,
           y = data.pos.y,
         }
-	game.viewport_centre = game.player_pos
+        game.viewport_centre = game.player_pos
         fmt.println("Move to", data.pos.x, data.pos.y)
       } else {
         fmt.println("Can't move to", data.tile, data.pos.x, data.pos.y)

@@ -56,13 +56,14 @@ playing_view :: proc(game: ^Game) {
     }
   }
 
+  grid_ui_border: f32 = 30
   grid_ui_dim := Dim {
-    w = gc.screen_dim.w - button_dim.w - 2 * gap,
-    h = gc.screen_dim.h,
+    w = gc.screen_dim.w - button_dim.w - 2 * gap - 2 * grid_ui_border,
+    h = gc.screen_dim.h - 2 * grid_ui_border,
   }
   grid_ui_pos_bot_left := Pos {
-    x = 0,
-    y = 0,
+    x = grid_ui_border,
+    y = grid_ui_border,
   }
   grid_button_dim := Dim {
     w = FONT_MEDIUM,
@@ -90,12 +91,12 @@ playing_view :: proc(game: ^Game) {
           grid_ui_dim,
           grid_button_dim,
         )
-	trim := Trim{
-	  left = max(0, grid_ui_pos_bot_left.x - ui_pos.x),
-	  right = max(0,ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w),
-	  top = max(0, ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h),
-	  bot = max(0, grid_ui_pos_bot_left.y - ui_pos.y),
-	}
+        trim := Trim {
+          left  = max(0, grid_ui_pos_bot_left.x - ui_pos.x),
+          right = max(0, ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w),
+          top   = max(0, ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h),
+          bot   = max(0, grid_ui_pos_bot_left.y - ui_pos.y),
+        }
 
         if !overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
           continue
@@ -112,7 +113,7 @@ playing_view :: proc(game: ^Game) {
             FONT_MEDIUM,
             .UbuntuMono,
             draw_info.colour,
-	    trim,
+            trim,
           ) {
             action = {
               type = .PlayerClick,
@@ -130,7 +131,7 @@ playing_view :: proc(game: ^Game) {
             FONT_MEDIUM,
             .UbuntuMono,
             draw_info.colour,
-	    trim,
+            trim,
           ) {
             action = {
               type = .GridClick,

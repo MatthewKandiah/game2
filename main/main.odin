@@ -131,6 +131,7 @@ main :: proc() {
     grid = game_grid_buf[:],
     player_pos = GridPos{x = 0, y = 0},
     viewport_centre = GridPos{x = 0, y = 0},
+    is_looking = false,
   }
   init_grid_tiles(game.grid)
 

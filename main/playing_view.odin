@@ -12,14 +12,14 @@ PlayingViewActionType :: enum {
   None,
   PlayerClick,
   GridClick,
+  LookClick,
+  RecentreClick,
+  ExitClick,
 }
 
 PlayingViewActionData :: union {
-  PlayerClickData,
   GridClickData,
 }
-
-PlayerClickData :: struct {}
 
 GridClickData :: struct {
   pos:  GridPos,
@@ -29,6 +29,7 @@ GridClickData :: struct {
 playing_view :: proc(game: ^Game) {
   action: PlayingViewAction = {
     type = .None,
+    data = {},
   }
 
   button_dim := Dim {
@@ -46,13 +47,24 @@ playing_view :: proc(game: ^Game) {
       x = ui_pos_top_left.x + gap,
       y = ui_pos_top_left.y - gap - button_dim.h,
     }
-    if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "fun", FONT_SMALL, .UbuntuMono) {
-      fmt.println("Having fun?")
+    if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
+      action = {
+        type = .LookClick,
+      }
     }
     ui_pos.y -= button_dim.h
     ui_pos.y -= gap
-    if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "exit", FONT_SMALL, .UbuntuMono) {
-      game.mode = .MainMenu
+    if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
+      action = {
+        type = .RecentreClick,
+      }
+    }
+    ui_pos.y -= button_dim.h
+    ui_pos.y -= gap
+    if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
+      action = {
+        type = .ExitClick,
+      }
     }
   }
 
@@ -146,34 +158,6 @@ playing_view :: proc(game: ^Game) {
   handle_action(game, action)
 }
 
-handle_action :: proc(game: ^Game, action: PlayingViewAction) {
-  switch (action.type) {
-  case .None:
-    return
-  case .GridClick:
-    {
-      data := action.data.(GridClickData)
-      if data.tile == .Floor &&
-         (abs(data.pos.x - game.player_pos.x) <= 1) &&
-         (abs(data.pos.y - game.player_pos.y) <= 1) {
-        game.player_pos = {
-          x = data.pos.x,
-          y = data.pos.y,
-        }
-        game.viewport_centre = game.player_pos
-        //fmt.println("Move to", data.pos.x, data.pos.y)
-      } else {
-        //fmt.println("Can't move to", data.tile, data.pos.x, data.pos.y)
-      }
-
-    }
-  case .PlayerClick:
-    {
-      //fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
-    }
-  }
-}
-
 grid_tile_screen_pos :: proc(
   tile_grid_pos: GridPos,
   centre_grid_pos: GridPos,
@@ -189,5 +173,43 @@ grid_tile_screen_pos :: proc(
   return Pos {
     x = grid_centre_ui_pos.x + (cast(f32)tile_grid_pos.x - cast(f32)centre_grid_pos.x - 0.5) * tile_dim.w,
     y = grid_centre_ui_pos.y + (cast(f32)tile_grid_pos.y - cast(f32)centre_grid_pos.y - 0.5) * tile_dim.h,
+  }
+}
+
+handle_action :: proc(game: ^Game, action: PlayingViewAction) {
+  switch (action.type) {
+  case .None:
+    return
+  case .LookClick:
+    {
+      game.is_looking = true
+    }
+  case .RecentreClick:
+    {
+      game.is_looking = false
+      game.viewport_centre = game.player_pos
+    }
+  case .ExitClick:
+    {
+      game.mode = .MainMenu
+    }
+  case .GridClick:
+    {
+      data := action.data.(GridClickData)
+      if game.is_looking {
+	game.viewport_centre = data.pos
+      } else {
+        if data.tile == .Floor &&
+           (abs(data.pos.x - game.player_pos.x) <= 1) &&
+           (abs(data.pos.y - game.player_pos.y) <= 1) {
+          game.player_pos = data.pos
+          game.viewport_centre = data.pos
+        }
+      }
+    }
+  case .PlayerClick:
+    {
+      fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
+    }
   }
 }

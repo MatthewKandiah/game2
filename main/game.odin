@@ -8,6 +8,7 @@ Game :: struct {
   grid:            []GridTile,
   player_pos:      GridPos,
   viewport_centre: GridPos,
+  is_looking:      bool,
 }
 
 GameMode :: enum {

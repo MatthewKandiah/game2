@@ -90,9 +90,14 @@ playing_view :: proc(game: ^Game) {
           grid_ui_dim,
           grid_button_dim,
         )
+	trim := Trim{
+	  left = max(0, grid_ui_pos_bot_left.x - ui_pos.x),
+	  right = max(0,ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w),
+	  top = max(0, ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h),
+	  bot = max(0, grid_ui_pos_bot_left.y - ui_pos.y),
+	}
 
-        // TODO - nicer to have partially included buttons trim, instead of excluding them entirely
-        if !contains(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
+        if !overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
           continue
         }
 
@@ -107,6 +112,7 @@ playing_view :: proc(game: ^Game) {
             FONT_MEDIUM,
             .UbuntuMono,
             draw_info.colour,
+	    trim,
           ) {
             action = {
               type = .PlayerClick,
@@ -124,6 +130,7 @@ playing_view :: proc(game: ^Game) {
             FONT_MEDIUM,
             .UbuntuMono,
             draw_info.colour,
+	    trim,
           ) {
             action = {
               type = .GridClick,

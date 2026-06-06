@@ -29,6 +29,7 @@ grid_button :: proc(
   font_size: f32,
   font: FontTexture,
   colour: Colour,
+  trim: Trim,
 ) -> bool {
   update_ui_state(id, pos, dim, z)
   bg_colour: Colour
@@ -38,6 +39,18 @@ grid_button :: proc(
     text_colour = BLACK
   } else if (gc.ui.hot_id == id) {
     bg_colour = DARK_GREY
+    text_colour = colour
+  } else if (trim.left != 0) {
+    bg_colour = PINK
+    text_colour = colour
+  } else if (trim.right != 0) {
+    bg_colour = YELLOW
+    text_colour = colour
+  } else if (trim.top != 0) {
+    bg_colour = WHITE
+    text_colour = colour
+  } else if (trim.bot != 0) {
+    bg_colour = BLUE
     text_colour = colour
   } else {
     bg_colour = BLACK

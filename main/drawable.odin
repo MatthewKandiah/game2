@@ -11,6 +11,13 @@ Drawable :: struct {
   colour:          Colour,
 }
 
+Trim :: struct {
+  left: f32,
+  right: f32,
+  top: f32,
+  bot: f32,
+}
+
 SPRITE_DRAWABLES_SIZE :: 100_000
 MASK_DRAWABLES_SIZE :: 100_000
 SPRITE_DRAWABLES_COUNT := 0

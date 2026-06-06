@@ -15,6 +15,9 @@ PlayingViewActionType :: enum {
   LookClick,
   RecentreClick,
   ExitClick,
+  ZoomInClick,
+  ZoomOutClick,
+  ResetZoomClick,
 }
 
 PlayingViewActionData :: union {
@@ -61,6 +64,120 @@ playing_view :: proc(game: ^Game) {
     }
     ui_pos.y -= button_dim.h
     ui_pos.y -= gap
+
+    {   // zoom button row
+      button_count: f32 = 2
+      zoom_button_dim := Dim {
+        w = button_dim.w / button_count,
+        h = button_dim.h,
+      }
+      zoom_button_pos := ui_pos
+      if text_button(get_uid(#file, #line), zoom_button_pos, zoom_button_dim, 0.1, "+", FONT_MEDIUM, .Ubuntu) {
+        action = {
+          type = .ZoomInClick,
+        }
+      }
+      zoom_button_pos.x += zoom_button_dim.w
+      if text_button(get_uid(#file, #line), zoom_button_pos, zoom_button_dim, 0.1, "-", FONT_MEDIUM, .Ubuntu) {
+        action = {
+          type = .ZoomOutClick,
+        }
+      }
+      zoom_button_pos.x += zoom_button_dim.w
+    }
+    ui_pos.y -= button_dim.h
+    ui_pos.y -= gap
+
+    if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
+      action = {
+        type = .ResetZoomClick,
+      }
+    }
+    ui_pos.y -= button_dim.h
+    ui_pos.y -= gap
+
+    if game.is_looking {
+      button_count: f32 = 4
+      viewport_button_dim := Dim {
+        w = button_dim.w / button_count,
+        h = button_dim.h,
+      }
+      viewport_button_pos := ui_pos
+      if text_button(
+        get_uid(#file, #line),
+        viewport_button_pos,
+        viewport_button_dim,
+        0.1,
+        "Left",
+        FONT_SMALL,
+        .Ubuntu,
+      ) {
+        grid_pos := GridPos {
+          x = max(0, game.viewport_centre.x - 1),
+          y = game.viewport_centre.y,
+        }
+        tile := grid_get(game.grid[:], grid_pos)
+        action = {
+          type = .GridClick,
+          data = GridClickData{pos = grid_pos, tile = tile},
+        }
+      }
+      viewport_button_pos.x += viewport_button_dim.w
+      if text_button(
+        get_uid(#file, #line),
+        viewport_button_pos,
+        viewport_button_dim,
+        0.1,
+        "Down",
+        FONT_SMALL,
+        .Ubuntu,
+      ) {
+        grid_pos := GridPos {
+          x = game.viewport_centre.x,
+          y = max(0, game.viewport_centre.y - 1),
+        }
+        tile := grid_get(game.grid[:], grid_pos)
+        action = {
+          type = .GridClick,
+          data = GridClickData{pos = grid_pos, tile = tile},
+        }
+      }
+      viewport_button_pos.x += viewport_button_dim.w
+      if text_button(get_uid(#file, #line), viewport_button_pos, viewport_button_dim, 0.1, "Up", FONT_SMALL, .Ubuntu) {
+        grid_pos := GridPos {
+          x = game.viewport_centre.x,
+          y = min(GRID_HEIGHT - 1, game.viewport_centre.y + 1),
+        }
+        tile := grid_get(game.grid[:], grid_pos)
+        action = {
+          type = .GridClick,
+          data = GridClickData{pos = grid_pos, tile = tile},
+        }}
+      viewport_button_pos.x += viewport_button_dim.w
+      if text_button(
+        get_uid(#file, #line),
+        viewport_button_pos,
+        viewport_button_dim,
+        0.1,
+        "Right",
+        FONT_SMALL,
+        .Ubuntu,
+      ) {
+        grid_pos := GridPos {
+          x = min(GRID_WIDTH - 1, game.viewport_centre.x + 1),
+          y = game.viewport_centre.y,
+        }
+        tile := grid_get(game.grid[:], grid_pos)
+        action = {
+          type = .GridClick,
+          data = GridClickData{pos = grid_pos, tile = tile},
+        }}
+      viewport_button_pos.x += viewport_button_dim.w
+
+      ui_pos.y -= button_dim.h
+      ui_pos.y -= gap
+    }
+
     if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
       action = {
         type = .ExitClick,
@@ -78,9 +195,10 @@ playing_view :: proc(game: ^Game) {
     y = grid_ui_border,
   }
   grid_button_dim := Dim {
-    w = FONT_MEDIUM,
-    h = FONT_MEDIUM,
+    w = FONT_MEDIUM * game.zoom_level,
+    h = FONT_MEDIUM * game.zoom_level,
   }
+  font_size := FONT_MEDIUM * game.zoom_level
 
   {   // draw grid
     max_tiles_wide := cast(i32)math.ceil(grid_ui_dim.w / grid_button_dim.w) + 2
@@ -122,7 +240,7 @@ playing_view :: proc(game: ^Game) {
             grid_button_dim,
             0.06,
             draw_info.char,
-            FONT_MEDIUM,
+            font_size,
             .UbuntuMono,
             draw_info.colour,
             trim,
@@ -140,7 +258,7 @@ playing_view :: proc(game: ^Game) {
             grid_button_dim,
             0.05,
             draw_info.char,
-            FONT_MEDIUM,
+            font_size,
             .UbuntuMono,
             draw_info.colour,
             trim,
@@ -189,6 +307,18 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       game.is_looking = false
       game.viewport_centre = game.player_pos
     }
+  case .ZoomInClick:
+    {
+      game.zoom_level += 0.2
+    }
+  case .ZoomOutClick:
+    {
+      game.zoom_level = max(0.2, game.zoom_level - 0.2)
+    }
+  case .ResetZoomClick:
+    {
+      game.zoom_level = 1
+    }
   case .ExitClick:
     {
       game.mode = .MainMenu
@@ -197,7 +327,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
     {
       data := action.data.(GridClickData)
       if game.is_looking {
-	game.viewport_centre = data.pos
+        game.viewport_centre = data.pos
       } else {
         if data.tile == .Floor &&
            (abs(data.pos.x - game.player_pos.x) <= 1) &&
@@ -209,6 +339,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
     }
   case .PlayerClick:
     {
+      game.viewport_centre = game.player_pos
       fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
     }
   }

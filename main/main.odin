@@ -106,7 +106,7 @@ main :: proc() {
     }
   }
 
-  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,.$"
+  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,.$+-"
   stopwatch := time.Stopwatch{}
   {   // init fonts
     time.stopwatch_start(&stopwatch)
@@ -132,6 +132,7 @@ main :: proc() {
     player_pos = GridPos{x = 0, y = 0},
     viewport_centre = GridPos{x = 0, y = 0},
     is_looking = false,
+    zoom_level = 1,
   }
   init_grid_tiles(game.grid)
 

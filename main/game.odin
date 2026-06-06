@@ -9,6 +9,7 @@ Game :: struct {
   player_pos:      GridPos,
   viewport_centre: GridPos,
   is_looking:      bool,
+  zoom_level:      f32,
 }
 
 GameMode :: enum {

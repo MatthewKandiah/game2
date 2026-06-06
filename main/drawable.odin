@@ -12,10 +12,10 @@ Drawable :: struct {
 }
 
 Trim :: struct {
-  left: f32,
+  left:  f32,
   right: f32,
-  top: f32,
-  bot: f32,
+  top:   f32,
+  bot:   f32,
 }
 
 SPRITE_DRAWABLES_SIZE :: 100_000
@@ -101,7 +101,78 @@ draw_drawables :: proc() {
   MASK_DRAWABLES_COUNT = 0
 }
 
-draw_char :: proc(c: rune, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour, trim: Trim) {
+draw_trimmed_char :: proc(
+  c: rune,
+  font_atlas: FontAtlas,
+  container_pos: Pos,
+  container_dim: Dim,
+  container_trim: Trim,
+  font_size_pixels: f32,
+  z: f32,
+  colour: Colour,
+) {
+  glyph_info, ok := font_atlas.char_map[c]
+  if !ok {
+    fmt.eprintln("c =", c)
+    panic("Missing char")
+  }
+  raw_char_bounding_box_pos := glyph_info.bounding_box.pos
+  raw_char_bounding_box_dim := glyph_info.bounding_box.dim
+
+  scale := font_size_pixels / font_atlas.font_size_pixels
+
+  untrimmed_char_ui_dim := Dim {
+    w = raw_char_bounding_box_dim.w * scale,
+    h = raw_char_bounding_box_dim.h * scale,
+  }
+  untrimmed_char_ui_pos := center_within_container(untrimmed_char_ui_dim, container_pos, container_dim)
+
+  char_trim := Trim {
+    left  = max(0, container_trim.left - (untrimmed_char_ui_pos.x - container_pos.x)),
+    right = max(
+      0,
+      container_trim.right - (container_pos.x + container_dim.w - untrimmed_char_ui_pos.x - untrimmed_char_ui_dim.w),
+    ),
+    top   = max(
+      0,
+      container_trim.top - (container_pos.y + container_dim.h - untrimmed_char_ui_pos.y - untrimmed_char_ui_dim.h),
+    ),
+    bot   = max(0, container_trim.bot - (untrimmed_char_ui_pos.y - container_pos.y)),
+  }
+
+  trimmed_char_ui_dim := Dim {
+    w = untrimmed_char_ui_dim.w - char_trim.left - char_trim.right,
+    h = untrimmed_char_ui_dim.h - char_trim.top - char_trim.bot,
+  }
+  trimmed_char_ui_pos := Pos {
+    x = untrimmed_char_ui_pos.x + char_trim.left,
+    y = untrimmed_char_ui_pos.y + char_trim.bot,
+  }
+
+  trimmed_char_texture_data := TextureData {
+    type = .Mask,
+    base = Pos {
+      x = raw_char_bounding_box_pos.x + (char_trim.left / scale),
+      y = raw_char_bounding_box_pos.y - (char_trim.bot / scale),
+    },
+    dim = Dim {
+      w = raw_char_bounding_box_dim.w - (char_trim.left + char_trim.right) / scale,
+      h = raw_char_bounding_box_dim.h - (char_trim.top + char_trim.bot) / scale,
+    },
+    tex_idx = font_texture_to_idx(font_atlas.font),
+  }
+  char_drawable: Drawable = {
+    colour          = colour,
+    dim             = trimmed_char_ui_dim,
+    pos             = trimmed_char_ui_pos,
+    z               = z,
+    override_colour = false,
+    texture_data    = trimmed_char_texture_data,
+  }
+  push_drawable(char_drawable)
+}
+
+draw_char :: proc(c: rune, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
   glyph_info, ok := font_atlas.char_map[c]
   if !ok {
     fmt.eprintln("c =", c)
@@ -137,7 +208,7 @@ draw_string :: proc(chars: string, font_atlas: FontAtlas, pos: Pos, z: f32, font
       x = x,
       y = pos.y,
     }
-    draw_char(c, font_atlas, char_pos, z, font_size_pixels, colour, {})
+    draw_char(c, font_atlas, char_pos, z, font_size_pixels, colour)
     scale := font_size_pixels / font_atlas.font_size_pixels
     glyph_info := font_atlas.char_map[c]
     x += scale * cast(f32)glyph_info.advance_width

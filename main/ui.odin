@@ -12,7 +12,6 @@ UiState :: struct {
 }
 
 update_ui_state :: proc(id: u64, pos: Pos, dim: Dim, z: f32) {
-  // TODO - this will need to know about trim too, or the pos and dim passed in will need to be updated, not sure which is better
   if (is_cursor_inside(pos, dim) && gc.ui.active_id == 0 && gc.ui.next_hot_z < z) ||
      (is_cursor_inside(pos, dim) && gc.ui.active_id == id) {
     gc.ui.next_hot_id = id
@@ -38,18 +37,6 @@ grid_button :: proc(
     text_colour = BLACK
   } else if (gc.ui.hot_id == id) {
     bg_colour = DARK_GREY
-    text_colour = colour
-  } else if (trim.left != 0) {
-    bg_colour = PINK
-    text_colour = colour
-  } else if (trim.right != 0) {
-    bg_colour = YELLOW
-    text_colour = colour
-  } else if (trim.top != 0) {
-    bg_colour = WHITE
-    text_colour = colour
-  } else if (trim.bot != 0) {
-    bg_colour = BLUE
     text_colour = colour
   } else {
     bg_colour = BLACK
@@ -78,7 +65,7 @@ grid_button :: proc(
     h = raw_char_dim.h * scale,
   }
   char_pos := center_within_container(char_dim, pos, dim)
-  draw_char(char, font_atlas, char_pos, z, font_size, text_colour, trim)
+  draw_trimmed_char(char, font_atlas, pos, dim, trim, font_size, z, colour)
   return gc.ui.triggered_id == id
 }
 

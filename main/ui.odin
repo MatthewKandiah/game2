@@ -31,7 +31,6 @@ grid_button :: proc(
   colour: Colour,
   trim: Trim,
 ) -> bool {
-  update_ui_state(id, pos, dim, z)
   bg_colour: Colour
   text_colour: Colour
   if (gc.ui.active_id == id) {
@@ -57,7 +56,17 @@ grid_button :: proc(
     text_colour = colour
   }
 
-  draw_rect(pos, z, dim, bg_colour)
+  trimmed_pos := Pos {
+    x = pos.x + trim.left,
+    y = pos.y + trim.bot,
+  }
+  trimmed_dim := Dim {
+    w = dim.w - trim.left - trim.right,
+    h = dim.h - trim.top - trim.bot,
+  }
+  update_ui_state(id, trimmed_pos, trimmed_dim, z)
+
+  draw_rect(trimmed_pos, z, trimmed_dim, bg_colour)
   font_atlas := FONTS[font]
   scale := font_size / font_atlas.font_size_pixels
   raw_char_dim := Dim {
@@ -69,7 +78,7 @@ grid_button :: proc(
     h = raw_char_dim.h * scale,
   }
   char_pos := center_within_container(char_dim, pos, dim)
-  draw_char(char, font_atlas, char_pos, z, font_size, text_colour)
+  draw_char(char, font_atlas, char_pos, z, font_size, text_colour, trim)
   return gc.ui.triggered_id == id
 }
 

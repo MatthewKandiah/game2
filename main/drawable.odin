@@ -101,15 +101,7 @@ draw_drawables :: proc() {
   MASK_DRAWABLES_COUNT = 0
 }
 
-/*
- * TODO - Trimming: want to be able to draw this box but cropped from any side
- * Note: First attempt didn't work. We aren't simply trimming the sampled image,
- * we are trimming the container box we're drawing, and possibly trimming the rendered character if the trim reaches it
- * so we need to compare the trim size from each edge with the character's bonding box to find if we're trimming the character at all, then use that info to set the texture data
- * then we update the pos and dim of the containing box to reflect the trim and it should work
- */
-
-draw_char :: proc(c: rune, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
+draw_char :: proc(c: rune, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour, trim: Trim) {
   glyph_info, ok := font_atlas.char_map[c]
   if !ok {
     fmt.eprintln("c =", c)
@@ -145,7 +137,7 @@ draw_string :: proc(chars: string, font_atlas: FontAtlas, pos: Pos, z: f32, font
       x = x,
       y = pos.y,
     }
-    draw_char(c, font_atlas, char_pos, z, font_size_pixels, colour)
+    draw_char(c, font_atlas, char_pos, z, font_size_pixels, colour, {})
     scale := font_size_pixels / font_atlas.font_size_pixels
     glyph_info := font_atlas.char_map[c]
     x += scale * cast(f32)glyph_info.advance_width

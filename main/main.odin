@@ -125,16 +125,16 @@ main :: proc() {
     time.stopwatch_reset(&stopwatch)
   }
 
-  game_grid_buf := [GRID_WIDTH * GRID_HEIGHT]GridTile{}
+  game_grid_buf := make([]GridTile, GRID_WIDTH * GRID_HEIGHT)
+  valid_player_pos := init_grid_tiles(game_grid_buf)
   game := Game {
     mode = .MainMenu,
-    grid = game_grid_buf[:],
-    player_pos = GridPos{x = 0, y = 0},
-    viewport_centre = GridPos{x = 0, y = 0},
+    grid = game_grid_buf,
+    player_pos = valid_player_pos,
+    viewport_centre = valid_player_pos,
     is_looking = false,
     zoom_level = 1,
   }
-  init_grid_tiles(game.grid)
 
   // main loop
   for !glfw.WindowShouldClose(gc.window) {

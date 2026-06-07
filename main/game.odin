@@ -1,7 +1,13 @@
 package main
 
-GRID_WIDTH :: 30
-GRID_HEIGHT :: 30
+import "core:fmt"
+import "core:math/rand"
+
+GRID_WIDTH :: 50
+GRID_HEIGHT :: 50
+ROOM_COUNT :: 20
+ROOM_MAX_DIM :: 7
+ROOM_MIN_DIM :: 3
 
 Game :: struct {
   mode:            GameMode,
@@ -29,30 +35,75 @@ GridTileDrawInfo :: struct {
 }
 
 grid_tile_draw_info := [GridTile]GridTileDrawInfo {
-  .Floor = GridTileDrawInfo{char = '.', colour = GREY},
-  .Wall = GridTileDrawInfo{char = '#', colour = WHITE},
+  .Floor = GridTileDrawInfo{char = '.', colour = DARK_GREY},
+  .Wall = GridTileDrawInfo{char = '#', colour = GREY},
   .Player = GridTileDrawInfo{char = '@', colour = YELLOW},
 }
 
-init_grid_tiles :: proc(tiles: []GridTile) {
+init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
   for &tile in tiles {
     tile = .Wall
   }
 
-  // bottom row should be floor
-  for i in 0 ..< GRID_WIDTH {
-    grid_set(tiles, GridPos{x = cast(i32)i, y = 0}, .Floor)
+  // Place a bunch of random connected rooms
+  rooms := [ROOM_COUNT]GridRect{}
+  for &room in rooms {
+    room = GridRect {
+      pos = GridPos {
+        x = rand.int32_range(1, GRID_WIDTH - ROOM_MAX_DIM - 1),
+        y = rand.int32_range(1, GRID_HEIGHT - ROOM_MAX_DIM - 1),
+      },
+      dim = GridDim {
+        w = rand.int32_range(ROOM_MIN_DIM, ROOM_MAX_DIM + 1),
+        h = rand.int32_range(ROOM_MIN_DIM, ROOM_MAX_DIM + 1),
+      },
+    }
+
+    for room_x in 0 ..< room.dim.w {
+      for room_y in 0 ..< room.dim.h {
+        grid_set(tiles, GridPos{x = room.pos.x + room_x, y = room.pos.y + room_y}, .Floor)
+      }
+    }
   }
 
-  // left column should be floor
-  for i in 0 ..< GRID_HEIGHT {
-    grid_set(tiles, GridPos{x = 0, y = cast(i32)i}, .Floor)
+  // Connect rooms with corridors
+  prev_room := rooms[len(rooms) - 1] // first connect to last, make a ring
+  for room in rooms {
+    prev_room_pos := GridPos {
+      x = prev_room.pos.x + rand.int32_range(0, prev_room.dim.w),
+      y = prev_room.pos.y + rand.int32_range(0, prev_room.dim.h),
+    }
+    room_pos := GridPos {
+      x = room.pos.x + rand.int32_range(0, room.dim.w),
+      y = room.pos.y + rand.int32_range(0, room.dim.h),
+    }
+    x_len := abs(room_pos.x - prev_room_pos.x)
+    y_len := abs(room_pos.y - prev_room_pos.y)
+    x_min := min(room_pos.x, prev_room_pos.x)
+    y_min := min(room_pos.y, prev_room_pos.y)
+
+    if rand.float32() < 0.5 {
+      // across then up
+      for x in x_min ..= x_min + x_len {
+        grid_set(tiles, GridPos{x = x, y = prev_room_pos.y}, .Floor)
+      }
+      for y in y_min ..= y_min + y_len {
+        grid_set(tiles, GridPos{x = room_pos.x, y = y}, .Floor)
+      }
+    } else {
+      // up then across
+      for y in y_min ..= y_min + y_len {
+        grid_set(tiles, GridPos{x = prev_room_pos.x, y = y}, .Floor)
+      }
+      for x in x_min ..= x_min + x_len {
+        grid_set(tiles, GridPos{x = x, y = room_pos.y}, .Floor)
+      }
+    }
+
+    prev_room = room
   }
 
-  // diagonal pathway for walking test
-  grid_set(tiles, GridPos{x = 2, y = 3}, .Floor)
-  grid_set(tiles, GridPos{x = 1, y = 2}, .Floor)
-  grid_set(tiles, GridPos{x = 1, y = 4}, .Floor)
+  return rooms[0].pos
 }
 
 grid_pos_to_idx :: proc(pos: GridPos) -> i32 {

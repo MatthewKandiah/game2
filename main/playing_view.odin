@@ -313,7 +313,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
     }
   case .ZoomOutClick:
     {
-      game.zoom_level = max(0.2, game.zoom_level - 0.2)
+      game.zoom_level = max(0.6, game.zoom_level - 0.2)
     }
   case .ResetZoomClick:
     {

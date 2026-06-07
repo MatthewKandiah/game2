@@ -9,6 +9,8 @@ GridTileType :: enum {
   Player,
 }
 
+// TODO - maybe pull `is_visible` and `is_known` into an enum? A pair of bools allows more states than the game does, you can't reasonably be visible but not known
+// an enum could be UNKNOWN, KNOWN, VISIBLE
 GridTile :: struct {
   type:       GridTileType,
   is_visible: bool,

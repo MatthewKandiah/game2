@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 import "core:hash/xxhash"
+import "base:runtime"
 
 UiState :: struct {
   hot_id:       u64,
@@ -107,14 +108,7 @@ center_within_container :: proc(dim: Dim, container_pos: Pos, container_dim: Dim
   return Pos{x = container_pos.x + dw / 2, y = container_pos.y + dh / 2}
 }
 
-get_uid :: proc {
-  get_uid_default,
-  get_uid_with_differentiator,
-}
-get_uid_default :: proc(file: string, line: u32) -> u64 {
-  return get_uid_with_differentiator(file, line, 0)
-}
-get_uid_with_differentiator :: proc(file: string, line: u32, d: u32) -> u64 {
-  seed: u64 = (cast(u64)line << 32) | cast(u64)d
-  return xxhash.XXH3_64_with_seed(transmute([]u8)file, seed)
+get_uid :: proc(d: u32 = 0, loc: runtime.Source_Code_Location = #caller_location) -> u64 {
+  seed: u64 = (cast(u64)loc.line << 32) | cast(u64)d
+  return xxhash.XXH3_64_with_seed(transmute([]u8)loc.file_path, seed)
 }

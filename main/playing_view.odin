@@ -90,14 +90,14 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
     x = ui_pos_top_left.x + gap,
     y = ui_pos_top_left.y - gap - button_dim.h,
   }
-  if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .LookClick,
     }
   }
   ui_pos.y -= button_dim.h
   ui_pos.y -= gap
-  if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .RecentreClick,
     }
@@ -112,13 +112,13 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
       h = button_dim.h,
     }
     zoom_button_pos := ui_pos
-    if text_button(get_uid(#file, #line), zoom_button_pos, zoom_button_dim, 0.1, "+", FONT_MEDIUM, .Ubuntu) {
+    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "+", FONT_MEDIUM, .Ubuntu) {
       action = {
         type = .ZoomInClick,
       }
     }
     zoom_button_pos.x += zoom_button_dim.w
-    if text_button(get_uid(#file, #line), zoom_button_pos, zoom_button_dim, 0.1, "-", FONT_MEDIUM, .Ubuntu) {
+    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "-", FONT_MEDIUM, .Ubuntu) {
       action = {
         type = .ZoomOutClick,
       }
@@ -128,7 +128,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
   ui_pos.y -= button_dim.h
   ui_pos.y -= gap
 
-  if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .ResetZoomClick,
     }
@@ -143,7 +143,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
       h = button_dim.h,
     }
     viewport_button_pos := ui_pos
-    if text_button(get_uid(#file, #line), viewport_button_pos, viewport_button_dim, 0.1, "Left", FONT_SMALL, .Ubuntu) {
+    if text_button(get_uid(), viewport_button_pos, viewport_button_dim, 0.1, "Left", FONT_SMALL, .Ubuntu) {
       grid_pos := GridPos {
         x = max(0, game.viewport_centre.x - 1),
         y = game.viewport_centre.y,
@@ -155,7 +155,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
       }
     }
     viewport_button_pos.x += viewport_button_dim.w
-    if text_button(get_uid(#file, #line), viewport_button_pos, viewport_button_dim, 0.1, "Down", FONT_SMALL, .Ubuntu) {
+    if text_button(get_uid(), viewport_button_pos, viewport_button_dim, 0.1, "Down", FONT_SMALL, .Ubuntu) {
       grid_pos := GridPos {
         x = game.viewport_centre.x,
         y = max(0, game.viewport_centre.y - 1),
@@ -167,7 +167,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
       }
     }
     viewport_button_pos.x += viewport_button_dim.w
-    if text_button(get_uid(#file, #line), viewport_button_pos, viewport_button_dim, 0.1, "Up", FONT_SMALL, .Ubuntu) {
+    if text_button(get_uid(), viewport_button_pos, viewport_button_dim, 0.1, "Up", FONT_SMALL, .Ubuntu) {
       grid_pos := GridPos {
         x = game.viewport_centre.x,
         y = min(GRID_HEIGHT - 1, game.viewport_centre.y + 1),
@@ -179,7 +179,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
       }}
     viewport_button_pos.x += viewport_button_dim.w
     if text_button(
-      get_uid(#file, #line),
+      get_uid(),
       viewport_button_pos,
       viewport_button_dim,
       0.1,
@@ -202,7 +202,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
     ui_pos.y -= gap
   }
 
-  if text_button(get_uid(#file, #line), ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .ExitClick,
     }
@@ -253,7 +253,7 @@ grid :: proc(
       if grid_pos == game.player_pos {
         draw_info := grid_tile_draw_info[.Player]
         if grid_button(
-          get_uid(#file, #line),
+          get_uid(),
           ui_pos,
           grid_button_dim,
           0.06,
@@ -272,7 +272,7 @@ grid :: proc(
         if tile.is_known {
           draw_info := grid_tile_draw_info[tile.type]
           if grid_button(
-            get_uid(#file, #line, d),
+            get_uid(d),
             ui_pos,
             grid_button_dim,
             0.05,

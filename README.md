@@ -5,6 +5,7 @@
 - [x] Put the player in one room
 - [ ] Line of sight
   - [ ] Line drawing on a grid
+  - [ ] For each tile in the vision range, draw a line from the player and check if it hits a wall
 - [ ] Memory of revealed tiles
 - [ ] Minimap
 
@@ -15,3 +16,4 @@
     - Specifically calls out that "Bresenham is the fastest line drawing algorithm" is accepted knowledge from a long time ago. Optimizing compilers are much more sophisticated now, and tend to handle simple code much more efficiently. Floating point operations used to be much more expensive that integer operations, that's not really true anymore (I think individual operations may still be slightly more expensive, but CPU micro-op pipelining and out-of-order execution minimises impact of that on throughput when doing a block of operations)
 	- Maybe worth writing both and profiling? Or just use the simplest one, and profile if it turns out that it's not fast enough?
   - LERP reference mentions you can optimise that simple algorithm into DDA https://en.wikipedia.org/wiki/Digital_differential_analyzer_(graphics_algorithm)
+- Bunch of different methods for line of sight calculations (including some fast approximate methods which may be useful later when we need to calculate this for lots of monsters!) https://www.roguebasin.com/index.php/Field_of_Vision

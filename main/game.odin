@@ -40,7 +40,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
           y = from.y + cast(i32)row_idx,
         }
         if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-        if grid_distance(check_pos, to) > PLAYER_VIEW_RADIUS {
+        if !is_visible(check_pos, to) {
           grid_set_visible(game.grid, check_pos, false)
         }
       }
@@ -55,11 +55,15 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
           y = from.y + cast(i32)row_idx,
         }
         if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-        if grid_distance(check_pos, to) <= PLAYER_VIEW_RADIUS {
+        if is_visible(check_pos, to) {
           grid_set_visible(game.grid, check_pos, true)
           grid_set_known(game.grid, check_pos, true)
         }
       }
     }
   }
+}
+
+is_visible :: proc(check_pos, player_pos: GridPos) -> bool {
+  return grid_distance(check_pos, player_pos) <= PLAYER_VIEW_RADIUS
 }

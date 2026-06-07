@@ -135,6 +135,7 @@ main :: proc() {
     is_looking = false,
     zoom_level = 1,
   }
+  game_player_move(&game, valid_player_pos) // slightly hacky, want to update known and visible grid values
 
   // main loop
   for !glfw.WindowShouldClose(gc.window) {

@@ -23,107 +23,43 @@ GameMode :: enum {
   Playing,
 }
 
-GridTileType :: enum {
-  Wall,
-  Floor,
-  Player,
-}
+// TODO - blocking LOS
+// for now just say player can see all tiles up to a set distance
+PLAYER_VIEW_RADIUS :: 7
 
-GridTile :: struct {
-  type:       GridTileType,
-  is_visible: bool,
-  is_known:   bool,
-}
+game_player_move :: proc(game: ^Game, to: GridPos) {
+  from := game.player_pos
+  game.player_pos = to
+  game.viewport_centre = to
 
-GridTileDrawInfo :: struct {
-  char:   rune,
-  colour: Colour,
-}
-
-grid_tile_draw_info := [GridTileType]GridTileDrawInfo {
-  .Floor = GridTileDrawInfo{char = '.', colour = DARK_GREY},
-  .Wall = GridTileDrawInfo{char = '#', colour = GREY},
-  .Player = GridTileDrawInfo{char = '@', colour = YELLOW},
-}
-
-init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
-  for &tile in tiles {
-    tile.type = .Wall
-  }
-
-  // Place a bunch of random connected rooms
-  rooms := [ROOM_COUNT]GridRect{}
-  for &room in rooms {
-    room = GridRect {
-      pos = GridPos {
-        x = rand.int32_range(1, GRID_WIDTH - ROOM_MAX_DIM - 1),
-        y = rand.int32_range(1, GRID_HEIGHT - ROOM_MAX_DIM - 1),
-      },
-      dim = GridDim {
-        w = rand.int32_range(ROOM_MIN_DIM, ROOM_MAX_DIM + 1),
-        h = rand.int32_range(ROOM_MIN_DIM, ROOM_MAX_DIM + 1),
-      },
-    }
-
-    for room_x in 0 ..< room.dim.w {
-      for room_y in 0 ..< room.dim.h {
-        grid_set(
-          tiles,
-          GridPos{x = room.pos.x + room_x, y = room.pos.y + room_y},
-          {type = .Floor, is_known = false, is_visible = false},
-        )
+  {   // check for tiles that are no longer visible
+    for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
+      for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
+        check_pos := GridPos {
+          x = from.x + cast(i32)col_idx,
+          y = from.y + cast(i32)row_idx,
+        }
+        if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
+        if grid_distance(check_pos, to) > PLAYER_VIEW_RADIUS {
+          grid_set_visible(game.grid, check_pos, false)
+        }
       }
     }
   }
 
-  // Connect rooms with corridors
-  prev_room := rooms[len(rooms) - 1] // first connect to last, make a ring
-  for room in rooms {
-    prev_room_pos := GridPos {
-      x = prev_room.pos.x + rand.int32_range(0, prev_room.dim.w),
-      y = prev_room.pos.y + rand.int32_range(0, prev_room.dim.h),
-    }
-    room_pos := GridPos {
-      x = room.pos.x + rand.int32_range(0, room.dim.w),
-      y = room.pos.y + rand.int32_range(0, room.dim.h),
-    }
-    x_len := abs(room_pos.x - prev_room_pos.x)
-    y_len := abs(room_pos.y - prev_room_pos.y)
-    x_min := min(room_pos.x, prev_room_pos.x)
-    y_min := min(room_pos.y, prev_room_pos.y)
-
-    if rand.float32() < 0.5 {
-      // across then up
-      for x in x_min ..= x_min + x_len {
-        grid_set(tiles, GridPos{x = x, y = prev_room_pos.y}, {type = .Floor, is_known = false, is_visible = false})
-      }
-      for y in y_min ..= y_min + y_len {
-        grid_set(tiles, GridPos{x = room_pos.x, y = y}, {type = .Floor, is_known = false, is_visible = false})
-      }
-    } else {
-      // up then across
-      for y in y_min ..= y_min + y_len {
-        grid_set(tiles, GridPos{x = prev_room_pos.x, y = y}, {type = .Floor, is_known = false, is_visible = false})
-      }
-      for x in x_min ..= x_min + x_len {
-        grid_set(tiles, GridPos{x = x, y = room_pos.y}, {type = .Floor, is_known = false, is_visible = false})
+  {   // check for tiles that are now visible and/or known
+    for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
+      for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
+        check_pos := GridPos {
+          x = to.x + cast(i32)col_idx,
+          y = from.y + cast(i32)row_idx,
+        }
+        if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
+        if grid_distance(check_pos, to) <= PLAYER_VIEW_RADIUS {
+          grid_set_visible(game.grid, check_pos, true)
+          grid_set_known(game.grid, check_pos, true)
+        }
       }
     }
-
-    prev_room = room
   }
-
-  return rooms[0].pos
-}
-
-grid_pos_to_idx :: proc(pos: GridPos) -> i32 {
-  return pos.x + (GRID_HEIGHT - 1 - pos.y) * GRID_WIDTH
-}
-
-grid_get :: proc(grid: []GridTile, pos: GridPos) -> GridTile {
-  return grid[grid_pos_to_idx(pos)]
-}
-
-grid_set :: proc(grid: []GridTile, pos: GridPos, value: GridTile) {
-  grid[grid_pos_to_idx(pos)] = value
 }

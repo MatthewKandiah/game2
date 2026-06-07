@@ -268,22 +268,24 @@ grid :: proc(
           }
         }
       } else {
-        tile := grid_get(game.grid[:], grid_pos)
-        draw_info := grid_tile_draw_info[tile.type]
-        if grid_button(
-          get_uid(#file, #line, d),
-          ui_pos,
-          grid_button_dim,
-          0.05,
-          draw_info.char,
-          font_size,
-          .UbuntuMono,
-          draw_info.colour,
-          trim,
-        ) {
-          action = {
-            type = .GridClick,
-            data = GridClickData{pos = grid_pos, tile_type = tile.type},
+        tile := grid_get(game.grid, grid_pos)
+        if tile.is_known {
+          draw_info := grid_tile_draw_info[tile.type]
+          if grid_button(
+            get_uid(#file, #line, d),
+            ui_pos,
+            grid_button_dim,
+            0.05,
+            draw_info.char,
+            font_size,
+            .UbuntuMono,
+            draw_info.colour if tile.is_visible else DARK_GREY,
+            trim,
+          ) {
+            action = {
+              type = .GridClick,
+              data = GridClickData{pos = grid_pos, tile_type = tile.type},
+            }
           }
         }
       }
@@ -330,8 +332,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         if data.tile_type == .Floor &&
            (abs(data.pos.x - game.player_pos.x) <= 1) &&
            (abs(data.pos.y - game.player_pos.y) <= 1) {
-          game.player_pos = data.pos
-          game.viewport_centre = data.pos
+          game_player_move(game, data.pos)
         }
       }
     }

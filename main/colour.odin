@@ -47,9 +47,9 @@ GREY :: Colour {
 }
 
 DARK_GREY :: Colour {
-  r = 0.1,
-  g = 0.1,
-  b = 0.1,
+  r = 0.05,
+  g = 0.05,
+  b = 0.05,
 }
 
 PINK :: Colour {

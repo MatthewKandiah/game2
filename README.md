@@ -8,6 +8,7 @@
   - [ ] For each tile in the vision range, draw a line from the player and check if it hits a wall
 - [ ] Memory of revealed tiles
 - [ ] Minimap
+- [ ] Flip png data to use bottom left origin consistently
 
 # NOTES
 - Line of sight is going to need a method for drawing a line in grid tiles from point A to B

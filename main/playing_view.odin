@@ -25,8 +25,8 @@ PlayingViewActionData :: union {
 }
 
 GridClickData :: struct {
-  pos:  GridPos,
-  tile: GridTile,
+  pos:       GridPos,
+  tile_type: GridTileType,
 }
 
 playing_view :: proc(game: ^Game) {
@@ -148,10 +148,10 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
         x = max(0, game.viewport_centre.x - 1),
         y = game.viewport_centre.y,
       }
-      tile := grid_get(game.grid[:], grid_pos)
+      tile := grid_get(game.grid, grid_pos)
       action = {
         type = .GridClick,
-        data = GridClickData{pos = grid_pos, tile = tile},
+        data = GridClickData{pos = grid_pos, tile_type = tile.type},
       }
     }
     viewport_button_pos.x += viewport_button_dim.w
@@ -163,7 +163,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
       tile := grid_get(game.grid[:], grid_pos)
       action = {
         type = .GridClick,
-        data = GridClickData{pos = grid_pos, tile = tile},
+        data = GridClickData{pos = grid_pos, tile_type = tile.type},
       }
     }
     viewport_button_pos.x += viewport_button_dim.w
@@ -175,7 +175,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
       tile := grid_get(game.grid[:], grid_pos)
       action = {
         type = .GridClick,
-        data = GridClickData{pos = grid_pos, tile = tile},
+        data = GridClickData{pos = grid_pos, tile_type = tile.type},
       }}
     viewport_button_pos.x += viewport_button_dim.w
     if text_button(
@@ -194,7 +194,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
       tile := grid_get(game.grid[:], grid_pos)
       action = {
         type = .GridClick,
-        data = GridClickData{pos = grid_pos, tile = tile},
+        data = GridClickData{pos = grid_pos, tile_type = tile.type},
       }}
     viewport_button_pos.x += viewport_button_dim.w
 
@@ -269,7 +269,7 @@ grid :: proc(
         }
       } else {
         tile := grid_get(game.grid[:], grid_pos)
-        draw_info := grid_tile_draw_info[tile]
+        draw_info := grid_tile_draw_info[tile.type]
         if grid_button(
           get_uid(#file, #line, d),
           ui_pos,
@@ -283,7 +283,7 @@ grid :: proc(
         ) {
           action = {
             type = .GridClick,
-            data = GridClickData{pos = grid_pos, tile = tile},
+            data = GridClickData{pos = grid_pos, tile_type = tile.type},
           }
         }
       }
@@ -327,7 +327,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       if game.is_looking {
         game.viewport_centre = data.pos
       } else {
-        if data.tile == .Floor &&
+        if data.tile_type == .Floor &&
            (abs(data.pos.x - game.player_pos.x) <= 1) &&
            (abs(data.pos.y - game.player_pos.y) <= 1) {
           game.player_pos = data.pos

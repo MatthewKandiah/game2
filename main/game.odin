@@ -23,10 +23,16 @@ GameMode :: enum {
   Playing,
 }
 
-GridTile :: enum {
+GridTileType :: enum {
   Wall,
   Floor,
   Player,
+}
+
+GridTile :: struct {
+  type:       GridTileType,
+  is_visible: bool,
+  is_known:   bool,
 }
 
 GridTileDrawInfo :: struct {
@@ -34,7 +40,7 @@ GridTileDrawInfo :: struct {
   colour: Colour,
 }
 
-grid_tile_draw_info := [GridTile]GridTileDrawInfo {
+grid_tile_draw_info := [GridTileType]GridTileDrawInfo {
   .Floor = GridTileDrawInfo{char = '.', colour = DARK_GREY},
   .Wall = GridTileDrawInfo{char = '#', colour = GREY},
   .Player = GridTileDrawInfo{char = '@', colour = YELLOW},
@@ -42,7 +48,7 @@ grid_tile_draw_info := [GridTile]GridTileDrawInfo {
 
 init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
   for &tile in tiles {
-    tile = .Wall
+    tile.type = .Wall
   }
 
   // Place a bunch of random connected rooms
@@ -61,7 +67,11 @@ init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
 
     for room_x in 0 ..< room.dim.w {
       for room_y in 0 ..< room.dim.h {
-        grid_set(tiles, GridPos{x = room.pos.x + room_x, y = room.pos.y + room_y}, .Floor)
+        grid_set(
+          tiles,
+          GridPos{x = room.pos.x + room_x, y = room.pos.y + room_y},
+          {type = .Floor, is_known = false, is_visible = false},
+        )
       }
     }
   }
@@ -85,18 +95,18 @@ init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
     if rand.float32() < 0.5 {
       // across then up
       for x in x_min ..= x_min + x_len {
-        grid_set(tiles, GridPos{x = x, y = prev_room_pos.y}, .Floor)
+        grid_set(tiles, GridPos{x = x, y = prev_room_pos.y}, {type = .Floor, is_known = false, is_visible = false})
       }
       for y in y_min ..= y_min + y_len {
-        grid_set(tiles, GridPos{x = room_pos.x, y = y}, .Floor)
+        grid_set(tiles, GridPos{x = room_pos.x, y = y}, {type = .Floor, is_known = false, is_visible = false})
       }
     } else {
       // up then across
       for y in y_min ..= y_min + y_len {
-        grid_set(tiles, GridPos{x = prev_room_pos.x, y = y}, .Floor)
+        grid_set(tiles, GridPos{x = prev_room_pos.x, y = y}, {type = .Floor, is_known = false, is_visible = false})
       }
       for x in x_min ..= x_min + x_len {
-        grid_set(tiles, GridPos{x = x, y = room_pos.y}, .Floor)
+        grid_set(tiles, GridPos{x = x, y = room_pos.y}, {type = .Floor, is_known = false, is_visible = false})
       }
     }
 

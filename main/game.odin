@@ -32,7 +32,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
   game.player_pos = to
   game.viewport_centre = to
 
-  {   // check for tiles that are no longer visible
+  {   // clear visibility on tiles for player's previous position
     for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
       for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
         check_pos := GridPos {
@@ -40,13 +40,14 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
           y = from.y + cast(i32)row_idx,
         }
         if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-        if !is_visible(check_pos, to) {
-          grid_set_visible(game.grid, check_pos, false)
-        }
+        grid_set_visible(game.grid, check_pos, false)
       }
     }
   }
 
+  // TODO - instead of checking if each tile is visible, walk a path from the centre to each square on the edge and mark any tile we can reach before hitting a wall as visible
+  // scales linearly in PLAYER_VIEW_RADIUS instead of quadratically
+  // we could add more logic to this (like is looking through diagonal crack going to look too weird, we could let you "peek" through it but not see as far as normal)
   {   // check for tiles that are now visible and/or known
     for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
       for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
@@ -55,7 +56,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
           y = from.y + cast(i32)row_idx,
         }
         if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-        if is_visible(check_pos, to) {
+        if is_visible(game.grid, check_pos, to) {
           grid_set_visible(game.grid, check_pos, true)
           grid_set_known(game.grid, check_pos, true)
         }
@@ -64,6 +65,9 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
   }
 }
 
-is_visible :: proc(check_pos, player_pos: GridPos) -> bool {
+is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos) -> bool {
+  path_buf := [GRID_WIDTH + GRID_HEIGHT]GridPos{}
+  path_count := 0
+  // TODO - draw a line from the middle of player_pos to the middle of check_pos, every grid cell we pass through is appended to path, then we can process that to decide if the end pos is visible
   return grid_distance(check_pos, player_pos) <= PLAYER_VIEW_RADIUS
 }

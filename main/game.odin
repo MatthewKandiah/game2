@@ -65,9 +65,20 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
   }
 }
 
+// TODO - this makes corners less visible than I'd like, we'll need to tweak. Just "does this line cross a wall" is too strict
 is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos) -> bool {
-  path_buf := [GRID_WIDTH + GRID_HEIGHT]GridPos{}
-  path_count := 0
-  // TODO - draw a line from the middle of player_pos to the middle of check_pos, every grid cell we pass through is appended to path, then we can process that to decide if the end pos is visible
-  return grid_distance(check_pos, player_pos) <= PLAYER_VIEW_RADIUS
+  if grid_distance(check_pos, player_pos) > PLAYER_VIEW_RADIUS {
+    return false
+  }
+
+  path, path_count := supercover(GRID_WIDTH + GRID_HEIGHT, player_pos, check_pos)
+
+  for path_pos in path[0:path_count - 1] {
+    path_tile := grid_get(grid, path_pos)
+    if path_tile.type == .Wall {
+      return false
+    }
+  }
+
+  return true
 }

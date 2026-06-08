@@ -1,19 +1,23 @@
 package main
 
+import "core:fmt"
 import "core:math"
 import "core:testing"
 
 // N: max size of our path (to avoid heap allocation)
 // populate path_buf with each tile that a line from the middle of start to the middle of end would pass through
+// populate entry_buf with the points where that line enters each tile
 // path includes start and end
-supercover :: proc($N: i32, start, end: GridPos) -> (path_buf: [N]GridPos, path_count: i32) {
-  path_buf[0] = start
-  path_count = 1
-
-  pos: Pos = Pos {
+supercover :: proc($N: i32, start, end: GridPos) -> (path_buf: [N]GridPos, entry_buf: [N]Pos, count: i32) {
+  start_pos: Pos = Pos {
     x = cast(f32)start.x + 0.5,
     y = cast(f32)start.y + 0.5,
   }
+  pos := start_pos
+  entry_pos: Pos = start_pos
+  path_buf[0] = start
+  entry_buf[0] = entry_pos
+  count = 1
 
   dx := cast(f32)end.x - cast(f32)start.x
   dy := cast(f32)end.y - cast(f32)start.y
@@ -27,26 +31,52 @@ supercover :: proc($N: i32, start, end: GridPos) -> (path_buf: [N]GridPos, path_
   iy: f32 = 0
 
   for (ix < abs(dx) || iy < abs(dy)) {
-    assert(path_count < N, "buffer size too small, next iteration will overflow")
+    assert(count < N, "buffer size too small, next iteration will overflow")
     decision := (1 + 2 * ix) * ny - (1 + 2 * iy) * nx
-    step_hor := decision <= 0
-    step_ver := decision >= 0
+    step_hor := decision < 0
+    step_ver := decision > 0
+    step_diag := decision == 0
     if step_hor {
+      x_edge := start_pos.x + (ix + 0.5) * sign_x
+      y_edge := start_pos.y + (x_edge - start_pos.x) * dy / dx
+      entry_pos = {
+        x = x_edge,
+        y = y_edge,
+      }
       pos.x += sign_x
       ix += 1
     }
     if step_ver {
+      y_edge := start_pos.y + (iy + 0.5) * sign_y
+      x_edge := start_pos.x + (y_edge - start_pos.y) * dx / dy
+      entry_pos = {
+        x = x_edge,
+        y = y_edge,
+      }
       pos.y += sign_y
       iy += 1
     }
-    path_buf[path_count] = GridPos {
+    if step_diag {
+      x_edge := start_pos.x + (ix + 0.5) * sign_x
+      y_edge := start_pos.y + (iy + 0.5) * sign_y
+      entry_pos = {
+        x = x_edge,
+        y = y_edge,
+      }
+      pos.x += sign_x
+      ix += 1
+      pos.y += sign_y
+      iy += 1
+    }
+    path_buf[count] = GridPos {
       x = cast(i32)math.floor(pos.x),
       y = cast(i32)math.floor(pos.y),
     }
-    path_count += 1
+    entry_buf[count] = entry_pos
+    count += 1
   }
 
-  return path_buf, path_count
+  return path_buf, entry_buf, count
 }
 
 @(test)
@@ -60,7 +90,7 @@ supercover_horizontal_right :: proc(t: ^testing.T) {
     y = 7,
   }
 
-  path, path_count := supercover(6, start, end)
+  path, _, path_count := supercover(6, start, end)
 
   testing.expect_value(t, path_count, end.x - start.x + 1)
   testing.expect_value(t, path[0], GridPos{x = start.x + 0, y = start.y})
@@ -82,7 +112,7 @@ supercover_horizontal_left :: proc(t: ^testing.T) {
     y = -2,
   }
 
-  path, path_count := supercover(3, start, end)
+  path, _, path_count := supercover(3, start, end)
 
   testing.expect_value(t, path_count, start.x - end.x + 1)
   testing.expect_value(t, path[0], GridPos{x = start.x - 0, y = start.y})
@@ -101,7 +131,7 @@ supercover_vertical_up :: proc(t: ^testing.T) {
     y = 7,
   }
 
-  path, path_count := supercover(4, start, end)
+  path, _, path_count := supercover(4, start, end)
 
   testing.expect_value(t, path_count, end.y - start.y + 1)
   testing.expect_value(t, path[0], GridPos{x = start.x, y = start.y + 0})
@@ -121,7 +151,7 @@ supercover_vertical_down :: proc(t: ^testing.T) {
     y = 5,
   }
 
-  path, path_count := supercover(10, start, end)
+  path, _, path_count := supercover(10, start, end)
 
   testing.expect_value(t, path_count, start.y - end.y + 1)
   testing.expect_value(t, path[0], GridPos{x = start.x, y = start.y - 0})
@@ -140,7 +170,7 @@ supercover_up_right :: proc(t: ^testing.T) {
     y = 2,
   }
 
-  path, path_count := supercover(10, start, end)
+  path, _, path_count := supercover(10, start, end)
 
   testing.expect_value(t, path_count, 7)
   testing.expect_value(t, path[0], GridPos{x = start.x + 0, y = start.y + 0})
@@ -163,7 +193,7 @@ supercover_down_right :: proc(t: ^testing.T) {
     y = -5,
   }
 
-  path, path_count := supercover(10, start, end)
+  path, _, path_count := supercover(10, start, end)
 
   testing.expect_value(t, path_count, 8)
   testing.expect_value(t, path[0], GridPos{x = start.x + 0, y = start.y - 0})
@@ -187,7 +217,7 @@ supercover_down_left :: proc(t: ^testing.T) {
     y = -4,
   }
 
-  path, path_count := supercover(10, start, end)
+  path, _, path_count := supercover(10, start, end)
 
   testing.expect_value(t, path_count, 3)
   testing.expect_value(t, path[0], GridPos{x = start.x - 0, y = start.y - 0})
@@ -206,7 +236,7 @@ supercover_up_left :: proc(t: ^testing.T) {
     y = 9,
   }
 
-  path, path_count := supercover(20, start, end)
+  path, _, path_count := supercover(20, start, end)
 
   testing.expect_value(t, path_count, 12)
   testing.expect_value(t, path[0], GridPos{x = start.x - 0, y = start.y + 0})

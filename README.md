@@ -4,8 +4,10 @@
 - [x] Generate a level of the game map - boxes and connecting corridors
 - [x] Put the player in one room
 - [ ] Line of sight
-  - [ ] Line drawing on a grid
-  - [ ] For each tile in the vision range, draw a line from the player and check if it hits a wall
+  - [x] Line drawing on a grid
+  - [x] For each tile in the vision range, draw a line from the player and check if it hits a wall
+  - [ ] Naive middle to middle paths blocked by first wall doesn't look right, it's too strict. What can we tweak?
+  - [ ] Original version involves a lot of duplicated work, we run over the same subpaths a lot. Try checking paths from player to each tile on the perimeter. Use same logic as before, update visibility for tiles along that path.
 - [x] Memory of revealed tiles
 - [ ] Minimap
 - [ ] Flip png data to use bottom left origin consistently

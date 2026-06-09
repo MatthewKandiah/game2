@@ -81,13 +81,12 @@ is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos) -> bool {
         p1 = entry_pos,
         p2 = exit_pos,
       }
-      if
-	lines_intersect(vision_line, vert1) ||
-	lines_intersect(vision_line, vert2) ||
-	lines_intersect(vision_line, hor1) ||
-	lines_intersect(vision_line, hor2) {
-	  return false
-	}
+      if lines_intersect(vision_line, vert1) ||
+         lines_intersect(vision_line, vert2) ||
+         lines_intersect(vision_line, hor1) ||
+         lines_intersect(vision_line, hor2) {
+        return false
+      }
     }
   }
   return true

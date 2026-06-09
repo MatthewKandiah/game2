@@ -252,3 +252,38 @@ supercover_up_left :: proc(t: ^testing.T) {
   testing.expect_value(t, path[10], GridPos{x = start.x - 5, y = start.y + 6})
   testing.expect_value(t, path[11], GridPos{x = start.x - 5, y = start.y + 7})
 }
+
+
+@(test)
+supercover_is_symmetric :: proc(t: ^testing.T) {
+  test_points := [?]GridPos {
+    GridPos{x = 0, y = 0},
+    GridPos{x = -2, y = 7},
+    GridPos{x = -2, y = 20},
+    GridPos{x = 10, y = 7},
+    GridPos{x = 5, y = 5},
+    GridPos{x = 15, y = 5},
+    GridPos{x = 5, y = 15},
+  }
+
+  contains :: proc(p: $T, path: []T) -> bool {
+    for cmp in path {
+      if p == cmp {
+        return true
+      }
+    }
+    return false
+  }
+  for p1 in test_points {
+    for p2 in test_points {
+      path1, _, path1_count := supercover(40, p1, p2)
+      path2, _, path2_count := supercover(40, p2, p1)
+
+      testing.expect_value(t, path1_count, path2_count)
+      for el in path1[0:path1_count] {
+        path2_slice := path2[0:path2_count]
+        testing.expect(t, contains(el, path2_slice), fmt.tprintfln("Expected %v to be in %v", el, path2_slice))
+      }
+    }
+  }
+}

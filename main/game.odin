@@ -48,7 +48,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
       for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
         check_pos := GridPos {
           x = to.x + cast(i32)col_idx,
-          y = from.y + cast(i32)row_idx,
+          y = to.y + cast(i32)row_idx,
         }
         if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
         if is_visible(game.grid, check_pos, to) {
@@ -76,12 +76,18 @@ is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos) -> bool {
     exit_pos := entries[idx + 1]
     path_tile := grid_get(grid, path_pos)
     if path_tile.type == .Wall {
-      vert_check_line, hor_check_line := wall_check_lines(grid, path_pos)
+      vert1, vert2, hor1, hor2 := wall_check_lines(grid, path_pos)
       vision_line := Line {
         p1 = entry_pos,
         p2 = exit_pos,
       }
-      return lines_intersect(vision_line, vert_check_line) || lines_intersect(vision_line, hor_check_line)
+      if
+	lines_intersect(vision_line, vert1) ||
+	lines_intersect(vision_line, vert2) ||
+	lines_intersect(vision_line, hor1) ||
+	lines_intersect(vision_line, hor2) {
+	  return false
+	}
     }
   }
   return true
@@ -90,7 +96,7 @@ is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos) -> bool {
 Line :: struct {
   p1, p2: Pos,
 }
-wall_check_lines :: proc(grid: []GridTile, grid_pos: GridPos) -> (vert, hor: Line) {
+wall_check_lines :: proc(grid: []GridTile, grid_pos: GridPos) -> (vert1, vert2, hor1, hor2: Line) {
   top_tile: GridTileType =
     .Wall if grid_pos.y + 1 > GRID_HEIGHT - 1 else grid_get(grid, GridPos{x = grid_pos.x, y = grid_pos.y + 1}).type
   bot_tile: GridTileType =
@@ -105,13 +111,25 @@ wall_check_lines :: proc(grid: []GridTile, grid_pos: GridPos) -> (vert, hor: Lin
     y = cast(f32)grid_pos.y + 0.5,
   }
 
-  vert = {
-    p1 = Pos{x = pos.x, y = pos.y - 0.5} if bot_tile == .Wall else Pos{x = pos.x, y = pos.y - 0.25},
-    p2 = Pos{x = pos.x, y = pos.y + 0.5} if top_tile == .Wall else Pos{x = pos.x, y = pos.y + 0.25},
+  disp: f32 = 0.1
+  disconnected_size: f32 = 0.1
+  connected_size: f32 = 0.5
+
+  vert1 = {
+    p1 = Pos{x = pos.x + disp, y = pos.y - connected_size} if bot_tile == .Wall else Pos{x = pos.x + disp, y = pos.y - disconnected_size},
+    p2 = Pos{x = pos.x + disp, y = pos.y + connected_size} if top_tile == .Wall else Pos{x = pos.x + disp, y = pos.y + disconnected_size},
   }
-  hor = {
-    p1 = Pos{x = pos.x - 0.5, y = pos.y} if left_tile == .Wall else Pos{x = pos.x - 0.25, y = pos.y},
-    p2 = Pos{x = pos.x + 0.5, y = pos.y} if right_tile == .Wall else Pos{x = pos.x + 0.25, y = pos.y},
+  vert2 = {
+    p1 = Pos{x = pos.x - disp, y = pos.y - connected_size} if bot_tile == .Wall else Pos{x = pos.x - disp, y = pos.y - disconnected_size},
+    p2 = Pos{x = pos.x - disp, y = pos.y + connected_size} if top_tile == .Wall else Pos{x = pos.x - disp, y = pos.y + disconnected_size},
+  }
+  hor1 = {
+    p1 = Pos{x = pos.x - connected_size, y = pos.y + disp} if left_tile == .Wall else Pos{x = pos.x - disconnected_size, y = pos.y + disp},
+    p2 = Pos{x = pos.x + connected_size, y = pos.y + disp} if right_tile == .Wall else Pos{x = pos.x + disconnected_size, y = pos.y + disp},
+  }
+  hor2 = {
+    p1 = Pos{x = pos.x - connected_size, y = pos.y - disp} if left_tile == .Wall else Pos{x = pos.x - disconnected_size, y = pos.y - disp},
+    p2 = Pos{x = pos.x + connected_size, y = pos.y - disp} if right_tile == .Wall else Pos{x = pos.x + disconnected_size, y = pos.y - disp},
   }
   return
 }
@@ -138,6 +156,7 @@ lines_intersect :: proc(l1, l2: Line) -> bool {
 
   t_num := (x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)
   u_num := (y1 - y2) * (x1 - x3) - (x1 - x2) * (y1 - y3)
-
-  return t_num >= 0 && t_num <= denom && u_num >= 0 && u_num <= denom
+  t := t_num / denom
+  u := u_num / denom
+  return (t >= 0 && t <= 1) && (u >= 0 && u <= 1)
 }

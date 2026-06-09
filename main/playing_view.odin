@@ -178,15 +178,7 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
         data = GridClickData{pos = grid_pos, tile_type = tile.type},
       }}
     viewport_button_pos.x += viewport_button_dim.w
-    if text_button(
-      get_uid(),
-      viewport_button_pos,
-      viewport_button_dim,
-      0.1,
-      "Right",
-      FONT_SMALL,
-      .Ubuntu,
-    ) {
+    if text_button(get_uid(), viewport_button_pos, viewport_button_dim, 0.1, "Right", FONT_SMALL, .Ubuntu) {
       grid_pos := GridPos {
         x = min(GRID_WIDTH - 1, game.viewport_centre.x + 1),
         y = game.viewport_centre.y,

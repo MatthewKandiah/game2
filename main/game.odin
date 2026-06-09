@@ -70,74 +70,74 @@ is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos) -> bool {
 
   path, entries, path_count := supercover(GRID_WIDTH + GRID_HEIGHT, player_pos, check_pos)
 
-  idx := 1
-  previous_wall_seen := false
-  for path_pos in path[1:path_count - 1] {
+  for idx in 1 ..< path_count - 1 {
+    path_pos := path[idx]
+    entry_pos := entries[idx]
+    exit_pos := entries[idx + 1]
     path_tile := grid_get(grid, path_pos)
     if path_tile.type == .Wall {
-      entry_point := entries[idx]
-      entry_quadrant := get_quadrant(entry_point, path_pos)
-      exit_point := entries[idx + 1]
-      exit_quadrant := get_quadrant(exit_point, path_pos)
-
-      is_left_neighbour_wall := grid_get(grid, GridPos{x = path_pos.x - 1, y = path_pos.y}).type == .Wall
-      is_right_neighbour_wall := grid_get(grid, GridPos{x = path_pos.x + 1, y = path_pos.y}).type == .Wall
-      is_top_neighbour_wall := grid_get(grid, GridPos{x = path_pos.x, y = path_pos.y + 1}).type == .Wall
-      is_bot_neighbour_wall := grid_get(grid, GridPos{x = path_pos.x, y = path_pos.y - 1}).type == .Wall
-      next_tile_on_path_is_wall := grid_get(grid, path[idx + 1]).type == .Wall
-
-      if next_tile_on_path_is_wall {
-        if previous_wall_seen {return false}
-        previous_wall_seen = true
-        switch entry_quadrant {
-        case .BottomLeft:
-          if exit_quadrant == .TopRight {return false}
-        case .BottomRight:
-          if exit_quadrant == .TopLeft {return false}
-        case .TopLeft:
-          if exit_quadrant == .BottomRight {return false}
-        case .TopRight:
-          if exit_quadrant == .BottomLeft {return false}
-        }
-      } else {
-        if entry_quadrant != exit_quadrant {return false}
-        switch entry_quadrant {
-        case .BottomLeft:
-          if (is_left_neighbour_wall || is_bot_neighbour_wall) {return false}
-        case .BottomRight:
-          if (is_right_neighbour_wall || is_bot_neighbour_wall) {return false}
-        case .TopLeft:
-          if (is_left_neighbour_wall || is_top_neighbour_wall) {return false}
-        case .TopRight:
-          if (is_right_neighbour_wall || is_top_neighbour_wall) {return false}
-        }
+      vert_check_line, hor_check_line := wall_check_lines(grid, path_pos)
+      vision_line := Line {
+        p1 = entry_pos,
+        p2 = exit_pos,
       }
+      return lines_intersect(vision_line, vert_check_line) || lines_intersect(vision_line, hor_check_line)
     }
-    idx += 1
   }
-
   return true
 }
 
-Quadrant :: enum {
-  BottomLeft,
-  BottomRight,
-  TopLeft,
-  TopRight,
+Line :: struct {
+  p1, p2: Pos,
+}
+wall_check_lines :: proc(grid: []GridTile, grid_pos: GridPos) -> (vert, hor: Line) {
+  top_tile: GridTileType =
+    .Wall if grid_pos.y + 1 > GRID_HEIGHT - 1 else grid_get(grid, GridPos{x = grid_pos.x, y = grid_pos.y + 1}).type
+  bot_tile: GridTileType =
+    .Wall if grid_pos.y - 1 < 0 else grid_get(grid, GridPos{x = grid_pos.x, y = grid_pos.y - 1}).type
+  left_tile: GridTileType =
+    .Wall if grid_pos.x - 1 < 0 else grid_get(grid, GridPos{x = grid_pos.x - 1, y = grid_pos.y}).type
+  right_tile: GridTileType =
+    .Wall if grid_pos.x + 1 > GRID_WIDTH - 1 else grid_get(grid, GridPos{x = grid_pos.x + 1, y = grid_pos.y}).type
+
+  pos := Pos {
+    x = cast(f32)grid_pos.x + 0.5,
+    y = cast(f32)grid_pos.y + 0.5,
+  }
+
+  vert = {
+    p1 = Pos{x = pos.x, y = pos.y - 0.5} if bot_tile == .Wall else Pos{x = pos.x, y = pos.y - 0.25},
+    p2 = Pos{x = pos.x, y = pos.y + 0.5} if top_tile == .Wall else Pos{x = pos.x, y = pos.y + 0.25},
+  }
+  hor = {
+    p1 = Pos{x = pos.x - 0.5, y = pos.y} if left_tile == .Wall else Pos{x = pos.x - 0.25, y = pos.y},
+    p2 = Pos{x = pos.x + 0.5, y = pos.y} if right_tile == .Wall else Pos{x = pos.x + 0.25, y = pos.y},
+  }
+  return
 }
 
-get_quadrant :: proc(point: Pos, tile_grid_pos: GridPos) -> Quadrant {
-  dx := cast(f32)tile_grid_pos.x + 0.5 - point.x
-  dy := cast(f32)tile_grid_pos.y + 0.5 - point.y
-  if dx <= 0 && dy <= 0 {
-    return .BottomLeft
-  } else if dx <= 0 && dy > 0 {
-    return .TopLeft
-  } else if dx > 0 && dy <= 0 {
-    return .BottomRight
-  } else if dx > 0 && dy > 0 {
-    return .TopRight
-  } else {
-    panic("Unreachable")
+lines_intersect :: proc(l1, l2: Line) -> bool {
+  // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+  // => lines intersect if an intersection point exists within both line segments
+  // => sufficient to check if the denominators in final expressions for t and u are non-zero, and values of t and u are between 0 and 1
+  x1 := l1.p1.x
+  x2 := l1.p2.x
+  x3 := l2.p1.x
+  x4 := l2.p2.x
+  y1 := l1.p1.y
+  y2 := l1.p2.y
+  y3 := l2.p1.y
+  y4 := l2.p2.y
+
+  denom := (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+  if denom == 0 {
+    // lines are parallel
+    // lines may be coincident, for our collision detection I think it's fine to treat this case as a non-collision, I don't think it will make a difference to us
+    return false
   }
+
+  t_num := (x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)
+  u_num := (y1 - y2) * (x1 - x3) - (x1 - x2) * (y1 - y3)
+
+  return t_num >= 0 && t_num <= denom && u_num >= 0 && u_num <= denom
 }

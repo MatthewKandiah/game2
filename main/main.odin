@@ -128,12 +128,12 @@ main :: proc() {
   game_grid_buf := make([]GridTile, GRID_WIDTH * GRID_HEIGHT)
   valid_player_pos := init_grid_tiles(game_grid_buf)
   game := Game {
-    mode = .MainMenu,
-    grid = game_grid_buf,
-    player_pos = valid_player_pos,
+    mode            = .MainMenu,
+    grid            = game_grid_buf,
+    player_pos      = valid_player_pos,
     viewport_centre = valid_player_pos,
-    is_looking = false,
-    zoom_level = 1,
+    is_looking      = false,
+    zoom_level      = 1,
   }
   game_player_move(&game, valid_player_pos) // slightly hacky, want to update known and visible grid values
 

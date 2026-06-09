@@ -261,7 +261,7 @@ grid :: proc(
         }
       } else {
         tile := grid_get(game.grid, grid_pos)
-        if tile.is_known {
+        if tile.visibility != .Unknown {
           draw_info := grid_tile_draw_info[tile.type]
           if grid_button(
             get_uid(d),
@@ -271,7 +271,7 @@ grid :: proc(
             draw_info.char,
             font_size,
             .UbuntuMono,
-            draw_info.colour if tile.is_visible else DARK_GREY,
+            draw_info.colour if tile.visibility == .Visible else DARK_GREY,
             trim,
           ) {
             action = {

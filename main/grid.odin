@@ -9,12 +9,15 @@ GridTileType :: enum {
   Player,
 }
 
-// TODO - maybe pull `is_visible` and `is_known` into an enum? A pair of bools allows more states than the game does, you can't reasonably be visible but not known
-// an enum could be UNKNOWN, KNOWN, VISIBLE
+GridVisibility :: enum {
+  Unknown,
+  Known,
+  Visible,
+}
+
 GridTile :: struct {
   type:       GridTileType,
-  is_visible: bool,
-  is_known:   bool,
+  visibility: GridVisibility,
 }
 
 GridTileDrawInfo :: struct {
@@ -52,7 +55,7 @@ init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
         grid_set(
           tiles,
           GridPos{x = room.pos.x + room_x, y = room.pos.y + room_y},
-          {type = .Floor, is_known = false, is_visible = false},
+          {type = .Floor, visibility = .Unknown},
         )
       }
     }
@@ -77,18 +80,18 @@ init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
     if rand.float32() < 0.5 {
       // across then up
       for x in x_min ..= x_min + x_len {
-        grid_set(tiles, GridPos{x = x, y = prev_room_pos.y}, {type = .Floor, is_known = false, is_visible = false})
+        grid_set(tiles, GridPos{x = x, y = prev_room_pos.y}, {type = .Floor, visibility = .Unknown})
       }
       for y in y_min ..= y_min + y_len {
-        grid_set(tiles, GridPos{x = room_pos.x, y = y}, {type = .Floor, is_known = false, is_visible = false})
+        grid_set(tiles, GridPos{x = room_pos.x, y = y}, {type = .Floor, visibility = .Unknown})
       }
     } else {
       // up then across
       for y in y_min ..= y_min + y_len {
-        grid_set(tiles, GridPos{x = prev_room_pos.x, y = y}, {type = .Floor, is_known = false, is_visible = false})
+        grid_set(tiles, GridPos{x = prev_room_pos.x, y = y}, {type = .Floor,visibility = .Unknown})
       }
       for x in x_min ..= x_min + x_len {
-        grid_set(tiles, GridPos{x = x, y = room_pos.y}, {type = .Floor, is_known = false, is_visible = false})
+        grid_set(tiles, GridPos{x = x, y = room_pos.y}, {type = .Floor, visibility = .Unknown})
       }
     }
 
@@ -114,12 +117,8 @@ grid_set_type :: proc(grid: []GridTile, pos: GridPos, value: GridTileType) {
   grid[grid_pos_to_idx(pos)].type = value
 }
 
-grid_set_visible :: proc(grid: []GridTile, pos: GridPos, value: bool) {
-  grid[grid_pos_to_idx(pos)].is_visible = value
-}
-
-grid_set_known :: proc(grid: []GridTile, pos: GridPos, value: bool) {
-  grid[grid_pos_to_idx(pos)].is_known = value
+grid_set_visibility :: proc(grid: []GridTile, pos: GridPos, value: GridVisibility) {
+  grid[grid_pos_to_idx(pos)].visibility = value
 }
 
 grid_distance :: proc(pos1, pos2: GridPos) -> i32 {

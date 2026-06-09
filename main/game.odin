@@ -38,7 +38,14 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
           y = from.y + cast(i32)row_idx,
         }
         if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-        grid_set_visible(game.grid, check_pos, false)
+        current := grid_get(game.grid, check_pos)
+        switch current.visibility {
+        case .Known:
+        case .Visible:
+          grid_set_visibility(game.grid, check_pos, .Known)
+        case .Unknown:
+        // NOOP
+        }
       }
     }
   }
@@ -52,8 +59,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
         }
         if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
         if is_visible(game.grid, check_pos, to) {
-          grid_set_visible(game.grid, check_pos, true)
-          grid_set_known(game.grid, check_pos, true)
+          grid_set_visibility(game.grid, check_pos, .Visible)
         }
       }
     }

@@ -111,8 +111,8 @@ wall_check_lines :: proc(grid: []GridTile, grid_pos: GridPos) -> (vert1, vert2, 
     y = cast(f32)grid_pos.y + 0.5,
   }
 
-  disp: f32 = 0.1
-  disconnected_size: f32 = 0.1
+  disp: f32 = 0.05
+  disconnected_size: f32 = 0.05
   connected_size: f32 = 0.5
 
   vert1 = {

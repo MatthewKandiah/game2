@@ -34,17 +34,35 @@ playing_view :: proc(game: ^Game) {
     type = .None,
     data = {},
   }
+  gap: f32 = 10
+
+  minimap_pixel_scale: f32 = 5
+  minimap_dim := Dim {
+    w = GRID_WIDTH * minimap_pixel_scale,
+    h = GRID_HEIGHT * minimap_pixel_scale,
+  }
+  minimap_pos := Pos {
+    x = gc.screen_dim.w - minimap_dim.w - gap,
+    y = gc.screen_dim.h - minimap_dim.h - gap,
+  }
+  minimap(
+    game,
+    Pos{x = minimap_pos.x - gap, y = minimap_pos.y - gap},
+    Dim{w = minimap_dim.w + 2 * gap, h = minimap_dim.h + 2 * gap},
+    minimap_pos,
+    minimap_dim,
+    minimap_pixel_scale,
+  )
 
   button_dim := Dim {
     w = 300,
     h = 100,
   }
-  gap: f32 = 10
-  ui_pos_top_left := Pos {
+  buttons_column_pos_bot_left := Pos {
     x = gc.screen_dim.w - 2 * gap - button_dim.w,
-    y = gc.screen_dim.h,
+    y = 0,
   }
-  buttons_column_action := buttons_column(game, ui_pos_top_left, gap, button_dim)
+  buttons_column_action := buttons_column(game, buttons_column_pos_bot_left, gap, button_dim)
   if buttons_column_action.type != .None {action = buttons_column_action}
 
   grid_ui_border: f32 = 30
@@ -85,56 +103,19 @@ grid_tile_screen_pos :: proc(
   }
 }
 
-buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: Dim) -> (action: PlayingViewAction) {
+buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: Dim) -> (action: PlayingViewAction) {
   ui_pos := Pos {
-    x = ui_pos_top_left.x + gap,
-    y = ui_pos_top_left.y - gap - button_dim.h,
+    x = ui_pos_bot_left.x + gap,
+    y = ui_pos_bot_left.y + gap,
   }
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
-    action = {
-      type = .LookClick,
-    }
-  }
-  ui_pos.y -= button_dim.h
-  ui_pos.y -= gap
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
-    action = {
-      type = .RecentreClick,
-    }
-  }
-  ui_pos.y -= button_dim.h
-  ui_pos.y -= gap
 
-  {   // zoom button row
-    button_count: f32 = 2
-    zoom_button_dim := Dim {
-      w = button_dim.w / button_count,
-      h = button_dim.h,
-    }
-    zoom_button_pos := ui_pos
-    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "+", FONT_MEDIUM, .Ubuntu) {
-      action = {
-        type = .ZoomInClick,
-      }
-    }
-    zoom_button_pos.x += zoom_button_dim.w
-    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "-", FONT_MEDIUM, .Ubuntu) {
-      action = {
-        type = .ZoomOutClick,
-      }
-    }
-    zoom_button_pos.x += zoom_button_dim.w
-  }
-  ui_pos.y -= button_dim.h
-  ui_pos.y -= gap
-
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
     action = {
-      type = .ResetZoomClick,
+      type = .ExitClick,
     }
   }
-  ui_pos.y -= button_dim.h
-  ui_pos.y -= gap
+  ui_pos.y += button_dim.h
+  ui_pos.y += gap
 
   if game.is_looking {
     button_count: f32 = 4
@@ -190,15 +171,57 @@ buttons_column :: proc(game: ^Game, ui_pos_top_left: Pos, gap: f32, button_dim: 
       }}
     viewport_button_pos.x += viewport_button_dim.w
 
-    ui_pos.y -= button_dim.h
-    ui_pos.y -= gap
+    ui_pos.y += button_dim.h
+    ui_pos.y += gap
   }
 
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
     action = {
-      type = .ExitClick,
+      type = .ResetZoomClick,
     }
   }
+  ui_pos.y += button_dim.h
+  ui_pos.y += gap
+
+  {   // zoom button row
+    button_count: f32 = 2
+    zoom_button_dim := Dim {
+      w = button_dim.w / button_count,
+      h = button_dim.h,
+    }
+    zoom_button_pos := ui_pos
+    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "+", FONT_MEDIUM, .Ubuntu) {
+      action = {
+        type = .ZoomInClick,
+      }
+    }
+    zoom_button_pos.x += zoom_button_dim.w
+    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "-", FONT_MEDIUM, .Ubuntu) {
+      action = {
+        type = .ZoomOutClick,
+      }
+    }
+    zoom_button_pos.x += zoom_button_dim.w
+  }
+  ui_pos.y += button_dim.h
+  ui_pos.y += gap
+
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
+    action = {
+      type = .RecentreClick,
+    }
+  }
+  ui_pos.y += button_dim.h
+  ui_pos.y += gap
+
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
+    action = {
+      type = .LookClick,
+    }
+  }
+  ui_pos.y += button_dim.h
+  ui_pos.y += gap
+
   return action
 }
 
@@ -243,7 +266,10 @@ grid :: proc(
       }
 
       if grid_pos == game.player_pos {
-        draw_info := grid_tile_draw_info[.Player]
+        draw_info := GridTileDrawInfo {
+          char   = '@',
+          colour = YELLOW,
+        }
         if grid_button(
           get_uid(),
           ui_pos,
@@ -333,5 +359,46 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       game.viewport_centre = game.player_pos
       fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
     }
+  }
+}
+
+minimap :: proc(
+  game: ^Game,
+  background_pos: Pos,
+  background_dim: Dim,
+  minimap_pos: Pos,
+  minimap_dim: Dim,
+  pixel_scale: f32,
+) {
+  draw_rect(background_pos, 0.1, background_dim, DARK_GREY)
+  ui_pos := Pos {
+    x = minimap_pos.x,
+    y = minimap_pos.y,
+  }
+  for row_idx in 0 ..< GRID_HEIGHT {
+    ui_pos.x = minimap_pos.x
+    for col_idx in 0 ..< GRID_WIDTH {
+      grid_pos := GridPos {
+        x = cast(i32)col_idx,
+        y = cast(i32)row_idx,
+      }
+      tile := grid_get(game.grid, grid_pos)
+      if tile.visibility != .Unknown {
+        colour: Colour
+        if grid_pos == game.player_pos {
+          colour = YELLOW
+        } else {
+          switch tile.type {
+          case .Wall:
+            colour = GREY
+          case .Floor:
+            colour = BLACK
+          }
+        }
+        draw_rect(ui_pos, 0.2, Dim{w = pixel_scale, h = pixel_scale}, colour)
+      }
+      ui_pos.x += pixel_scale
+    }
+    ui_pos.y += pixel_scale
   }
 }

@@ -6,7 +6,6 @@ import "core:math/rand"
 GridTileType :: enum {
   Wall,
   Floor,
-  Player,
 }
 
 GridVisibility :: enum {
@@ -28,7 +27,6 @@ GridTileDrawInfo :: struct {
 grid_tile_draw_info := [GridTileType]GridTileDrawInfo {
   .Floor = GridTileDrawInfo{char = '.', colour = WHITE},
   .Wall = GridTileDrawInfo{char = '#', colour = WHITE},
-  .Player = GridTileDrawInfo{char = '@', colour = YELLOW},
 }
 
 init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {

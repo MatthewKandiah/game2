@@ -18,6 +18,8 @@ PlayingViewActionType :: enum {
   ZoomInClick,
   ZoomOutClick,
   ResetZoomClick,
+  ShowAllClick,
+  HideAllClick,
 }
 
 PlayingViewActionData :: union {
@@ -56,7 +58,7 @@ playing_view :: proc(game: ^Game) {
 
   button_dim := Dim {
     w = 300,
-    h = 100,
+    h = 70,
   }
   buttons_column_pos_bot_left := Pos {
     x = gc.screen_dim.w - 2 * gap - button_dim.w,
@@ -117,64 +119,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: 
   ui_pos.y += button_dim.h
   ui_pos.y += gap
 
-  if game.is_looking {
-    button_count: f32 = 4
-    viewport_button_dim := Dim {
-      w = button_dim.w / button_count,
-      h = button_dim.h,
-    }
-    viewport_button_pos := ui_pos
-    if text_button(get_uid(), viewport_button_pos, viewport_button_dim, 0.1, "Left", FONT_SMALL, .Ubuntu) {
-      grid_pos := GridPos {
-        x = max(0, game.viewport_centre.x - 1),
-        y = game.viewport_centre.y,
-      }
-      tile := grid_get(game.grid, grid_pos, game.floor)
-      action = {
-        type = .GridClick,
-        data = GridClickData{pos = grid_pos, tile_type = tile.type},
-      }
-    }
-    viewport_button_pos.x += viewport_button_dim.w
-    if text_button(get_uid(), viewport_button_pos, viewport_button_dim, 0.1, "Down", FONT_SMALL, .Ubuntu) {
-      grid_pos := GridPos {
-        x = game.viewport_centre.x,
-        y = max(0, game.viewport_centre.y - 1),
-      }
-      tile := grid_get(game.grid, grid_pos, game.floor)
-      action = {
-        type = .GridClick,
-        data = GridClickData{pos = grid_pos, tile_type = tile.type},
-      }
-    }
-    viewport_button_pos.x += viewport_button_dim.w
-    if text_button(get_uid(), viewport_button_pos, viewport_button_dim, 0.1, "Up", FONT_SMALL, .Ubuntu) {
-      grid_pos := GridPos {
-        x = game.viewport_centre.x,
-        y = min(GRID_HEIGHT - 1, game.viewport_centre.y + 1),
-      }
-      tile := grid_get(game.grid, grid_pos, game.floor)
-      action = {
-        type = .GridClick,
-        data = GridClickData{pos = grid_pos, tile_type = tile.type},
-      }}
-    viewport_button_pos.x += viewport_button_dim.w
-    if text_button(get_uid(), viewport_button_pos, viewport_button_dim, 0.1, "Right", FONT_SMALL, .Ubuntu) {
-      grid_pos := GridPos {
-        x = min(GRID_WIDTH - 1, game.viewport_centre.x + 1),
-        y = game.viewport_centre.y,
-      }
-      tile := grid_get(game.grid, grid_pos, game.floor)
-      action = {
-        type = .GridClick,
-        data = GridClickData{pos = grid_pos, tile_type = tile.type},
-      }}
-    viewport_button_pos.x += viewport_button_dim.w
-
-    ui_pos.y += button_dim.h
-    ui_pos.y += gap
-  }
-
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .ResetZoomClick,
@@ -217,6 +161,22 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .LookClick,
+    }
+  }
+  ui_pos.y += button_dim.h
+  ui_pos.y += gap
+
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "See all", FONT_MEDIUM, .Ubuntu) {
+    action = {
+      type = .ShowAllClick,
+    }
+  }
+  ui_pos.y += button_dim.h
+  ui_pos.y += gap
+
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Hide all", FONT_MEDIUM, .Ubuntu) {
+    action = {
+      type = .HideAllClick,
     }
   }
   ui_pos.y += button_dim.h
@@ -312,6 +272,48 @@ grid :: proc(
   return action
 }
 
+
+minimap :: proc(
+  game: ^Game,
+  background_pos: Pos,
+  background_dim: Dim,
+  minimap_pos: Pos,
+  minimap_dim: Dim,
+  pixel_scale: f32,
+) {
+  draw_rect(background_pos, 0.1, background_dim, DARK_GREY)
+  ui_pos := Pos {
+    x = minimap_pos.x,
+    y = minimap_pos.y,
+  }
+  for row_idx in 0 ..< GRID_HEIGHT {
+    ui_pos.x = minimap_pos.x
+    for col_idx in 0 ..< GRID_WIDTH {
+      grid_pos := GridPos {
+        x = cast(i32)col_idx,
+        y = cast(i32)row_idx,
+      }
+      tile := grid_get(game.grid, grid_pos, game.floor)
+      if tile.visibility != .Unknown {
+        colour: Colour
+        if grid_pos == game.player_pos {
+          colour = YELLOW
+        } else {
+          switch tile.type {
+          case .Wall:
+            colour = GREY
+          case .Floor:
+            colour = BLACK
+          }
+        }
+        draw_rect(ui_pos, 0.2, Dim{w = pixel_scale, h = pixel_scale}, colour)
+      }
+      ui_pos.x += pixel_scale
+    }
+    ui_pos.y += pixel_scale
+  }
+}
+
 handle_action :: proc(game: ^Game, action: PlayingViewAction) {
   switch (action.type) {
   case .None:
@@ -359,46 +361,31 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       game.viewport_centre = game.player_pos
       fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
     }
-  }
-}
-
-minimap :: proc(
-  game: ^Game,
-  background_pos: Pos,
-  background_dim: Dim,
-  minimap_pos: Pos,
-  minimap_dim: Dim,
-  pixel_scale: f32,
-) {
-  draw_rect(background_pos, 0.1, background_dim, DARK_GREY)
-  ui_pos := Pos {
-    x = minimap_pos.x,
-    y = minimap_pos.y,
-  }
-  for row_idx in 0 ..< GRID_HEIGHT {
-    ui_pos.x = minimap_pos.x
-    for col_idx in 0 ..< GRID_WIDTH {
-      grid_pos := GridPos {
-        x = cast(i32)col_idx,
-        y = cast(i32)row_idx,
-      }
-      tile := grid_get(game.grid, grid_pos, game.floor)
-      if tile.visibility != .Unknown {
-        colour: Colour
-        if grid_pos == game.player_pos {
-          colour = YELLOW
-        } else {
-          switch tile.type {
-          case .Wall:
-            colour = GREY
-          case .Floor:
-            colour = BLACK
+  case .HideAllClick:
+    {
+      for row_idx in 0 ..< GRID_HEIGHT {
+        for col_idx in 0 ..< GRID_WIDTH {
+          pos := GridPos {
+            x = cast(i32)col_idx,
+            y = cast(i32)row_idx,
           }
+          grid_set_visibility(game.grid, pos, game.floor, .Unknown)
         }
-        draw_rect(ui_pos, 0.2, Dim{w = pixel_scale, h = pixel_scale}, colour)
       }
-      ui_pos.x += pixel_scale
+      game_player_move(game, game.player_pos)
     }
-    ui_pos.y += pixel_scale
+  case .ShowAllClick:
+    {
+      for row_idx in 0 ..< GRID_HEIGHT {
+        for col_idx in 0 ..< GRID_WIDTH {
+          pos := GridPos {
+            x = cast(i32)col_idx,
+            y = cast(i32)row_idx,
+          }
+          grid_set_visibility(game.grid, pos, game.floor, .Known)
+        }
+      }
+      game_player_move(game, game.player_pos)
+    }
   }
 }

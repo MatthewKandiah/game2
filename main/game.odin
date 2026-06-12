@@ -6,7 +6,7 @@ import "core:math/rand"
 GRID_WIDTH :: 50
 GRID_HEIGHT :: 50
 GRID_DEPTH :: 10
-ROOM_COUNT :: 20
+ROOM_COUNT :: 4
 ROOM_MAX_DIM :: 7
 ROOM_MIN_DIM :: 3
 

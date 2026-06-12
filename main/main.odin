@@ -106,7 +106,7 @@ main :: proc() {
     }
   }
 
-  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,.$+-"
+  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,.$+-<>{}()[]"
   stopwatch := time.Stopwatch{}
   {   // init fonts
     time.stopwatch_start(&stopwatch)

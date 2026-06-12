@@ -55,7 +55,7 @@ init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
         grid_set(
           tiles,
           GridPos{x = room.pos.x + room_x, y = room.pos.y + room_y},
-	  floor,
+          floor,
           {type = .Floor, visibility = .Unknown},
         )
       }

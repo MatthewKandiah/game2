@@ -11,7 +11,8 @@ glslc -o build/sprite-frag.spv shaders/sprite.frag -g
 glslc -o build/mask-frag.spv shaders/mask.frag -g
 
 echo "Building main..."
-odin build main -out:build/main.bin -debug
+# -o:speed / -o:minimal
+odin build main -out:build/main.bin -debug -o:minimal
 
 echo "Running main..."
 ./build/main.bin

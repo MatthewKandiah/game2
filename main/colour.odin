@@ -57,3 +57,9 @@ PINK :: Colour {
   g = 0,
   b = 1,
 }
+
+TEAL :: Colour {
+  r = 0,
+  g = 1,
+  b = 1,
+}

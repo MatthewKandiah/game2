@@ -304,6 +304,10 @@ minimap :: proc(
             colour = GREY
           case .Floor:
             colour = BLACK
+	  case .DownStair:
+	    colour = PINK
+	  case .UpStair:
+	    colour = TEAL
           }
         }
         draw_rect(ui_pos, 0.2, Dim{w = pixel_scale, h = pixel_scale}, colour)

@@ -12,9 +12,12 @@
   - non-interactive for now, just drawn
 - [ ] Tidy z handling
   - think we want to pull out constants / enums or something, possibly per view component? Something that make it easier to see the intended ordering without having to jump around and compare numbers
-- [ ] Revisit pos-dim
-  - neater arithmetic functions?
+- [x] Revisit pos-dim
+  - neater arithmetic functions? 
+	- Actually not a lot of repeated operations yet, leaving for now
   - neater constructors and conversions?
+	- Again not as much repeated code as I'd expected, leaving for now
   - refactor to use Rect and GridRect more widely?
+    - Tried doing this everywhere, honestly just seemed to add typing. Our logic tends to care about pos and/or dim, so all our operations are at that level. Pulling values out to act on them then regrouping into Rects to conform to the next function's type signature doesn't feel like an improvement.
 
 # NOTES

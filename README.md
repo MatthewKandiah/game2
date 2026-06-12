@@ -10,7 +10,6 @@
 - [x] Memory of revealed tiles
 - [x] Minimap
   - non-interactive for now, just drawn
-- [ ] Flip png data to use bottom left origin consistently
 - [ ] Tidy z handling
   - think we want to pull out constants / enums or something, possibly per view component? Something that make it easier to see the intended ordering without having to jump around and compare numbers
 - [ ] Revisit pos-dim

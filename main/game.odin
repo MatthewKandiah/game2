@@ -5,14 +5,16 @@ import "core:math/rand"
 
 GRID_WIDTH :: 50
 GRID_HEIGHT :: 50
+GRID_DEPTH :: 10
 ROOM_COUNT :: 20
 ROOM_MAX_DIM :: 7
 ROOM_MIN_DIM :: 3
 
 Game :: struct {
   mode:            GameMode,
-  grid:            []GridTile,
+  grid:            [][]GridTile,
   player_pos:      GridPos,
+  floor:           i32,
   viewport_centre: GridPos,
   is_looking:      bool,
   zoom_level:      f32,
@@ -38,11 +40,11 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
           y = from.y + cast(i32)row_idx,
         }
         if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-        current := grid_get(game.grid, check_pos)
+        current := grid_get(game.grid, check_pos, game.floor)
         switch current.visibility {
         case .Known:
         case .Visible:
-          grid_set_visibility(game.grid, check_pos, .Known)
+          grid_set_visibility(game.grid, check_pos, game.floor, .Known)
         case .Unknown:
         // NOOP
         }
@@ -58,15 +60,15 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
           y = to.y + cast(i32)row_idx,
         }
         if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-        if is_visible(game.grid, check_pos, to) {
-          grid_set_visibility(game.grid, check_pos, .Visible)
+        if is_visible(game.grid, check_pos, to, game.floor) {
+          grid_set_visibility(game.grid, check_pos, game.floor, .Visible)
         }
       }
     }
   }
 }
 
-is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos) -> bool {
+is_visible :: proc(grid: [][]GridTile, check_pos, player_pos: GridPos, floor: i32) -> bool {
   switch grid_distance(check_pos, player_pos) {
   case 0:
     return true
@@ -80,9 +82,9 @@ is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos) -> bool {
     path_pos := path[idx]
     entry_pos := entries[idx]
     exit_pos := entries[idx + 1]
-    path_tile := grid_get(grid, path_pos)
+    path_tile := grid_get(grid, path_pos, 4)
     if path_tile.type == .Wall {
-      vert1, vert2, hor1, hor2 := wall_check_lines(grid, path_pos)
+      vert1, vert2, hor1, hor2 := wall_check_lines(grid, path_pos, floor)
       vision_line := Line {
         p1 = entry_pos,
         p2 = exit_pos,
@@ -101,15 +103,15 @@ is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos) -> bool {
 Line :: struct {
   p1, p2: Pos,
 }
-wall_check_lines :: proc(grid: []GridTile, grid_pos: GridPos) -> (vert1, vert2, hor1, hor2: Line) {
+wall_check_lines :: proc(grid: [][]GridTile, grid_pos: GridPos, floor: i32) -> (vert1, vert2, hor1, hor2: Line) {
   top_tile: GridTileType =
-    .Wall if grid_pos.y + 1 > GRID_HEIGHT - 1 else grid_get(grid, GridPos{x = grid_pos.x, y = grid_pos.y + 1}).type
+    .Wall if grid_pos.y + 1 > GRID_HEIGHT - 1 else grid_get(grid, GridPos{x = grid_pos.x, y = grid_pos.y + 1}, floor).type
   bot_tile: GridTileType =
-    .Wall if grid_pos.y - 1 < 0 else grid_get(grid, GridPos{x = grid_pos.x, y = grid_pos.y - 1}).type
+    .Wall if grid_pos.y - 1 < 0 else grid_get(grid, GridPos{x = grid_pos.x, y = grid_pos.y - 1}, floor).type
   left_tile: GridTileType =
-    .Wall if grid_pos.x - 1 < 0 else grid_get(grid, GridPos{x = grid_pos.x - 1, y = grid_pos.y}).type
+    .Wall if grid_pos.x - 1 < 0 else grid_get(grid, GridPos{x = grid_pos.x - 1, y = grid_pos.y}, floor).type
   right_tile: GridTileType =
-    .Wall if grid_pos.x + 1 > GRID_WIDTH - 1 else grid_get(grid, GridPos{x = grid_pos.x + 1, y = grid_pos.y}).type
+    .Wall if grid_pos.x + 1 > GRID_WIDTH - 1 else grid_get(grid, GridPos{x = grid_pos.x + 1, y = grid_pos.y}, floor).type
 
   pos := Pos {
     x = cast(f32)grid_pos.x + 0.5,

@@ -129,7 +129,7 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: 
         x = max(0, game.viewport_centre.x - 1),
         y = game.viewport_centre.y,
       }
-      tile := grid_get(game.grid, grid_pos)
+      tile := grid_get(game.grid, grid_pos, game.floor)
       action = {
         type = .GridClick,
         data = GridClickData{pos = grid_pos, tile_type = tile.type},
@@ -141,7 +141,7 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: 
         x = game.viewport_centre.x,
         y = max(0, game.viewport_centre.y - 1),
       }
-      tile := grid_get(game.grid[:], grid_pos)
+      tile := grid_get(game.grid, grid_pos, game.floor)
       action = {
         type = .GridClick,
         data = GridClickData{pos = grid_pos, tile_type = tile.type},
@@ -153,7 +153,7 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: 
         x = game.viewport_centre.x,
         y = min(GRID_HEIGHT - 1, game.viewport_centre.y + 1),
       }
-      tile := grid_get(game.grid[:], grid_pos)
+      tile := grid_get(game.grid, grid_pos, game.floor)
       action = {
         type = .GridClick,
         data = GridClickData{pos = grid_pos, tile_type = tile.type},
@@ -164,7 +164,7 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: 
         x = min(GRID_WIDTH - 1, game.viewport_centre.x + 1),
         y = game.viewport_centre.y,
       }
-      tile := grid_get(game.grid[:], grid_pos)
+      tile := grid_get(game.grid, grid_pos, game.floor)
       action = {
         type = .GridClick,
         data = GridClickData{pos = grid_pos, tile_type = tile.type},
@@ -286,7 +286,7 @@ grid :: proc(
           }
         }
       } else {
-        tile := grid_get(game.grid, grid_pos)
+        tile := grid_get(game.grid, grid_pos, game.floor)
         if tile.visibility != .Unknown {
           draw_info := grid_tile_draw_info[tile.type]
           if grid_button(
@@ -382,7 +382,7 @@ minimap :: proc(
         x = cast(i32)col_idx,
         y = cast(i32)row_idx,
       }
-      tile := grid_get(game.grid, grid_pos)
+      tile := grid_get(game.grid, grid_pos, game.floor)
       if tile.visibility != .Unknown {
         colour: Colour
         if grid_pos == game.player_pos {

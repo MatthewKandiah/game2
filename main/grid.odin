@@ -29,8 +29,10 @@ grid_tile_draw_info := [GridTileType]GridTileDrawInfo {
   .Wall = GridTileDrawInfo{char = '#', colour = WHITE},
 }
 
-init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
-  for &tile in tiles {
+init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
+  // TODO - generate all levels with stairs connecting them
+  floor :: 4
+  for &tile in tiles[floor] {
     tile.type = .Wall
   }
 
@@ -53,6 +55,7 @@ init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
         grid_set(
           tiles,
           GridPos{x = room.pos.x + room_x, y = room.pos.y + room_y},
+	  floor,
           {type = .Floor, visibility = .Unknown},
         )
       }
@@ -78,18 +81,18 @@ init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
     if rand.float32() < 0.5 {
       // across then up
       for x in x_min ..= x_min + x_len {
-        grid_set(tiles, GridPos{x = x, y = prev_room_pos.y}, {type = .Floor, visibility = .Unknown})
+        grid_set(tiles, GridPos{x = x, y = prev_room_pos.y}, floor, {type = .Floor, visibility = .Unknown})
       }
       for y in y_min ..= y_min + y_len {
-        grid_set(tiles, GridPos{x = room_pos.x, y = y}, {type = .Floor, visibility = .Unknown})
+        grid_set(tiles, GridPos{x = room_pos.x, y = y}, floor, {type = .Floor, visibility = .Unknown})
       }
     } else {
       // up then across
       for y in y_min ..= y_min + y_len {
-        grid_set(tiles, GridPos{x = prev_room_pos.x, y = y}, {type = .Floor,visibility = .Unknown})
+        grid_set(tiles, GridPos{x = prev_room_pos.x, y = y}, floor, {type = .Floor, visibility = .Unknown})
       }
       for x in x_min ..= x_min + x_len {
-        grid_set(tiles, GridPos{x = x, y = room_pos.y}, {type = .Floor, visibility = .Unknown})
+        grid_set(tiles, GridPos{x = x, y = room_pos.y}, floor, {type = .Floor, visibility = .Unknown})
       }
     }
 
@@ -103,20 +106,20 @@ grid_pos_to_idx :: proc(pos: GridPos) -> i32 {
   return pos.x + (GRID_HEIGHT - 1 - pos.y) * GRID_WIDTH
 }
 
-grid_get :: proc(grid: []GridTile, pos: GridPos) -> GridTile {
-  return grid[grid_pos_to_idx(pos)]
+grid_get :: proc(grid: [][]GridTile, pos: GridPos, floor: i32) -> GridTile {
+  return grid[floor][grid_pos_to_idx(pos)]
 }
 
-grid_set :: proc(grid: []GridTile, pos: GridPos, value: GridTile) {
-  grid[grid_pos_to_idx(pos)] = value
+grid_set :: proc(grid: [][]GridTile, pos: GridPos, floor: i32, value: GridTile) {
+  grid[floor][grid_pos_to_idx(pos)] = value
 }
 
-grid_set_type :: proc(grid: []GridTile, pos: GridPos, value: GridTileType) {
-  grid[grid_pos_to_idx(pos)].type = value
+grid_set_type :: proc(grid: [][]GridTile, pos: GridPos, floor: i32, value: GridTileType) {
+  grid[floor][grid_pos_to_idx(pos)].type = value
 }
 
-grid_set_visibility :: proc(grid: []GridTile, pos: GridPos, value: GridVisibility) {
-  grid[grid_pos_to_idx(pos)].visibility = value
+grid_set_visibility :: proc(grid: [][]GridTile, pos: GridPos, floor: i32, value: GridVisibility) {
+  grid[floor][grid_pos_to_idx(pos)].visibility = value
 }
 
 grid_distance :: proc(pos1, pos2: GridPos) -> i32 {

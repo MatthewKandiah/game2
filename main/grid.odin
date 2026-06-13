@@ -55,14 +55,13 @@ init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
          prev_floor_down_stair_pos_list[room_idx] != unset_down_stair_pos_sentinel {
         prev_floor_down_stair_pos := prev_floor_down_stair_pos_list[room_idx]
         room_pos = GridPos {
-          x = clamp(prev_floor_down_stair_pos.x - rand.int32_range(0, room_dim.w), 1, GRID_WIDTH - room_dim.w),
-          y = clamp(prev_floor_down_stair_pos.y - rand.int32_range(0, room_dim.h), 1, GRID_HEIGHT - room_dim.h),
+          x = clamp(prev_floor_down_stair_pos.x - rand.int32_range(0, room_dim.w), 1, GRID_WIDTH - room_dim.w - 1),
+          y = clamp(prev_floor_down_stair_pos.y - rand.int32_range(0, room_dim.h), 1, GRID_HEIGHT - room_dim.h - 1),
         }
-        fmt.println(room_pos)
       } else {
         room_pos = GridPos {
-          x = clamp(rand.int32_range(1, GRID_WIDTH - room_dim.w), 1, GRID_WIDTH - room_dim.w),
-          y = clamp(rand.int32_range(1, GRID_HEIGHT - room_dim.h), 1, GRID_HEIGHT - room_dim.h),
+          x = clamp(rand.int32_range(1, GRID_WIDTH - room_dim.w), 1, GRID_WIDTH - room_dim.w - 1),
+          y = clamp(rand.int32_range(1, GRID_HEIGHT - room_dim.h), 1, GRID_HEIGHT - room_dim.h - 1),
         }
       }
 
@@ -73,18 +72,13 @@ init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
 
       for room_x in 0 ..< room.dim.w {
         for room_y in 0 ..< room.dim.h {
-          grid_set(
-            tiles,
-            GridPos{x = room.pos.x + room_x, y = room.pos.y + room_y},
-            floor,
-            {type = .Floor, visibility = .Unknown},
-          )
+          pos := GridPos {
+            x = room.pos.x + room_x,
+            y = room.pos.y + room_y,
+          }
+          grid_set(tiles, pos, floor, {type = .Floor, visibility = .Unknown})
         }
       }
-      for stair_pos in prev_floor_down_stair_pos_list {
-        grid_set_type(tiles, stair_pos, floor, .UpStair)
-      }
-
       if floor == START_FLOOR {valid_player_pos = rooms[0].pos}
     }
 
@@ -123,6 +117,12 @@ init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
       }
 
       prev_room = room
+    }
+
+    for stair_pos in prev_floor_down_stair_pos_list {
+      if stair_pos != unset_down_stair_pos_sentinel {
+        grid_set_type(tiles, stair_pos, floor, .UpStair)
+      }
     }
 
     // Place downstairs

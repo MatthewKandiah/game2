@@ -373,11 +373,13 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       } else {
         data := action.data.(PlayerClickData)
         if data.tile_type == .DownStair {
+	  clear_visibility(game.grid, game.player_pos, game.floor)
           game.floor += 1
-          game_player_move(game, game.player_pos)
+          update_visibility(game.grid, game.player_pos, game.floor)
         } else if data.tile_type == .UpStair {
+	  clear_visibility(game.grid, game.player_pos, game.floor)
           game.floor -= 1
-          game_player_move(game, game.player_pos)
+          update_visibility(game.grid, game.player_pos, game.floor)
         }
       }
     }
@@ -392,7 +394,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           grid_set_visibility(game.grid, pos, game.floor, .Unknown)
         }
       }
-      game_player_move(game, game.player_pos)
+      update_visibility(game.grid, game.player_pos, game.floor)
     }
   case .ShowAllClick:
     {
@@ -405,7 +407,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           grid_set_visibility(game.grid, pos, game.floor, .Known)
         }
       }
-      game_player_move(game, game.player_pos)
+      update_visibility(game.grid, game.player_pos, game.floor)
     }
   }
 }

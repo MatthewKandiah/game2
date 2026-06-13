@@ -34,37 +34,40 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
   game.player_pos = to
   game.viewport_centre = to
 
-  {   // clear visibility on tiles for player's previous position
-    for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
-      for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
-        check_pos := GridPos {
-          x = from.x + cast(i32)col_idx,
-          y = from.y + cast(i32)row_idx,
-        }
-        if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-        current := grid_get(game.grid, check_pos, game.floor)
-        switch current.visibility {
-        case .Known:
-        case .Visible:
-          grid_set_visibility(game.grid, check_pos, game.floor, .Known)
-        case .Unknown:
-        // NOOP
-        }
+  clear_visibility(game.grid, from, game.floor)
+  update_visibility(game.grid, to, game.floor)
+}
+
+clear_visibility :: proc(grid: [][]GridTile, player_pos: GridPos, floor: i32) {
+  for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
+    for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
+      check_pos := GridPos {
+        x = player_pos.x + cast(i32)col_idx,
+        y = player_pos.y + cast(i32)row_idx,
+      }
+      if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
+      current := grid_get(grid, check_pos, floor)
+      switch current.visibility {
+      case .Known:
+      case .Visible:
+        grid_set_visibility(grid, check_pos, floor, .Known)
+      case .Unknown:
+      // NOOP
       }
     }
   }
+}
 
-  {   // check for tiles that are now visible and/or known
-    for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
-      for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
-        check_pos := GridPos {
-          x = to.x + cast(i32)col_idx,
-          y = to.y + cast(i32)row_idx,
-        }
-        if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-        if is_visible(game.grid, check_pos, to, game.floor) {
-          grid_set_visibility(game.grid, check_pos, game.floor, .Visible)
-        }
+update_visibility :: proc(grid: [][]GridTile, player_pos: GridPos, floor: i32) {
+  for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
+    for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
+      check_pos := GridPos {
+        x = player_pos.x + cast(i32)col_idx,
+        y = player_pos.y + cast(i32)row_idx,
+      }
+      if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
+      if is_visible(grid, check_pos, player_pos, floor) {
+        grid_set_visibility(grid, check_pos, floor, .Visible)
       }
     }
   }

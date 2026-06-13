@@ -144,6 +144,25 @@ init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
       }
     }
   }
+
+  {   // check expected properties
+    for floor_with_down_stairs in tiles[0:len(tiles) - 1] {
+      down_stairs_count := 0
+      for tile in floor_with_down_stairs {
+        if tile.type == .DownStair {down_stairs_count += 1}
+      }
+      assert(down_stairs_count == DOWN_STAIRS_PER_FLOOR)
+    }
+
+    for floor_with_up_stairs in tiles[1:len(tiles)] {
+      up_stairs_count := 0
+      for tile in floor_with_up_stairs {
+        if tile.type == .UpStair {up_stairs_count += 1}
+      }
+      assert(up_stairs_count == DOWN_STAIRS_PER_FLOOR)
+    }
+  }
+
   return valid_player_pos
 }
 

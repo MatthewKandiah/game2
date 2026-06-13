@@ -10,5 +10,8 @@
 - [x] Memory of revealed tiles
 - [x] Minimap
   - non-interactive for now, just drawn
+- [ ] Add unintelligent enemies that just approach the player if they can see them
+- [ ] Add player health
+- [ ] Add player -> enemy attacks and enemy -> player attacks
 
 # NOTES

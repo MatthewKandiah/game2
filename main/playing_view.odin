@@ -376,10 +376,10 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         data := action.data.(PlayerClickData)
         if data.tile_type == .DownStair {
           game.floor += 1
-	  game_player_move(game, game.player_pos)
+          game_player_move(game, game.player_pos)
         } else if data.tile_type == .UpStair {
           game.floor -= 1
-	  game_player_move(game, game.player_pos)
+          game_player_move(game, game.player_pos)
         }
       }
       fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)

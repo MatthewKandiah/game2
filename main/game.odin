@@ -9,6 +9,8 @@ GRID_DEPTH :: 10
 ROOM_COUNT :: 4
 ROOM_MAX_DIM :: 7
 ROOM_MIN_DIM :: 3
+START_FLOOR :: 4
+DOWN_STAIRS_PER_FLOOR :: 3
 
 Game :: struct {
   mode:            GameMode,

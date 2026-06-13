@@ -24,10 +24,15 @@ PlayingViewActionType :: enum {
 
 PlayingViewActionData :: union {
   GridClickData,
+  PlayerClickData,
 }
 
 GridClickData :: struct {
   pos:       GridPos,
+  tile_type: GridTileType,
+}
+
+PlayerClickData :: struct {
   tile_type: GridTileType,
 }
 
@@ -225,6 +230,7 @@ grid :: proc(
         continue
       }
 
+      tile := grid_get(game.grid, grid_pos, game.floor)
       if grid_pos == game.player_pos {
         draw_info := GridTileDrawInfo {
           char   = '@',
@@ -243,10 +249,10 @@ grid :: proc(
         ) {
           action = {
             type = .PlayerClick,
+            data = PlayerClickData{tile_type = tile.type},
           }
         }
       } else {
-        tile := grid_get(game.grid, grid_pos, game.floor)
         if tile.visibility != .Unknown {
           draw_info := grid_tile_draw_info[tile.type]
           if grid_button(
@@ -304,10 +310,10 @@ minimap :: proc(
             colour = GREY
           case .Floor:
             colour = BLACK
-	  case .DownStair:
-	    colour = PINK
-	  case .UpStair:
-	    colour = TEAL
+          case .DownStair:
+            colour = PINK
+          case .UpStair:
+            colour = TEAL
           }
         }
         draw_rect(ui_pos, 0.2, Dim{w = pixel_scale, h = pixel_scale}, colour)
@@ -353,7 +359,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       if game.is_looking {
         game.viewport_centre = data.pos
       } else {
-        if data.tile_type == .Floor &&
+        if data.tile_type != .Wall &&
            (abs(data.pos.x - game.player_pos.x) <= 1) &&
            (abs(data.pos.y - game.player_pos.y) <= 1) {
           game_player_move(game, data.pos)
@@ -361,8 +367,21 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       }
     }
   case .PlayerClick:
+    // TODO - vision is fubar after moving between floors
+    // need to do something less hacky than just moving player
     {
-      game.viewport_centre = game.player_pos
+      if game.is_looking {
+        game.viewport_centre = game.player_pos
+      } else {
+        data := action.data.(PlayerClickData)
+        if data.tile_type == .DownStair {
+          game.floor += 1
+	  game_player_move(game, game.player_pos)
+        } else if data.tile_type == .UpStair {
+          game.floor -= 1
+	  game_player_move(game, game.player_pos)
+        }
+      }
       fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
     }
   case .HideAllClick:

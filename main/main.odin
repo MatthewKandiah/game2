@@ -34,13 +34,13 @@ GlobalContext :: struct {
 gc: GlobalContext
 
 main :: proc() {
-  console_logger := log.create_console_logger(lowest = .Error)
+  console_logger := log.create_console_logger(lowest = .Info)
   log_file, log_file_err := os.create("./build/game2_logs.txt")
   if log_file_err != nil {
     log.fatal(log_file_err)
     panic("Failed to create log file")
   }
-  file_logger := log.create_file_logger(log_file, lowest = .Info)
+  file_logger := log.create_file_logger(log_file, lowest = .Debug)
   gc.logger = log.create_multi_logger(file_logger, console_logger)
   context.logger = gc.logger
 
@@ -112,7 +112,7 @@ main :: proc() {
     time.stopwatch_start(&stopwatch)
     init_fonts(chars)
     _, _, secs, nanos := time.precise_clock_from_stopwatch(stopwatch)
-    fmt.println("init_fonts:", secs, "secs,", cast(f32)(nanos) / 1_000_000, "millis")
+    log.info("init_fonts:", secs, "secs,", cast(f32)(nanos) / 1_000_000, "millis")
     time.stopwatch_reset(&stopwatch)
   }
 
@@ -121,7 +121,7 @@ main :: proc() {
     time.stopwatch_start(&stopwatch)
     renderer = init_renderer()
     _, _, _, nanos := time.precise_clock_from_stopwatch(stopwatch)
-    fmt.println("init_renderer:", cast(f32)(nanos) / 1_000_000, "millis")
+    log.info("init_renderer:", cast(f32)(nanos) / 1_000_000, "millis")
     time.stopwatch_reset(&stopwatch)
   }
 
@@ -161,14 +161,14 @@ main :: proc() {
     }
 
     when PRINT_GRAPHICS_PRIMITIVE_COUNTS {
-      fmt.printf("Sprites: %d, Masks: %d\n", SPRITE_DRAWABLES_COUNT, MASK_DRAWABLES_COUNT)
+      log.info("Sprites: %d, Masks: %d\n", SPRITE_DRAWABLES_COUNT, MASK_DRAWABLES_COUNT)
     }
 
     render_frame(&renderer)
 
     when PRINT_FPS {
       h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)
-      fmt.println("Frame:", cast(f32)(nanos) / 1_000_000, "millis")
+      log.info("Frame:", cast(f32)(nanos) / 1_000_000, "millis")
       time.stopwatch_reset(&stopwatch)
     }
   }

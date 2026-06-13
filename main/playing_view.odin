@@ -367,8 +367,6 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       }
     }
   case .PlayerClick:
-    // TODO - vision is fubar after moving between floors
-    // need to do something less hacky than just moving player
     {
       if game.is_looking {
         game.viewport_centre = game.player_pos
@@ -382,7 +380,6 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           game_player_move(game, game.player_pos)
         }
       }
-      fmt.printfln("clicked player: %d %d", game.player_pos.x, game.player_pos.y)
     }
   case .HideAllClick:
     {

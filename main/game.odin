@@ -84,7 +84,7 @@ is_visible :: proc(grid: [][]GridTile, check_pos, player_pos: GridPos, floor: i3
     path_pos := path[idx]
     entry_pos := entries[idx]
     exit_pos := entries[idx + 1]
-    path_tile := grid_get(grid, path_pos, 4)
+    path_tile := grid_get(grid, path_pos, floor)
     if path_tile.type == .Wall {
       vert1, vert2, hor1, hor2 := wall_check_lines(grid, path_pos, floor)
       vision_line := Line {

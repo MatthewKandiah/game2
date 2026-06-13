@@ -21,14 +21,12 @@ menu_view :: proc(game: ^Game) {
   }
 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "START", FONT_LARGE, .Ubuntu) {
-    fmt.println("START")
     game.mode = .Playing
   }
   ui_pos.x = ui_pos_top_left.x
   ui_pos.y -= gap
   ui_pos.y -= button_dim.h
   if text_button(get_uid(), ui_pos, button_dim, 0.2, "QUIT", FONT_LARGE, .Ubuntu) {
-    fmt.println("QUIT")
     os.exit(0)
   }
 }

@@ -131,15 +131,14 @@ main :: proc() {
   }
   valid_player_pos := init_grid_tiles(game_grid_buf)
   game := Game {
-    mode            = .MainMenu,
-    grid            = game_grid_buf,
-    player_pos      = valid_player_pos,
-    floor           = 4,
+    mode = .MainMenu,
+    grid = game_grid_buf,
+    player = Player{pos = valid_player_pos, floor = 4},
     viewport_centre = valid_player_pos,
-    is_looking      = false,
-    zoom_level      = 1,
+    is_looking = false,
+    zoom_level = 1,
   }
-  update_visibility(game.grid, valid_player_pos, game.floor)
+  update_visibility(game.grid, valid_player_pos, game.player.floor)
 
   // main loop
   for !glfw.WindowShouldClose(gc.window) {

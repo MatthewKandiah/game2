@@ -230,8 +230,8 @@ grid :: proc(
         continue
       }
 
-      tile := grid_get(game.grid, grid_pos, game.floor)
-      if grid_pos == game.player_pos {
+      tile := grid_get(game.grid, grid_pos, game.player.floor)
+      if grid_pos == game.player.pos {
         draw_info := GridTileDrawInfo {
           char   = '@',
           colour = YELLOW,
@@ -299,10 +299,10 @@ minimap :: proc(
         x = cast(i32)col_idx,
         y = cast(i32)row_idx,
       }
-      tile := grid_get(game.grid, grid_pos, game.floor)
+      tile := grid_get(game.grid, grid_pos, game.player.floor)
       if tile.visibility != .Unknown {
         colour: Colour
-        if grid_pos == game.player_pos {
+        if grid_pos == game.player.pos {
           colour = YELLOW
         } else {
           switch tile.type {
@@ -335,7 +335,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
   case .RecentreClick:
     {
       game.is_looking = false
-      game.viewport_centre = game.player_pos
+      game.viewport_centre = game.player.pos
     }
   case .ZoomInClick:
     {
@@ -360,8 +360,8 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         game.viewport_centre = data.pos
       } else {
         if data.tile_type != .Wall &&
-           (abs(data.pos.x - game.player_pos.x) <= 1) &&
-           (abs(data.pos.y - game.player_pos.y) <= 1) {
+           (abs(data.pos.x - game.player.pos.x) <= 1) &&
+           (abs(data.pos.y - game.player.pos.y) <= 1) {
           game_player_move(game, data.pos)
         }
       }
@@ -369,17 +369,17 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
   case .PlayerClick:
     {
       if game.is_looking {
-        game.viewport_centre = game.player_pos
+        game.viewport_centre = game.player.pos
       } else {
         data := action.data.(PlayerClickData)
         if data.tile_type == .DownStair {
-	  clear_visibility(game.grid, game.player_pos, game.floor)
-          game.floor += 1
-          update_visibility(game.grid, game.player_pos, game.floor)
+	  clear_visibility(game.grid, game.player.pos, game.player.floor)
+          game.player.floor += 1
+          update_visibility(game.grid, game.player.pos, game.player.floor)
         } else if data.tile_type == .UpStair {
-	  clear_visibility(game.grid, game.player_pos, game.floor)
-          game.floor -= 1
-          update_visibility(game.grid, game.player_pos, game.floor)
+	  clear_visibility(game.grid, game.player.pos, game.player.floor)
+          game.player.floor -= 1
+          update_visibility(game.grid, game.player.pos, game.player.floor)
         }
       }
     }
@@ -391,10 +391,10 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
             x = cast(i32)col_idx,
             y = cast(i32)row_idx,
           }
-          grid_set_visibility(game.grid, pos, game.floor, .Unknown)
+          grid_set_visibility(game.grid, pos, game.player.floor, .Unknown)
         }
       }
-      update_visibility(game.grid, game.player_pos, game.floor)
+      update_visibility(game.grid, game.player.pos, game.player.floor)
     }
   case .ShowAllClick:
     {
@@ -404,10 +404,10 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
             x = cast(i32)col_idx,
             y = cast(i32)row_idx,
           }
-          grid_set_visibility(game.grid, pos, game.floor, .Known)
+          grid_set_visibility(game.grid, pos, game.player.floor, .Known)
         }
       }
-      update_visibility(game.grid, game.player_pos, game.floor)
+      update_visibility(game.grid, game.player.pos, game.player.floor)
     }
   }
 }

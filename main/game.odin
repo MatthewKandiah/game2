@@ -15,11 +15,15 @@ DOWN_STAIRS_PER_FLOOR :: 3
 Game :: struct {
   mode:            GameMode,
   grid:            [][]GridTile,
-  player_pos:      GridPos,
-  floor:           i32,
+  player:          Player,
   viewport_centre: GridPos,
   is_looking:      bool,
   zoom_level:      f32,
+}
+
+Player :: struct {
+  pos:   GridPos,
+  floor: i32,
 }
 
 GameMode :: enum {
@@ -30,12 +34,12 @@ GameMode :: enum {
 PLAYER_VIEW_RADIUS :: 7
 
 game_player_move :: proc(game: ^Game, to: GridPos) {
-  from := game.player_pos
-  game.player_pos = to
+  from := game.player.pos
+  game.player.pos = to
   game.viewport_centre = to
 
-  clear_visibility(game.grid, from, game.floor)
-  update_visibility(game.grid, to, game.floor)
+  clear_visibility(game.grid, from, game.player.floor)
+  update_visibility(game.grid, to, game.player.floor)
 }
 
 clear_visibility :: proc(grid: [][]GridTile, player_pos: GridPos, floor: i32) {

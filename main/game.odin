@@ -14,7 +14,7 @@ DOWN_STAIRS_PER_FLOOR :: 3
 
 Game :: struct {
   mode:            GameMode,
-  grid:            [][]GridTile,
+  grid:            []GridTile,
   player:          Player,
   viewport_centre: GridPos,
   is_looking:      bool,
@@ -42,7 +42,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
   update_visibility(game.grid, to, game.player.floor)
 }
 
-clear_visibility :: proc(grid: [][]GridTile, player_pos: GridPos, floor: i32) {
+clear_visibility :: proc(grid: []GridTile, player_pos: GridPos, floor: i32) {
   for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
     for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
       check_pos := GridPos {
@@ -62,7 +62,7 @@ clear_visibility :: proc(grid: [][]GridTile, player_pos: GridPos, floor: i32) {
   }
 }
 
-update_visibility :: proc(grid: [][]GridTile, player_pos: GridPos, floor: i32) {
+update_visibility :: proc(grid: []GridTile, player_pos: GridPos, floor: i32) {
   for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
     for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
       check_pos := GridPos {
@@ -77,7 +77,7 @@ update_visibility :: proc(grid: [][]GridTile, player_pos: GridPos, floor: i32) {
   }
 }
 
-is_visible :: proc(grid: [][]GridTile, check_pos, player_pos: GridPos, floor: i32) -> bool {
+is_visible :: proc(grid: []GridTile, check_pos, player_pos: GridPos, floor: i32) -> bool {
   switch grid_distance(check_pos, player_pos) {
   case 0:
     return true
@@ -112,7 +112,7 @@ is_visible :: proc(grid: [][]GridTile, check_pos, player_pos: GridPos, floor: i3
 Line :: struct {
   p1, p2: Pos,
 }
-wall_check_lines :: proc(grid: [][]GridTile, grid_pos: GridPos, floor: i32) -> (vert1, vert2, hor1, hor2: Line) {
+wall_check_lines :: proc(grid: []GridTile, grid_pos: GridPos, floor: i32) -> (vert1, vert2, hor1, hor2: Line) {
   top_tile: GridTileType =
     .Wall if grid_pos.y + 1 > GRID_HEIGHT - 1 else grid_get(grid, GridPos{x = grid_pos.x, y = grid_pos.y + 1}, floor).type
   bot_tile: GridTileType =

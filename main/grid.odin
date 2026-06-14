@@ -33,7 +33,7 @@ grid_tile_draw_info := [GridTileType]GridTileDrawInfo {
   .UpStair = GridTileDrawInfo{char = '<', colour = WHITE},
 }
 
-init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
+init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
   // Assumed grid is zero initialised to all wall
 
   unset_down_stair_pos_sentinel := GridPos {
@@ -42,7 +42,7 @@ init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
   }
   prev_floor_down_stair_pos_list: [DOWN_STAIRS_PER_FLOOR]GridPos = unset_down_stair_pos_sentinel
   // Place a bunch of random connected rooms
-  for floor in 0 ..< len(tiles) {
+  for floor in 0 ..< GRID_DEPTH {
     floor := cast(i32)floor
     rooms := [ROOM_COUNT]GridRect{}
     for &room, room_idx in rooms {
@@ -146,17 +146,17 @@ init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
   }
 
   {   // check expected properties
-    for floor_with_down_stairs in tiles[0:len(tiles) - 1] {
+    for floor_with_down_stairs in 0 ..< GRID_DEPTH - 1 {
       down_stairs_count := 0
-      for tile in floor_with_down_stairs {
+      for tile in grid_floor_slice(tiles, cast(i32)floor_with_down_stairs) {
         if tile.type == .DownStair {down_stairs_count += 1}
       }
       assert(down_stairs_count == DOWN_STAIRS_PER_FLOOR)
     }
 
-    for floor_with_up_stairs in tiles[1:len(tiles)] {
+    for floor_with_up_stairs in 1 ..< GRID_DEPTH {
       up_stairs_count := 0
-      for tile in floor_with_up_stairs {
+      for tile in grid_floor_slice(tiles, cast(i32)floor_with_up_stairs) {
         if tile.type == .UpStair {up_stairs_count += 1}
       }
       assert(up_stairs_count == DOWN_STAIRS_PER_FLOOR)
@@ -166,24 +166,29 @@ init_grid_tiles :: proc(tiles: [][]GridTile) -> (valid_player_pos: GridPos) {
   return valid_player_pos
 }
 
-grid_pos_to_idx :: proc(pos: GridPos) -> i32 {
-  return pos.x + (GRID_HEIGHT - 1 - pos.y) * GRID_WIDTH
+grid_pos_to_idx :: proc(pos: GridPos, floor: i32) -> i32 {
+  return pos.x + (GRID_HEIGHT - 1 - pos.y) * GRID_WIDTH + (GRID_HEIGHT * GRID_WIDTH) * floor
 }
 
-grid_get :: proc(grid: [][]GridTile, pos: GridPos, floor: i32) -> GridTile {
-  return grid[floor][grid_pos_to_idx(pos)]
+grid_floor_slice :: proc(grid: []GridTile, floor: i32) -> []GridTile {
+  floor_stride: i32 = GRID_WIDTH * GRID_HEIGHT
+  return grid[floor * floor_stride:(floor + 1) * floor_stride]
 }
 
-grid_set :: proc(grid: [][]GridTile, pos: GridPos, floor: i32, value: GridTile) {
-  grid[floor][grid_pos_to_idx(pos)] = value
+grid_get :: proc(grid: []GridTile, pos: GridPos, floor: i32) -> GridTile {
+  return grid[grid_pos_to_idx(pos, floor)]
 }
 
-grid_set_type :: proc(grid: [][]GridTile, pos: GridPos, floor: i32, value: GridTileType) {
-  grid[floor][grid_pos_to_idx(pos)].type = value
+grid_set :: proc(grid: []GridTile, pos: GridPos, floor: i32, value: GridTile) {
+  grid[grid_pos_to_idx(pos, floor)] = value
 }
 
-grid_set_visibility :: proc(grid: [][]GridTile, pos: GridPos, floor: i32, value: GridVisibility) {
-  grid[floor][grid_pos_to_idx(pos)].visibility = value
+grid_set_type :: proc(grid: []GridTile, pos: GridPos, floor: i32, value: GridTileType) {
+  grid[grid_pos_to_idx(pos, floor)].type = value
+}
+
+grid_set_visibility :: proc(grid: []GridTile, pos: GridPos, floor: i32, value: GridVisibility) {
+  grid[grid_pos_to_idx(pos, floor)].visibility = value
 }
 
 grid_distance :: proc(pos1, pos2: GridPos) -> i32 {

@@ -267,7 +267,7 @@ grid :: proc(
           draw_info.colour,
           trim,
         ) {
-          fmt.println("Clicked enemy", ui_pos)
+          fmt.println("Clicked", enemy.type, enemy.pos)
         }
       } else {
         if tile.visibility != .Unknown {

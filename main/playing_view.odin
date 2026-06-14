@@ -252,6 +252,23 @@ grid :: proc(
             data = PlayerClickData{tile_type = tile.type},
           }
         }
+      } else if tile.visibility == .Visible && grid_pos == game.enemies[0].pos {
+        // Temporary to debug enemy drawing -- assumes only a single enemy exists
+        enemy := game.enemies[0]
+        draw_info := enemy_draw_info[enemy.type]
+        if grid_button(
+          get_uid(),
+          ui_pos,
+          grid_button_dim,
+          0.06,
+          draw_info.char,
+          font_size,
+          .UbuntuMono,
+          draw_info.colour,
+          trim,
+        ) {
+          fmt.println("Clicked enemy", ui_pos)
+        }
       } else {
         if tile.visibility != .Unknown {
           draw_info := grid_tile_draw_info[tile.type]
@@ -373,11 +390,11 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       } else {
         data := action.data.(PlayerClickData)
         if data.tile_type == .DownStair {
-	  clear_visibility(game.grid, game.player.pos, game.player.floor)
+          clear_visibility(game.grid, game.player.pos, game.player.floor)
           game.player.floor += 1
           update_visibility(game.grid, game.player.pos, game.player.floor)
         } else if data.tile_type == .UpStair {
-	  clear_visibility(game.grid, game.player.pos, game.player.floor)
+          clear_visibility(game.grid, game.player.pos, game.player.floor)
           game.player.floor -= 1
           update_visibility(game.grid, game.player.pos, game.player.floor)
         }

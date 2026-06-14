@@ -16,6 +16,7 @@ Game :: struct {
   mode:            GameMode,
   grid:            []GridTile,
   player:          Player,
+  enemies:         [dynamic]Enemy, // TODO - this probably needs to do something that avoids so much memory allocation and copying
   viewport_centre: GridPos,
   is_looking:      bool,
   zoom_level:      f32,

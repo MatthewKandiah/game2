@@ -27,6 +27,7 @@ PlayingViewActionType :: enum {
 PlayingViewActionData :: union {
   GridClickData,
   PlayerClickData,
+  EnemyClickData,
 }
 
 GridClickData :: struct {
@@ -36,6 +37,10 @@ GridClickData :: struct {
 
 PlayerClickData :: struct {
   tile_type: GridTileType,
+}
+
+EnemyClickData :: struct {
+  enemy_idx: GenerationalIndex,
 }
 
 playing_view :: proc(game: ^Game) {
@@ -301,8 +306,10 @@ grid :: proc(
   }
 
   {   // draw enemies
-    found, enemy, enemy_idx := enemy_manager_get_next(game.enemy_manager, 0)
+    found, enemy_idx := enemy_manager_get_next(game.enemy_manager, 0)
     for found {
+      enemy_ok, enemy := enemy_manager_get_enemy(&game.enemy_manager, enemy_idx)
+      if !enemy_ok {panic("Unexpectedly missing enemy")}
       ui_pos := grid_tile_screen_pos(
         enemy.pos,
         game.viewport_centre,
@@ -318,22 +325,25 @@ grid :: proc(
       }
       tile := grid_get(game.grid, enemy.pos, enemy.floor)
       draw_info := enemy_draw_info[enemy.type]
-      if enemy.floor == game.player.floor && tile.visibility == .Visible && grid_button(
-        get_uid(cast(u32)enemy_idx),
-        ui_pos,
-        grid_button_dim,
-        0.06,
-        draw_info.char,
-        font_size,
-        .UbuntuMono,
-        draw_info.colour,
-        trim,
-      ) {
+      if enemy.floor == game.player.floor &&
+         tile.visibility == .Visible &&
+         grid_button(
+           get_uid(cast(u32)enemy_idx.idx),
+           ui_pos,
+           grid_button_dim,
+           0.06,
+           draw_info.char,
+           font_size,
+           .UbuntuMono,
+           draw_info.colour,
+           trim,
+         ) {
         action = {
           type = .EnemyClick,
+	  data = EnemyClickData{enemy_idx = enemy_idx},
         }
       }
-      found, enemy, enemy_idx = enemy_manager_get_next(game.enemy_manager, enemy_idx + 1)
+      found, enemy_idx = enemy_manager_get_next(game.enemy_manager, enemy_idx.idx + 1)
     }
   }
   return action
@@ -472,7 +482,8 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
     }
   case .EnemyClick:
     {
-      fmt.println("enemy click")
+      data := action.data.(EnemyClickData)
+      enemy_manager_delete_enemy(&game.enemy_manager, data.enemy_idx)
     }
   case .SpawnMonsterClick:
     {
@@ -487,15 +498,17 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           grid_get(game.grid, GridPos{x = game.player.pos.x + x, y = game.player.pos.y + y}, game.player.floor).type !=
           .Wall
         not_enemy := true
-        got_enemy, enemy, idx := enemy_manager_get_next(game.enemy_manager, 0)
+        got_enemy, enemy_idx := enemy_manager_get_next(game.enemy_manager, 0)
         for got_enemy {
+          enemy_ok, enemy := enemy_manager_get_enemy(&game.enemy_manager, enemy_idx)
+          if !enemy_ok {panic("Unexpectedly missing enemy")}
           if enemy.pos.x == game.player.pos.x + x &&
              enemy.pos.y == game.player.pos.y + y &&
              enemy.floor == game.player.floor {
             not_enemy = false
             break
           }
-          got_enemy, enemy, idx = enemy_manager_get_next(game.enemy_manager, idx + 1)
+          got_enemy, enemy_idx = enemy_manager_get_next(game.enemy_manager, enemy_idx.idx + 1)
         }
         return not_wall && not_enemy
       }

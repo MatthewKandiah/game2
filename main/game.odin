@@ -82,12 +82,21 @@ enemy_manager_delete_enemy :: proc(enemy_manager: ^EnemyManager, index: Generati
   return false
 }
 
-enemy_manager_get_next :: proc(enemy_manager: EnemyManager, first_index: i32) -> (found: bool, enemy: Enemy, found_index: i32) {
+enemy_manager_get_next :: proc(
+  enemy_manager: EnemyManager,
+  first_index: i32,
+) -> (
+  found: bool,
+  enemy_index: GenerationalIndex,
+) {
+  if first_index >= ENEMIES_BUFFER_SIZE {
+    return false, {generation = -1, idx = -1}
+  }
   idx := first_index
   searching := true
   for searching {
     if enemy_manager.active_indices[idx] {
-      return true, enemy_manager.buffer[idx], idx
+      return true, GenerationalIndex{idx = idx, generation = enemy_manager.current_generations[idx]}
     } else {
       idx += 1
       if idx >= ENEMIES_BUFFER_SIZE {
@@ -95,7 +104,7 @@ enemy_manager_get_next :: proc(enemy_manager: EnemyManager, first_index: i32) ->
       }
     }
   }
-  return false, {}, -1
+  return false, {generation = -1, idx = -1}
 }
 
 Game :: struct {

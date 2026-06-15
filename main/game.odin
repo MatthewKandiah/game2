@@ -82,6 +82,22 @@ enemy_manager_delete_enemy :: proc(enemy_manager: ^EnemyManager, index: Generati
   return false
 }
 
+enemy_manager_get_next :: proc(enemy_manager: EnemyManager, first_index: i32) -> (found: bool, enemy: Enemy, found_index: i32) {
+  idx := first_index
+  searching := true
+  for searching {
+    if enemy_manager.active_indices[idx] {
+      return true, enemy_manager.buffer[idx], idx
+    } else {
+      idx += 1
+      if idx >= ENEMIES_BUFFER_SIZE {
+        searching = false
+      }
+    }
+  }
+  return false, {}, -1
+}
+
 Game :: struct {
   mode:            GameMode,
   grid:            []GridTile,

@@ -11,6 +11,7 @@ PlayingViewAction :: struct {
 PlayingViewActionType :: enum {
   None,
   PlayerClick,
+  EnemyClick,
   GridClick,
   LookClick,
   RecentreClick,
@@ -240,48 +241,99 @@ grid :: proc(
       }
 
       tile := grid_get(game.grid, grid_pos, game.player.floor)
-      if grid_pos == game.player.pos {
-        draw_info := GridTileDrawInfo {
-          char   = '@',
-          colour = YELLOW,
-        }
+      if tile.visibility != .Unknown {
+        draw_info := grid_tile_draw_info[tile.type]
         if grid_button(
-          get_uid(),
+          get_uid(d),
           ui_pos,
           grid_button_dim,
-          0.06,
+          0.05,
           draw_info.char,
           font_size,
           .UbuntuMono,
-          draw_info.colour,
+          draw_info.colour if tile.visibility == .Visible else DARK_GREY,
           trim,
         ) {
           action = {
-            type = .PlayerClick,
-            data = PlayerClickData{tile_type = tile.type},
-          }
-        }
-      } else {
-        if tile.visibility != .Unknown {
-          draw_info := grid_tile_draw_info[tile.type]
-          if grid_button(
-            get_uid(d),
-            ui_pos,
-            grid_button_dim,
-            0.05,
-            draw_info.char,
-            font_size,
-            .UbuntuMono,
-            draw_info.colour if tile.visibility == .Visible else DARK_GREY,
-            trim,
-          ) {
-            action = {
-              type = .GridClick,
-              data = GridClickData{pos = grid_pos, tile_type = tile.type},
-            }
+            type = .GridClick,
+            data = GridClickData{pos = grid_pos, tile_type = tile.type},
           }
         }
       }
+    }
+  }
+
+  {   // draw player
+    ui_pos := grid_tile_screen_pos(
+      game.player.pos,
+      game.viewport_centre,
+      grid_ui_pos_bot_left,
+      grid_ui_dim,
+      grid_button_dim,
+    )
+    trim := Trim {
+      left  = max(0, grid_ui_pos_bot_left.x - ui_pos.x),
+      right = max(0, ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w),
+      top   = max(0, ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h),
+      bot   = max(0, grid_ui_pos_bot_left.y - ui_pos.y),
+    }
+    tile := grid_get(game.grid, game.player.pos, game.player.floor)
+    draw_info := GridTileDrawInfo {
+      char   = '@',
+      colour = YELLOW,
+    }
+    if grid_button(
+      get_uid(),
+      ui_pos,
+      grid_button_dim,
+      0.06,
+      draw_info.char,
+      font_size,
+      .UbuntuMono,
+      draw_info.colour,
+      trim,
+    ) {
+      action = {
+        type = .PlayerClick,
+        data = PlayerClickData{tile_type = tile.type},
+      }
+    }
+  }
+
+  {   // draw enemies
+    found, enemy, enemy_idx := enemy_manager_get_next(game.enemy_manager, 0)
+    for found {
+      ui_pos := grid_tile_screen_pos(
+        enemy.pos,
+        game.viewport_centre,
+        grid_ui_pos_bot_left,
+        grid_ui_dim,
+        grid_button_dim,
+      )
+      trim := Trim {
+        left  = max(0, grid_ui_pos_bot_left.x - ui_pos.x),
+        right = max(0, ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w),
+        top   = max(0, ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h),
+        bot   = max(0, grid_ui_pos_bot_left.y - ui_pos.y),
+      }
+      tile := grid_get(game.grid, enemy.pos, enemy.floor)
+      draw_info := enemy_draw_info[enemy.type]
+      if enemy.floor == game.player.floor && tile.visibility == .Visible && grid_button(
+        get_uid(cast(u32)enemy_idx),
+        ui_pos,
+        grid_button_dim,
+        0.06,
+        draw_info.char,
+        font_size,
+        .UbuntuMono,
+        draw_info.colour,
+        trim,
+      ) {
+        action = {
+          type = .EnemyClick,
+        }
+      }
+      found, enemy, enemy_idx = enemy_manager_get_next(game.enemy_manager, enemy_idx + 1)
     }
   }
   return action
@@ -418,6 +470,10 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       }
       update_visibility(game.grid, game.player.pos, game.player.floor)
     }
+  case .EnemyClick:
+    {
+      fmt.println("enemy click")
+    }
   case .SpawnMonsterClick:
     {
       enemy_pos: GridPos
@@ -426,12 +482,22 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       bot_valid := game.player.pos.y > 1
       top_valid := game.player.pos.y < GRID_HEIGHT - 1
 
-      // TODO - don't spawn enemy on top of another enemy
       check :: proc(game: ^Game, x, y: i32) -> bool {
-        return(
+        not_wall :=
           grid_get(game.grid, GridPos{x = game.player.pos.x + x, y = game.player.pos.y + y}, game.player.floor).type !=
-          .Wall \
-        )
+          .Wall
+        not_enemy := true
+        got_enemy, enemy, idx := enemy_manager_get_next(game.enemy_manager, 0)
+        for got_enemy {
+          if enemy.pos.x == game.player.pos.x + x &&
+             enemy.pos.y == game.player.pos.y + y &&
+             enemy.floor == game.player.floor {
+            not_enemy = false
+            break
+          }
+          got_enemy, enemy, idx = enemy_manager_get_next(game.enemy_manager, idx + 1)
+        }
+        return not_wall && not_enemy
       }
 
       if left_valid && top_valid && check(game, -1, 1) {
@@ -460,9 +526,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         enemy_pos.y = game.player.pos.y - 1
       } else {panic("Failed to place enemy")}
 
-      // TODO - draw these on the grid so we can check it's working!
       enemy_manager_add_enemy(&game.enemy_manager, .Rat, enemy_pos, game.player.floor)
-      
     }
   }
 }

@@ -138,54 +138,6 @@ main :: proc() {
   }
   update_visibility(game.grid, valid_player_pos, game.player.floor)
 
-  {   // stick an enemy somewhere near the player for debugging
-    enemy_pos: GridPos
-    left_valid := game.player.pos.x > 1
-    right_valid := game.player.pos.x < GRID_WIDTH - 1
-    bot_valid := game.player.pos.y > 1
-    top_valid := game.player.pos.y < GRID_HEIGHT - 1
-
-    check :: proc(game: Game, x, y: i32) -> bool {
-      return(
-        grid_get(game.grid, GridPos{x = game.player.pos.x + x, y = game.player.pos.y + y}, game.player.floor).type !=
-        .Wall \
-      )
-    }
-
-    if left_valid && top_valid && check(game, -1, 1) {
-      enemy_pos.x = game.player.pos.x - 1
-      enemy_pos.y = game.player.pos.y + 1
-    } else if left_valid && bot_valid && check(game, -1, -1) {
-      enemy_pos.x = game.player.pos.x - 1
-      enemy_pos.y = game.player.pos.y - 1
-    } else if left_valid && check(game, -1, 0) {
-      enemy_pos.x = game.player.pos.x - 1
-      enemy_pos.y = game.player.pos.y
-    } else if right_valid && top_valid && check(game, 1, 1) {
-      enemy_pos.x = game.player.pos.x + 1
-      enemy_pos.y = game.player.pos.y + 1
-    } else if right_valid && bot_valid && check(game, 1, -1) {
-      enemy_pos.x = game.player.pos.x + 1
-      enemy_pos.y = game.player.pos.y - 1
-    } else if right_valid && check(game, 1, 0) {
-      enemy_pos.x = game.player.pos.x + 1
-      enemy_pos.y = game.player.pos.y
-    } else if top_valid && check(game, 0, 1) {
-      enemy_pos.x = game.player.pos.x
-      enemy_pos.y = game.player.pos.y + 1
-    } else if bot_valid && check(game, 0, -1) {
-      enemy_pos.x = game.player.pos.x
-      enemy_pos.y = game.player.pos.y - 1
-    } else {panic("Failed to place enemy")}
-
-    // TODO - what do we want it to behave like?
-    // enemy_id := game_add_enemy(&game, type, pos, floor)
-    // enemy := game_get_enemy(enemy_id)
-    // delete_enemy(enemy_id)
-    // enemy_manager lets you get enemy ids by floor, so we can process game logic
-    enemy_manager_add_enemy(&game.enemy_manager, .Rat, enemy_pos, game.player.floor)
-  }
-
   // main loop
   for !glfw.WindowShouldClose(gc.window) {
     time.stopwatch_start(&stopwatch)

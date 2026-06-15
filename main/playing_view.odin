@@ -20,6 +20,7 @@ PlayingViewActionType :: enum {
   ResetZoomClick,
   ShowAllClick,
   HideAllClick,
+  SpawnMonsterClick,
 }
 
 PlayingViewActionData :: union {
@@ -182,6 +183,14 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "Hide all", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .HideAllClick,
+    }
+  }
+  ui_pos.y += button_dim.h
+  ui_pos.y += gap
+
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Spawn", FONT_MEDIUM, .Ubuntu) {
+    action = {
+      type = .SpawnMonsterClick,
     }
   }
   ui_pos.y += button_dim.h
@@ -408,6 +417,52 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         }
       }
       update_visibility(game.grid, game.player.pos, game.player.floor)
+    }
+  case .SpawnMonsterClick:
+    {
+      enemy_pos: GridPos
+      left_valid := game.player.pos.x > 1
+      right_valid := game.player.pos.x < GRID_WIDTH - 1
+      bot_valid := game.player.pos.y > 1
+      top_valid := game.player.pos.y < GRID_HEIGHT - 1
+
+      // TODO - don't spawn enemy on top of another enemy
+      check :: proc(game: ^Game, x, y: i32) -> bool {
+        return(
+          grid_get(game.grid, GridPos{x = game.player.pos.x + x, y = game.player.pos.y + y}, game.player.floor).type !=
+          .Wall \
+        )
+      }
+
+      if left_valid && top_valid && check(game, -1, 1) {
+        enemy_pos.x = game.player.pos.x - 1
+        enemy_pos.y = game.player.pos.y + 1
+      } else if left_valid && bot_valid && check(game, -1, -1) {
+        enemy_pos.x = game.player.pos.x - 1
+        enemy_pos.y = game.player.pos.y - 1
+      } else if left_valid && check(game, -1, 0) {
+        enemy_pos.x = game.player.pos.x - 1
+        enemy_pos.y = game.player.pos.y
+      } else if right_valid && top_valid && check(game, 1, 1) {
+        enemy_pos.x = game.player.pos.x + 1
+        enemy_pos.y = game.player.pos.y + 1
+      } else if right_valid && bot_valid && check(game, 1, -1) {
+        enemy_pos.x = game.player.pos.x + 1
+        enemy_pos.y = game.player.pos.y - 1
+      } else if right_valid && check(game, 1, 0) {
+        enemy_pos.x = game.player.pos.x + 1
+        enemy_pos.y = game.player.pos.y
+      } else if top_valid && check(game, 0, 1) {
+        enemy_pos.x = game.player.pos.x
+        enemy_pos.y = game.player.pos.y + 1
+      } else if bot_valid && check(game, 0, -1) {
+        enemy_pos.x = game.player.pos.x
+        enemy_pos.y = game.player.pos.y - 1
+      } else {panic("Failed to place enemy")}
+
+      // TODO - draw these on the grid so we can check it's working!
+      enemy_manager_add_enemy(&game.enemy_manager, .Rat, enemy_pos, game.player.floor)
+      
     }
   }
 }

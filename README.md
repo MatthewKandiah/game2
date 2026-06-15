@@ -10,6 +10,8 @@
 - [x] Memory of revealed tiles
 - [x] Minimap
   - non-interactive for now, just drawn
+- [ ] EnemyManager
+  - [ ] test by adding a button to spawn enemies near the player, and delete them on click
 - [ ] Add unintelligent enemies that just approach the player if they can see them
 - [ ] Add player health
 - [ ] Add player -> enemy attacks and enemy -> player attacks

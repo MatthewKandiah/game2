@@ -131,6 +131,7 @@ main :: proc() {
     mode = .MainMenu,
     grid = game_grid_buf,
     player = Player{pos = valid_player_pos, floor = 4},
+    enemy_manager = EnemyManager{},
     viewport_centre = valid_player_pos,
     is_looking = false,
     zoom_level = 1,
@@ -177,12 +178,12 @@ main :: proc() {
       enemy_pos.y = game.player.pos.y - 1
     } else {panic("Failed to place enemy")}
 
-    enemy := Enemy {
-      type  = .Rat,
-      pos   = enemy_pos,
-      floor = game.player.floor,
-    }
-    append(&game.enemies, enemy)
+    // TODO - what do we want it to behave like?
+    // enemy_id := game_add_enemy(&game, type, pos, floor)
+    // enemy := game_get_enemy(enemy_id)
+    // delete_enemy(enemy_id)
+    // enemy_manager lets you get enemy ids by floor, so we can process game logic
+    enemy_manager_add_enemy(&game.enemy_manager, .Rat, enemy_pos, game.player.floor)
   }
 
   // main loop

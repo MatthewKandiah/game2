@@ -12,11 +12,81 @@ ROOM_MIN_DIM :: 3
 START_FLOOR :: 4
 DOWN_STAIRS_PER_FLOOR :: 3
 
+// TODO temporary for debugging - increase for actual game
+ENEMIES_BUFFER_SIZE :: 10
+EnemyManager :: struct {
+  buffer:              [ENEMIES_BUFFER_SIZE]Enemy,
+  active_indices:      [ENEMIES_BUFFER_SIZE]bool,
+  current_generations: [ENEMIES_BUFFER_SIZE]i32,
+  insert_index:        GenerationalIndex,
+}
+
+enemy_manager_set_valid_insert_index :: proc(enemy_manager: ^EnemyManager) -> (ok: bool) {
+  searching := true
+  start_idx := enemy_manager.insert_index.idx
+  for searching {
+    if enemy_manager.active_indices[enemy_manager.insert_index.idx] {
+      enemy_manager.insert_index.idx += 1
+      if enemy_manager.insert_index.idx == ENEMIES_BUFFER_SIZE {
+        enemy_manager.insert_index.idx = 0
+        enemy_manager.insert_index.generation += 1
+      } else if enemy_manager.insert_index.idx > ENEMIES_BUFFER_SIZE {
+        panic("Expect to step by 1 and then loop round, this should be unreachable")
+      }
+      if enemy_manager.insert_index.idx == start_idx {
+        // we've looped back to start, couldn't insert anywhere
+        return false
+      }
+    } else {
+      searching = false
+    }
+  }
+  return true
+}
+
+enemy_manager_add_enemy :: proc(
+  enemy_manager: ^EnemyManager,
+  type: EnemyType,
+  pos: GridPos,
+  floor: i32,
+) -> GenerationalIndex {
+  if !enemy_manager_set_valid_insert_index(enemy_manager) {
+    // probably indicates buggy tidy-up logic or runaway logic spawning endlessly
+    panic("Couldn't insert enemy")
+  }
+  idx := enemy_manager.insert_index.idx
+  generation := enemy_manager.insert_index.generation
+  enemy_manager.buffer[idx] = Enemy {
+    type  = type,
+    pos   = pos,
+    floor = floor,
+  }
+  enemy_manager.active_indices[idx] = true
+  enemy_manager.current_generations[idx] = generation
+
+  return {idx = idx, generation = generation}
+}
+
+enemy_manager_get_enemy :: proc(enemy_manager: ^EnemyManager, index: GenerationalIndex) -> (ok: bool, enemy: Enemy) {
+  if enemy_manager.active_indices[index.idx] && enemy_manager.current_generations[index.idx] == index.generation {
+    return true, enemy_manager.buffer[index.idx]
+  } else {
+    return false, {}
+  }
+}
+
+enemy_manager_delete_enemy :: proc(enemy_manager: ^EnemyManager, index: GenerationalIndex) -> (ok: bool) {
+  if enemy_manager.active_indices[index.idx] && enemy_manager.current_generations[index.idx] == index.generation {
+    enemy_manager.active_indices[index.idx] = false
+  }
+  return false
+}
+
 Game :: struct {
   mode:            GameMode,
   grid:            []GridTile,
   player:          Player,
-  enemies:         [dynamic]Enemy, // TODO - this probably needs to do something that avoids so much memory allocation and copying
+  enemy_manager:   EnemyManager,
   viewport_centre: GridPos,
   is_looking:      bool,
   zoom_level:      f32,

@@ -1,5 +1,10 @@
 package main
 
+GenerationalIndex :: struct {
+  idx: i32,
+  generation: i32,
+}
+
 Enemy :: struct {
   type:  EnemyType,
   pos:   GridPos,

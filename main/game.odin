@@ -82,6 +82,8 @@ enemy_manager_delete_enemy :: proc(enemy_manager: ^EnemyManager, index: Generati
   return false
 }
 
+// TODO - should this return found, enemy_index, enemy
+// avoids case where this gets you an index, then getting enemy has to handle it not existing
 enemy_manager_get_next :: proc(
   enemy_manager: EnemyManager,
   first_index: i32,

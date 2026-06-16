@@ -205,6 +205,7 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: 
   return action
 }
 
+// TODO - refactor out copy-pasted bits
 grid :: proc(
   game: ^Game,
   grid_ui_pos_bot_left: Pos,

@@ -20,11 +20,14 @@ Game :: struct {
   viewport_centre: GridPos,
   is_looking:      bool,
   zoom_level:      f32,
+  time:            f32,
 }
 
 Player :: struct {
-  pos:   GridPos,
-  floor: i32,
+  pos:        GridPos,
+  floor:      i32,
+  move_speed: f32,
+  health:     i32,
 }
 
 GameMode :: enum {
@@ -41,6 +44,8 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
 
   clear_visibility(game.grid, from, game.player.floor)
   update_visibility(game.grid, to, game.player.floor)
+
+  game.time += game.player.move_speed
 }
 
 clear_visibility :: proc(grid: []GridTile, player_pos: GridPos, floor: i32) {

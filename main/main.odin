@@ -130,7 +130,12 @@ main :: proc() {
   game := Game {
     mode = .MainMenu,
     grid = game_grid_buf,
-    player = Player{pos = valid_player_pos, floor = 4},
+    player = Player{
+      pos = valid_player_pos,
+      floor = 4,
+      health = 10,
+      move_speed = 1,
+    },
     enemy_manager = EnemyManager{},
     viewport_centre = valid_player_pos,
     is_looking = false,

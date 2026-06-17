@@ -26,7 +26,6 @@ GridTileDrawInfo :: struct {
   colour: Colour,
 }
 
-// TODO - calling these "grid tile" keeps mixing me up, do I mean the logical entity that exists in the map at this coord, or do I mean the UI entity that is part of drawing the grid? If the former, maybe rename to "map tile"? "grid" reserved for the UI, "map" used for logic?
 grid_tile_draw_info := [GridTileType]GridTileDrawInfo {
   .Floor = GridTileDrawInfo{char = '.', colour = WHITE},
   .Wall = GridTileDrawInfo{char = '#', colour = WHITE},

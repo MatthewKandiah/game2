@@ -117,6 +117,15 @@ grid_tile_screen_pos :: proc(
   }
 }
 
+grid_tile_trim :: proc(grid_ui_pos_bot_left: Pos, grid_ui_dim: Dim, ui_pos: Pos, grid_button_dim: Dim) -> Trim {
+  return Trim {
+    left = max(0, grid_ui_pos_bot_left.x - ui_pos.x),
+    right = max(0, ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w),
+    top = max(0, ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h),
+    bot = max(0, grid_ui_pos_bot_left.y - ui_pos.y),
+  }
+}
+
 buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: Dim) -> (action: PlayingViewAction) {
   ui_pos := Pos {
     x = ui_pos_bot_left.x + gap,
@@ -205,7 +214,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: 
   return action
 }
 
-// TODO - refactor out copy-pasted bits
 grid :: proc(
   game: ^Game,
   grid_ui_pos_bot_left: Pos,
@@ -235,17 +243,10 @@ grid :: proc(
         grid_ui_dim,
         grid_button_dim,
       )
-      trim := Trim {
-        left  = max(0, grid_ui_pos_bot_left.x - ui_pos.x),
-        right = max(0, ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w),
-        top   = max(0, ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h),
-        bot   = max(0, grid_ui_pos_bot_left.y - ui_pos.y),
-      }
-
       if !overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
         continue
       }
-
+      trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
       tile := grid_get(game.grid, grid_pos, game.player.floor)
       if tile.visibility != .Unknown {
         draw_info := grid_tile_draw_info[tile.type]
@@ -277,12 +278,7 @@ grid :: proc(
       grid_ui_dim,
       grid_button_dim,
     )
-    trim := Trim {
-      left  = max(0, grid_ui_pos_bot_left.x - ui_pos.x),
-      right = max(0, ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w),
-      top   = max(0, ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h),
-      bot   = max(0, grid_ui_pos_bot_left.y - ui_pos.y),
-    }
+    trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
     tile := grid_get(game.grid, game.player.pos, game.player.floor)
     draw_info := GridTileDrawInfo {
       char   = '@',
@@ -316,30 +312,27 @@ grid :: proc(
         grid_ui_dim,
         grid_button_dim,
       )
-      trim := Trim {
-        left  = max(0, grid_ui_pos_bot_left.x - ui_pos.x),
-        right = max(0, ui_pos.x + grid_button_dim.w - grid_ui_pos_bot_left.x - grid_ui_dim.w),
-        top   = max(0, ui_pos.y + grid_button_dim.h - grid_ui_pos_bot_left.y - grid_ui_dim.h),
-        bot   = max(0, grid_ui_pos_bot_left.y - ui_pos.y),
-      }
-      tile := grid_get(game.grid, enemy.pos, enemy.floor)
-      draw_info := enemy_draw_info[enemy.type]
-      if enemy.floor == game.player.floor &&
-         tile.visibility == .Visible &&
-         grid_button(
-           get_uid(cast(u32)enemy_idx.idx),
-           ui_pos,
-           grid_button_dim,
-           0.06,
-           draw_info.char,
-           font_size,
-           .UbuntuMono,
-           draw_info.colour,
-           trim,
-         ) {
-        action = {
-          type = .EnemyClick,
-	  data = EnemyClickData{enemy_idx = enemy_idx},
+      if overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
+        trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
+        tile := grid_get(game.grid, enemy.pos, enemy.floor)
+        draw_info := enemy_draw_info[enemy.type]
+        if enemy.floor == game.player.floor &&
+           tile.visibility == .Visible &&
+           grid_button(
+             get_uid(cast(u32)enemy_idx.idx),
+             ui_pos,
+             grid_button_dim,
+             0.06,
+             draw_info.char,
+             font_size,
+             .UbuntuMono,
+             draw_info.colour,
+             trim,
+           ) {
+          action = {
+            type = .EnemyClick,
+            data = EnemyClickData{enemy_idx = enemy_idx},
+          }
         }
       }
       found, enemy_idx, enemy = enemy_manager_get_next(game.enemy_manager, enemy_idx.idx + 1)
@@ -347,7 +340,6 @@ grid :: proc(
   }
   return action
 }
-
 
 minimap :: proc(
   game: ^Game,

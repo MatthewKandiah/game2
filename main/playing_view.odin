@@ -48,7 +48,6 @@ playing_view :: proc(game: ^Game) {
     type = .None,
     data = {},
   }
-  gap: f32 = 10
 
   minimap_pixel_scale: f32 = 5
   minimap_dim := Dim {
@@ -56,13 +55,13 @@ playing_view :: proc(game: ^Game) {
     h = GRID_HEIGHT * minimap_pixel_scale,
   }
   minimap_pos := Pos {
-    x = gc.screen_dim.w - minimap_dim.w - gap,
-    y = gc.screen_dim.h - minimap_dim.h - gap,
+    x = gc.screen_dim.w - minimap_dim.w,
+    y = gc.screen_dim.h - minimap_dim.h,
   }
   minimap(
     game,
-    Pos{x = minimap_pos.x - gap, y = minimap_pos.y - gap},
-    Dim{w = minimap_dim.w + 2 * gap, h = minimap_dim.h + 2 * gap},
+    Pos{x = minimap_pos.x, y = minimap_pos.y},
+    Dim{w = minimap_dim.w, h = minimap_dim.h},
     minimap_pos,
     minimap_dim,
     minimap_pixel_scale,
@@ -73,20 +72,21 @@ playing_view :: proc(game: ^Game) {
     h = 70,
   }
   buttons_column_pos_bot_left := Pos {
-    x = gc.screen_dim.w - 2 * gap - button_dim.w,
+    x = gc.screen_dim.w - button_dim.w,
     y = 0,
   }
-  buttons_column_action := buttons_column(game, buttons_column_pos_bot_left, gap, button_dim)
+  buttons_column_action := buttons_column(game, buttons_column_pos_bot_left, button_dim)
   if buttons_column_action.type != .None {action = buttons_column_action}
 
-  grid_ui_border: f32 = 30
+  top_bar_height: f32 = 30
+  bot_bar_height: f32 = 30
   grid_ui_dim := Dim {
-    w = gc.screen_dim.w - button_dim.w - 2 * gap - 2 * grid_ui_border,
-    h = gc.screen_dim.h - 2 * grid_ui_border,
+    w = gc.screen_dim.w - button_dim.w,
+    h = gc.screen_dim.h - bot_bar_height - top_bar_height,
   }
   grid_ui_pos_bot_left := Pos {
-    x = grid_ui_border,
-    y = grid_ui_border,
+    x = 0,
+    y = bot_bar_height,
   }
   grid_button_dim := Dim {
     w = FONT_MEDIUM * game.zoom_level,
@@ -95,6 +95,18 @@ playing_view :: proc(game: ^Game) {
   font_size := FONT_MEDIUM * game.zoom_level
   grid_action := grid(game, grid_ui_pos_bot_left, grid_ui_dim, grid_button_dim, font_size)
   if grid_action.type != .None {action = grid_action}
+  { // bottom bar - TODO health
+    draw_rect(Pos{x = 0, y = 0}, 0.2, Dim{w = grid_ui_dim.w, h = bot_bar_height}, GREY)
+  }
+
+  { // top bar - TODO time
+    draw_rect(
+      Pos{x = 0, y = grid_ui_pos_bot_left.y + grid_ui_dim.h},
+      0.2,
+      Dim{w = grid_ui_dim.w, h = top_bar_height},
+      GREY,
+    )
+  }
 
   handle_action(game, action)
 }
@@ -126,7 +138,8 @@ grid_tile_trim :: proc(grid_ui_pos_bot_left: Pos, grid_ui_dim: Dim, ui_pos: Pos,
   }
 }
 
-buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, gap: f32, button_dim: Dim) -> (action: PlayingViewAction) {
+buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (action: PlayingViewAction) {
+  gap: f32 = 15
   ui_pos := Pos {
     x = ui_pos_bot_left.x + gap,
     y = ui_pos_bot_left.y + gap,

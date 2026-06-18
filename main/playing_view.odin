@@ -158,10 +158,9 @@ grid_tile_trim :: proc(grid_ui_pos_bot_left: Pos, grid_ui_dim: Dim, ui_pos: Pos,
 }
 
 buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (action: PlayingViewAction) {
-  gap: f32 = 15
   ui_pos := Pos {
-    x = ui_pos_bot_left.x + gap,
-    y = ui_pos_bot_left.y + gap,
+    x = ui_pos_bot_left.x,
+    y = ui_pos_bot_left.y,
   }
 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
@@ -170,7 +169,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     }
   }
   ui_pos.y += button_dim.h
-  ui_pos.y += gap
 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
     action = {
@@ -178,7 +176,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     }
   }
   ui_pos.y += button_dim.h
-  ui_pos.y += gap
 
   {   // zoom button row
     button_count: f32 = 2
@@ -201,7 +198,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     zoom_button_pos.x += zoom_button_dim.w
   }
   ui_pos.y += button_dim.h
-  ui_pos.y += gap
 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
     action = {
@@ -209,7 +205,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     }
   }
   ui_pos.y += button_dim.h
-  ui_pos.y += gap
 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
     action = {
@@ -217,7 +212,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     }
   }
   ui_pos.y += button_dim.h
-  ui_pos.y += gap
 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "See all", FONT_MEDIUM, .Ubuntu) {
     action = {
@@ -225,7 +219,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     }
   }
   ui_pos.y += button_dim.h
-  ui_pos.y += gap
 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "Hide all", FONT_MEDIUM, .Ubuntu) {
     action = {
@@ -233,7 +226,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     }
   }
   ui_pos.y += button_dim.h
-  ui_pos.y += gap
 
   if text_button(get_uid(), ui_pos, button_dim, 0.1, "Spawn", FONT_MEDIUM, .Ubuntu) {
     action = {
@@ -241,7 +233,6 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     }
   }
   ui_pos.y += button_dim.h
-  ui_pos.y += gap
 
   return action
 }

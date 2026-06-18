@@ -28,6 +28,7 @@ Player :: struct {
   floor:      i32,
   move_speed: f32,
   health:     i32,
+  max_health: i32,
 }
 
 GameMode :: enum {

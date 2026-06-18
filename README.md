@@ -10,5 +10,5 @@
 - [x] Add player health
   - [ ] stick health in the UI somewhere
 - [ ] Add player -> enemy attacks and enemy -> player attacks
-
+- [ ] Nice `draw_int` and `draw_float` helpers
 # NOTES

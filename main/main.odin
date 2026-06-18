@@ -106,7 +106,7 @@ main :: proc() {
     }
   }
 
-  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,.$+-<>{}()[]"
+  chars := " 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!#%,.$+-<>{}()[]\\/"
   stopwatch := time.Stopwatch{}
   {   // init fonts
     time.stopwatch_start(&stopwatch)
@@ -134,6 +134,7 @@ main :: proc() {
       pos = valid_player_pos,
       floor = 4,
       health = 10,
+      max_health = 10,
       move_speed = 1,
     },
     enemy_manager = EnemyManager{},

@@ -95,17 +95,36 @@ playing_view :: proc(game: ^Game) {
   font_size := FONT_MEDIUM * game.zoom_level
   grid_action := grid(game, grid_ui_pos_bot_left, grid_ui_dim, grid_button_dim, font_size)
   if grid_action.type != .None {action = grid_action}
-  { // bottom bar - TODO health
+  {   // bottom bar
+    ui_pos := Pos {
+      x = 0,
+      y = 0,
+    }
     draw_rect(Pos{x = 0, y = 0}, 0.2, Dim{w = grid_ui_dim.w, h = bot_bar_height}, GREY)
+    health_str := [5]u8{}
+    health_str[0] = cast(u8)(game.player.health / 10) + '0'
+    health_str[1] = cast(u8)(game.player.health % 10) + '0'
+    health_str[2] = '/'
+    health_str[3] = cast(u8)(game.player.max_health / 10) + '0'
+    health_str[4] = cast(u8)(game.player.max_health % 10) + '0'
+    draw_string(string(health_str[:]), FONTS[.Ubuntu], ui_pos, 0.3, bot_bar_height, BLACK)
   }
 
-  { // top bar - TODO time
-    draw_rect(
-      Pos{x = 0, y = grid_ui_pos_bot_left.y + grid_ui_dim.h},
-      0.2,
-      Dim{w = grid_ui_dim.w, h = top_bar_height},
-      GREY,
-    )
+  {   // top bar
+    ui_pos := Pos {
+      x = 0,
+      y = grid_ui_pos_bot_left.y + grid_ui_dim.h,
+    }
+    draw_rect(ui_pos, 0.2, Dim{w = grid_ui_dim.w, h = top_bar_height}, GREY)
+    time_str := [10]u8{}
+    t := cast(i32)game.time
+    t_idx := 9
+    for t_idx >= 0 {
+      time_str[t_idx] = cast(u8)(t % 10) + '0'
+      t /= 10
+      t_idx -= 1
+    }
+    draw_string(string(time_str[:]), FONTS[.Ubuntu], ui_pos, 0.3, top_bar_height, BLACK)
   }
 
   handle_action(game, action)

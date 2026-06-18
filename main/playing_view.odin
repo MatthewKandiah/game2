@@ -107,7 +107,7 @@ playing_view :: proc(game: ^Game) {
     health_str[2] = '/'
     health_str[3] = cast(u8)(game.player.max_health / 10) + '0'
     health_str[4] = cast(u8)(game.player.max_health % 10) + '0'
-    draw_string(string(health_str[:]), FONTS[.Ubuntu], ui_pos, 0.3, bot_bar_height, BLACK)
+    draw_string(string(health_str[:]), FONTS[.UbuntuMono], ui_pos, 0.3, bot_bar_height, BLACK)
   }
 
   {   // top bar
@@ -124,7 +124,7 @@ playing_view :: proc(game: ^Game) {
       t /= 10
       t_idx -= 1
     }
-    draw_string(string(time_str[:]), FONTS[.Ubuntu], ui_pos, 0.3, top_bar_height, BLACK)
+    draw_string(string(time_str[:]), FONTS[.UbuntuMono], ui_pos, 0.3, top_bar_height, BLACK)
   }
 
   handle_action(game, action)

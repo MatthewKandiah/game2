@@ -1,8 +1,8 @@
 package main
 
-import "core:testing"
 import "core:fmt"
 import "core:log"
+import "core:testing"
 
 ActorQueue :: struct {
   heap_data:  []Actor,
@@ -80,6 +80,7 @@ actor_queue_pop_min :: proc(actor_queue: ^ActorQueue) -> Actor {
         if actor_queue.heap_data[check_idx].next_active > actor_queue.heap_data[left_idx].next_active {
           actor_queue.heap_data[check_idx], actor_queue.heap_data[left_idx] =
             actor_queue.heap_data[left_idx], actor_queue.heap_data[check_idx]
+          check_idx = left_idx
         } else {
           break
         }
@@ -87,6 +88,7 @@ actor_queue_pop_min :: proc(actor_queue: ^ActorQueue) -> Actor {
         if actor_queue.heap_data[check_idx].next_active > actor_queue.heap_data[right_idx].next_active {
           actor_queue.heap_data[check_idx], actor_queue.heap_data[right_idx] =
             actor_queue.heap_data[right_idx], actor_queue.heap_data[check_idx]
+          check_idx = right_idx
         } else {
           break
         }
@@ -96,6 +98,7 @@ actor_queue_pop_min :: proc(actor_queue: ^ActorQueue) -> Actor {
       if actor_queue.heap_data[check_idx].next_active > actor_queue.heap_data[left_idx].next_active {
         actor_queue.heap_data[check_idx], actor_queue.heap_data[left_idx] =
           actor_queue.heap_data[left_idx], actor_queue.heap_data[check_idx]
+        check_idx = left_idx
       } else {
         break
       }
@@ -108,10 +111,15 @@ actor_queue_pop_min :: proc(actor_queue: ^ActorQueue) -> Actor {
 @(test)
 should_be_able_to_insert_and_pop_a_single_element_repeatedly :: proc(t: ^testing.T) {
   buf := [10]Actor{}
-  actor_queue := ActorQueue{heap_data = buf[:]}
+  actor_queue := ActorQueue {
+    heap_data = buf[:],
+  }
 
-  a := Actor{type = .Player, next_active = 1}
-  for i in 0..<100 {
+  a := Actor {
+    type        = .Player,
+    next_active = 1,
+  }
+  for i in 0 ..< 100 {
     actor_queue_insert(&actor_queue, a)
     testing.expect_value(t, actor_queue.heap_count, 1)
 
@@ -126,12 +134,16 @@ should_be_able_to_insert_and_pop_a_single_element_repeatedly :: proc(t: ^testing
 @(test)
 should_be_able_to_insert_and_pop_multiple_values :: proc(t: ^testing.T) {
   buf := [10]Actor{}
-  actor_queue := ActorQueue{heap_data = buf[:]}
+  actor_queue := ActorQueue {
+    heap_data = buf[:],
+  }
 
-  for i in 0..<5 {
-    a := Actor{next_active = cast(f32)i * 100}
+  for i in 0 ..< 5 {
+    a := Actor {
+      next_active = cast(f32)i * 100,
+    }
     actor_queue_insert(&actor_queue, a)
-  }   // [0, 100, 200, 300, 400]
+  } // [0, 100, 200, 300, 400]
   testing.expect_value(t, actor_queue.heap_count, 5)
 
   p1 := actor_queue_pop_min(&actor_queue).next_active
@@ -139,9 +151,11 @@ should_be_able_to_insert_and_pop_multiple_values :: proc(t: ^testing.T) {
   testing.expect_value(t, actor_queue.heap_count, 3)
   testing.expect_value(t, p1, 0)
   testing.expect_value(t, p2, 100)
-  
-  for i in 0..<3 {
-    a := Actor{next_active = 350 - cast(f32)i * 50}
+
+  for i in 0 ..< 3 {
+    a := Actor {
+      next_active = 350 - cast(f32)i * 50,
+    }
     actor_queue_insert(&actor_queue, a)
   } // [200, 250, 300, 300, 350, 400]
   testing.expect_value(t, actor_queue.heap_count, 6)
@@ -162,3 +176,25 @@ should_be_able_to_insert_and_pop_multiple_values :: proc(t: ^testing.T) {
   testing.expect_value(t, p8, 400)
 }
 
+@(test)
+should_be_able_to_add_and_pop_lots_of_values :: proc(t: ^testing.T) {
+  size :: 1000
+  buf := [size]Actor{}
+  actor_queue := ActorQueue {
+    heap_data = buf[:],
+  }
+
+  for idx in 0 ..< size {
+    a := Actor {
+      next_active = cast(f32)idx,
+    }
+    actor_queue_insert(&actor_queue, a)
+  }
+  testing.expect_value(t, actor_queue.heap_count, size)
+
+  for idx in 0 ..< size {
+    a := actor_queue_pop_min(&actor_queue)
+    testing.expect_value(t, a.next_active, cast(f32)idx)
+  }
+  testing.expect_value(t, actor_queue.heap_count, 0)
+}

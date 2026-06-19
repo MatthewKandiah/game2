@@ -1,8 +1,8 @@
 package main
 
 import "core:fmt"
-import "core:math/rand"
 import "core:log"
+import "core:math/rand"
 
 GRID_WIDTH :: 50
 GRID_HEIGHT :: 50
@@ -29,7 +29,7 @@ Game :: struct {
 Player :: struct {
   pos:        GridPos,
   floor:      i32,
-  move_time: f32,
+  move_time:  f32,
   health:     i32,
   max_health: i32,
 }
@@ -50,7 +50,10 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
   clear_visibility(game.grid, from, game.player.floor)
   update_visibility(game.grid, to, game.player.floor)
 
-  actor := Actor{type = .Player, next_active = game.time + game.player.move_time}
+  actor := Actor {
+    type        = .Player,
+    next_active = game.time + game.player.move_time,
+  }
   actor_queue_insert(&game.actor_queue, actor)
   game.process_actors = true
 }

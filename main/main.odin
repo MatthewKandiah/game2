@@ -34,14 +34,8 @@ GlobalContext :: struct {
 gc: GlobalContext
 
 main :: proc() {
-  console_logger := log.create_console_logger(lowest = .Info)
-  log_file, log_file_err := os.create("./build/game2_logs.txt")
-  if log_file_err != nil {
-    log.fatal(log_file_err)
-    panic("Failed to create log file")
-  }
-  file_logger := log.create_file_logger(log_file, lowest = .Debug)
-  gc.logger = log.create_multi_logger(file_logger, console_logger)
+  console_logger := log.create_console_logger(lowest = .Warning)
+  gc.logger = console_logger
   context.logger = gc.logger
 
   {   // glfw init
@@ -131,18 +125,9 @@ main :: proc() {
   game := Game {
     mode = .MainMenu,
     grid = game_grid_buf,
-    player = Player{
-      pos = valid_player_pos,
-      floor = 4,
-      health = 10,
-      max_health = 10,
-      move_time = 10,
-    },
+    player = Player{pos = valid_player_pos, floor = 4, health = 10, max_health = 10, move_time = 10},
     enemy_manager = EnemyManager{},
-    actor_queue = ActorQueue{
-      heap_data = actor_queue_buf,
-      heap_count = 0,
-    },
+    actor_queue = ActorQueue{heap_data = actor_queue_buf, heap_count = 0},
     viewport_centre = valid_player_pos,
     is_looking = false,
     zoom_level = 1,
@@ -160,16 +145,15 @@ main :: proc() {
       actor := actor_queue_pop_min(&game.actor_queue)
       game.time = actor.next_active
       if actor.type != .Player {
-	fmt.println("actor.type != .Player")
-	if enemy_manager_delete_enemy(&game.enemy_manager, actor.data.(ActorEnemyData).idx) {
-	  fmt.println(game.time, "- actor dies", actor)
-	}
+        // TODO - temporary, needs to kick off a smarter AI processing step
+        if enemy_manager_delete_enemy(&game.enemy_manager, actor.data.(ActorEnemyData).idx) {
+          fmt.println(game.time, "- actor dies", actor)
+        }
       } else {
-	fmt.println("actor.type == .Player")
-	game.process_actors = false
+        game.process_actors = false
       }
     }
-    
+
     gc.ui.triggered_id = 0
     flush_input_events()
 

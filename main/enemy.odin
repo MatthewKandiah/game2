@@ -1,15 +1,17 @@
 package main
 
+import "core:log"
+
 GenerationalIndex :: struct {
-  idx: i32,
+  idx:        i32,
   generation: i32,
 }
 
 Enemy :: struct {
-  type:  EnemyType,
-  pos:   GridPos,
-  floor: i32,
-  health: i32,
+  type:       EnemyType,
+  pos:        GridPos,
+  floor:      i32,
+  health:     i32,
   max_health: i32,
 }
 
@@ -26,30 +28,16 @@ EnemyManager :: struct {
   buffer:              [ENEMIES_BUFFER_SIZE]Enemy,
   active_indices:      [ENEMIES_BUFFER_SIZE]bool,
   current_generations: [ENEMIES_BUFFER_SIZE]i32,
-  insert_index:        GenerationalIndex,
 }
 
-enemy_manager_set_valid_insert_index :: proc(enemy_manager: ^EnemyManager) -> (ok: bool) {
-  searching := true
-  start_idx := enemy_manager.insert_index.idx
-  for searching {
-    if enemy_manager.active_indices[enemy_manager.insert_index.idx] {
-      enemy_manager.insert_index.idx += 1
-      if enemy_manager.insert_index.idx == ENEMIES_BUFFER_SIZE {
-        enemy_manager.insert_index.idx = 0
-        enemy_manager.insert_index.generation += 1
-      } else if enemy_manager.insert_index.idx > ENEMIES_BUFFER_SIZE {
-        panic("Expect to step by 1 and then loop round, this should be unreachable")
-      }
-      if enemy_manager.insert_index.idx == start_idx {
-        // we've looped back to start, couldn't insert anywhere
-        return false
-      }
-    } else {
-      searching = false
+enemy_manager_get_valid_insert_index :: proc(enemy_manager: EnemyManager) -> (ok: bool, idx: GenerationalIndex) {
+  for is_active, idx in enemy_manager.active_indices {
+    if !is_active {
+      generation := enemy_manager.current_generations[idx] + 1
+      return true, GenerationalIndex{idx = cast(i32)idx, generation = generation}
     }
   }
-  return true
+  return false, {}
 }
 
 enemy_manager_add_enemy :: proc(
@@ -58,23 +46,23 @@ enemy_manager_add_enemy :: proc(
   pos: GridPos,
   floor: i32,
 ) -> GenerationalIndex {
-  if !enemy_manager_set_valid_insert_index(enemy_manager) {
+  insert_ok, gen_idx := enemy_manager_get_valid_insert_index(enemy_manager^)
+  if !insert_ok {
     // probably indicates buggy tidy-up logic or runaway logic spawning endlessly
     panic("Couldn't insert enemy")
   }
-  idx := enemy_manager.insert_index.idx
-  generation := enemy_manager.insert_index.generation
-  enemy_manager.buffer[idx] = Enemy {
-    type  = type,
-    pos   = pos,
-    floor = floor,
-    health = 10,
+  enemy_manager.buffer[gen_idx.idx] = Enemy {
+    type       = type,
+    pos        = pos,
+    floor      = floor,
+    health     = 10,
     max_health = 10,
   }
-  enemy_manager.active_indices[idx] = true
-  enemy_manager.current_generations[idx] = generation
+  enemy_manager.active_indices[gen_idx.idx] = true
+  enemy_manager.current_generations[gen_idx.idx] = gen_idx.generation
 
-  return {idx = idx, generation = generation}
+  log.info("enemy_manager_add_enemy", gen_idx)
+  return gen_idx
 }
 
 enemy_manager_get_enemy :: proc(enemy_manager: ^EnemyManager, index: GenerationalIndex) -> (ok: bool, enemy: Enemy) {
@@ -85,11 +73,15 @@ enemy_manager_get_enemy :: proc(enemy_manager: ^EnemyManager, index: Generationa
   }
 }
 
-enemy_manager_delete_enemy :: proc(enemy_manager: ^EnemyManager, index: GenerationalIndex) -> (ok: bool) {
+enemy_manager_delete_enemy :: proc(enemy_manager: ^EnemyManager, index: GenerationalIndex) -> (deleted: bool) {
   if enemy_manager.active_indices[index.idx] && enemy_manager.current_generations[index.idx] == index.generation {
     enemy_manager.active_indices[index.idx] = false
+    deleted = true
+  } else {
+    deleted = false
   }
-  return false
+  log.info("enemy_manager_delete_enemy", index, deleted)
+  return deleted
 }
 
 enemy_manager_get_next :: proc(
@@ -107,7 +99,9 @@ enemy_manager_get_next :: proc(
   searching := true
   for searching {
     if enemy_manager.active_indices[idx] {
-      return true, GenerationalIndex{idx = idx, generation = enemy_manager.current_generations[idx]}, enemy_manager.buffer[idx]
+      return true,
+        GenerationalIndex{idx = idx, generation = enemy_manager.current_generations[idx]},
+        enemy_manager.buffer[idx]
     } else {
       idx += 1
       if idx >= ENEMIES_BUFFER_SIZE {

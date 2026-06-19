@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 import "core:math/rand"
+import "core:log"
 
 GRID_WIDTH :: 50
 GRID_HEIGHT :: 50
@@ -22,12 +23,13 @@ Game :: struct {
   is_looking:      bool,
   zoom_level:      f32,
   time:            f32,
+  process_actors:  bool,
 }
 
 Player :: struct {
   pos:        GridPos,
   floor:      i32,
-  move_speed: f32,
+  move_time: f32,
   health:     i32,
   max_health: i32,
 }
@@ -41,13 +43,16 @@ PLAYER_VIEW_RADIUS :: 7
 
 game_player_move :: proc(game: ^Game, to: GridPos) {
   from := game.player.pos
+  log.info("game_player_move", from, "to", to)
   game.player.pos = to
   game.viewport_centre = to
 
   clear_visibility(game.grid, from, game.player.floor)
   update_visibility(game.grid, to, game.player.floor)
 
-  game.time += game.player.move_speed
+  actor := Actor{type = .Player, next_active = game.time + game.player.move_time}
+  actor_queue_insert(&game.actor_queue, actor)
+  game.process_actors = true
 }
 
 clear_visibility :: proc(grid: []GridTile, player_pos: GridPos, floor: i32) {

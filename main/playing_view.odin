@@ -553,7 +553,13 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         enemy_pos.y = game.player.pos.y - 1
       } else {panic("Failed to place enemy")}
 
-      enemy_manager_add_enemy(&game.enemy_manager, .Rat, enemy_pos, game.player.floor)
+      enemy_idx := enemy_manager_add_enemy(&game.enemy_manager, .Rat, enemy_pos, game.player.floor)
+      actor := Actor {
+        type = .Enemy,
+        next_active = game.time + 25,
+        data = ActorEnemyData{idx = enemy_idx},
+      }
+      actor_queue_insert(&game.actor_queue, actor)
     }
   }
 }

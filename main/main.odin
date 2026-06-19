@@ -126,7 +126,7 @@ main :: proc() {
   }
 
   game_grid_buf := make([]GridTile, GRID_DEPTH * GRID_WIDTH * GRID_HEIGHT)
-  actor_queue_buf := make([]Actor, ENEMIES_BUFFER_SIZE + 1) // enemies + player
+  actor_queue_buf := make([]Actor, 2 * ENEMIES_BUFFER_SIZE + 1) // enemies + player
   valid_player_pos := init_grid_tiles(game_grid_buf)
   game := Game {
     mode = .MainMenu,
@@ -136,7 +136,7 @@ main :: proc() {
       floor = 4,
       health = 10,
       max_health = 10,
-      move_speed = 1,
+      move_time = 10,
     },
     enemy_manager = EnemyManager{},
     actor_queue = ActorQueue{
@@ -146,8 +146,9 @@ main :: proc() {
     viewport_centre = valid_player_pos,
     is_looking = false,
     zoom_level = 1,
+    process_actors = true,
   }
-  // TODO - we need to stick the player in the actor queue
+  actor_queue_insert(&game.actor_queue, {type = .Player, next_active = 0})
   update_visibility(game.grid, valid_player_pos, game.player.floor)
 
   // main loop
@@ -155,6 +156,20 @@ main :: proc() {
     time.stopwatch_start(&stopwatch)
     glfw.PollEvents()
 
+    for game.process_actors {
+      actor := actor_queue_pop_min(&game.actor_queue)
+      game.time = actor.next_active
+      if actor.type != .Player {
+	fmt.println("actor.type != .Player")
+	if enemy_manager_delete_enemy(&game.enemy_manager, actor.data.(ActorEnemyData).idx) {
+	  fmt.println(game.time, "- actor dies", actor)
+	}
+      } else {
+	fmt.println("actor.type == .Player")
+	game.process_actors = false
+      }
+    }
+    
     gc.ui.triggered_id = 0
     flush_input_events()
 

@@ -2,6 +2,7 @@ package main
 
 import "core:testing"
 import "core:fmt"
+import "core:log"
 
 ActorQueue :: struct {
   heap_data:  []Actor,
@@ -43,6 +44,7 @@ actor_queue_heap_parent_idx :: proc(idx: i32) -> i32 {
 }
 
 actor_queue_insert :: proc(actor_queue: ^ActorQueue, actor: Actor) {
+  log.info("actor_queue_insert", actor)
   actor_queue.heap_data[actor_queue.heap_count] = actor
   cmp_child_idx := actor_queue.heap_count
   cmp_parent_idx := actor_queue_heap_parent_idx(cmp_child_idx)
@@ -62,6 +64,7 @@ actor_queue_peek_min :: proc(actor_queue: ActorQueue) -> Actor {
 
 actor_queue_pop_min :: proc(actor_queue: ^ActorQueue) -> Actor {
   res := actor_queue.heap_data[0]
+  log.info("actor_queue_pop_min", res)
   actor_queue.heap_data[0] = actor_queue.heap_data[actor_queue.heap_count - 1]
   actor_queue.heap_count -= 1
 
@@ -80,7 +83,7 @@ actor_queue_pop_min :: proc(actor_queue: ^ActorQueue) -> Actor {
         } else {
           break
         }
-      } else {   // right_child_is_smaller
+      } else {   // right_child_is_smaller or equal
         if actor_queue.heap_data[check_idx].next_active > actor_queue.heap_data[right_idx].next_active {
           actor_queue.heap_data[check_idx], actor_queue.heap_data[right_idx] =
             actor_queue.heap_data[right_idx], actor_queue.heap_data[check_idx]

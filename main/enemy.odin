@@ -9,6 +9,8 @@ Enemy :: struct {
   type:  EnemyType,
   pos:   GridPos,
   floor: i32,
+  health: i32,
+  max_health: i32,
 }
 
 EnemyType :: enum {
@@ -66,6 +68,8 @@ enemy_manager_add_enemy :: proc(
     type  = type,
     pos   = pos,
     floor = floor,
+    health = 10,
+    max_health = 10,
   }
   enemy_manager.active_indices[idx] = true
   enemy_manager.current_generations[idx] = generation

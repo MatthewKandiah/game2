@@ -17,6 +17,7 @@ Game :: struct {
   grid:            []GridTile,
   player:          Player,
   enemy_manager:   EnemyManager,
+  actor_queue:     ActorQueue,
   viewport_centre: GridPos,
   is_looking:      bool,
   zoom_level:      f32,

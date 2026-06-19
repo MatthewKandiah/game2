@@ -126,6 +126,7 @@ main :: proc() {
   }
 
   game_grid_buf := make([]GridTile, GRID_DEPTH * GRID_WIDTH * GRID_HEIGHT)
+  actor_queue_buf := make([]Actor, ENEMIES_BUFFER_SIZE + 1) // enemies + player
   valid_player_pos := init_grid_tiles(game_grid_buf)
   game := Game {
     mode = .MainMenu,
@@ -138,10 +139,15 @@ main :: proc() {
       move_speed = 1,
     },
     enemy_manager = EnemyManager{},
+    actor_queue = ActorQueue{
+      heap_data = actor_queue_buf,
+      heap_count = 0,
+    },
     viewport_centre = valid_player_pos,
     is_looking = false,
     zoom_level = 1,
   }
+  // TODO - we need to stick the player in the actor queue
   update_visibility(game.grid, valid_player_pos, game.player.floor)
 
   // main loop

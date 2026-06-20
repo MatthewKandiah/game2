@@ -3,16 +3,21 @@
 # TODO
 - [x] EnemyManager
   - [x] test by adding a button to spawn enemies near the player, and delete them on click
-- [ ] Add unintelligent enemies that just approach the player if they can see them
+- [x] Add unintelligent enemies that just approach the player if they can see them
   - [x] needs an in-game time system
   - [x] needs an actor ordering system
   - [x] stick time in the UI somewhere
-  - [ ] needs enemies to have ALERT and NOT_ALERT modes that drive their behaviour
+  - [x] needs enemies to have ALERT and NOT_ALERT modes that drive their behaviour
 - [x] Add player health
   - [x] stick health in the UI somewhere
 - [ ] Add player -> enemy attacks and enemy -> player attacks
+  - [ ] Game over state when health hits zero
 - [ ] Nice `draw_int` and `draw_float` helpers
   - Health and time UI good places to do it
+- [ ] Path finding
+  - Current just hacked in based on vision code
+  - Should enable clicking to move the player more than one tile too, set a target position and process moves along that path
+- [ ] Message console for communicating in-game info (instead of console logging to terminal)
 
 # NOTES
 - originally had the actor queue size set to enemy manager buffer size + 1, thinking you can't have more actors than that. Doesn't work unless we also remove dead actors from the actor queue, which we can't do efficiently.   - set it to double the enemy count and see how we go? Unlikely that we wipe every actor out and replace them all and then have another one

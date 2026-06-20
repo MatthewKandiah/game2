@@ -512,17 +512,15 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           grid_get(game.grid, GridPos{x = game.player.pos.x + x, y = game.player.pos.y + y}, game.player.floor).type !=
           .Wall
         not_enemy := true
-        got_enemy, enemy_idx, _ := enemy_manager_get_next(game.enemy_manager, 0)
+        got_enemy, enemy_idx, enemy := enemy_manager_get_next(game.enemy_manager, 0)
         for got_enemy {
-          enemy_ok, enemy := enemy_manager_get_enemy(&game.enemy_manager, enemy_idx)
-          if !enemy_ok {panic("Unexpectedly missing enemy")}
           if enemy.pos.x == game.player.pos.x + x &&
              enemy.pos.y == game.player.pos.y + y &&
              enemy.floor == game.player.floor {
             not_enemy = false
             break
           }
-          got_enemy, enemy_idx, _ = enemy_manager_get_next(game.enemy_manager, enemy_idx.idx + 1)
+          got_enemy, enemy_idx, enemy = enemy_manager_get_next(game.enemy_manager, enemy_idx.idx + 1)
         }
         return not_wall && not_enemy
       }

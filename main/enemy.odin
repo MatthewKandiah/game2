@@ -9,14 +9,21 @@ GenerationalIndex :: struct {
 
 Enemy :: struct {
   type:       EnemyType,
+  status:     EnemyStatus,
   pos:        GridPos,
   floor:      i32,
   health:     i32,
   max_health: i32,
+  move_time:  f32,
 }
 
 EnemyType :: enum {
   Rat,
+}
+
+EnemyStatus :: enum {
+  INACTIVE,
+  ACTIVE,
 }
 
 enemy_draw_info := [EnemyType]GridTileDrawInfo {
@@ -43,6 +50,7 @@ enemy_manager_get_valid_insert_index :: proc(enemy_manager: EnemyManager) -> (ok
 enemy_manager_add_enemy :: proc(
   enemy_manager: ^EnemyManager,
   type: EnemyType,
+  status: EnemyStatus,
   pos: GridPos,
   floor: i32,
 ) -> GenerationalIndex {
@@ -53,10 +61,12 @@ enemy_manager_add_enemy :: proc(
   }
   enemy_manager.buffer[gen_idx.idx] = Enemy {
     type       = type,
+    status     = status,
     pos        = pos,
     floor      = floor,
     health     = 10,
     max_health = 10,
+    move_time  = 25,
   }
   enemy_manager.active_indices[gen_idx.idx] = true
   enemy_manager.current_generations[gen_idx.idx] = gen_idx.generation
@@ -70,6 +80,12 @@ enemy_manager_get_enemy :: proc(enemy_manager: ^EnemyManager, index: Generationa
     return true, enemy_manager.buffer[index.idx]
   } else {
     return false, {}
+  }
+}
+
+enemy_manager_set_enemy_status :: proc(enemy_manager: ^EnemyManager, index: GenerationalIndex, status: EnemyStatus) {
+  if enemy_manager.active_indices[index.idx] && enemy_manager.current_generations[index.idx] == index.generation {
+    enemy_manager.buffer[index.idx].status = status
   }
 }
 

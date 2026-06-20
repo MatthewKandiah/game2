@@ -145,9 +145,15 @@ main :: proc() {
       actor := actor_queue_pop_min(&game.actor_queue)
       game.time = actor.next_active
       if actor.type != .Player {
-        // TODO - temporary, needs to kick off a smarter AI processing step
-        if enemy_manager_delete_enemy(&game.enemy_manager, actor.data.(ActorEnemyData).idx) {
-          fmt.println(game.time, "- actor dies", actor)
+        enemy_idx := actor.data.(ActorEnemyData).idx
+        acts_again, next_action_time := enemy_ai(&game, enemy_idx)
+        if acts_again {
+          actor := Actor {
+            type = .Enemy,
+            next_active = next_action_time,
+            data = ActorEnemyData{idx = enemy_idx},
+          }
+          actor_queue_insert(&game.actor_queue, actor)
         }
       } else {
         game.process_actors = false

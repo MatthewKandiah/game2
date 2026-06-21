@@ -25,7 +25,7 @@ enemy_ai :: proc(game: ^Game, enemy_gen_idx: GenerationalIndex) -> (acts_again: 
       case .ACTIVE:
         {
           if can_see_player {
-            // TODO - more sensible pathfinding
+            // TODO - more sensible pathfinding using game.floor_dijkstra_map
             path_size :: 2 * PLAYER_VIEW_RADIUS
             path_buf, _, path_count := supercover(path_size, enemy.pos, game.player.pos)
             target_pos := path_buf[1]

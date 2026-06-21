@@ -17,6 +17,7 @@ Game :: struct {
   mode:            GameMode,
   grid:            []GridTile,
   player:          Player,
+  floor_dijkstra_map: []i32,
   enemy_manager:   EnemyManager,
   actor_queue:     ActorQueue,
   viewport_centre: GridPos,

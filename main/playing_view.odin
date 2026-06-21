@@ -461,10 +461,12 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           clear_visibility(game.grid, game.player.pos, game.player.floor)
           game.player.floor += 1
           update_visibility(game.grid, game.player.pos, game.player.floor)
+          update_floor_dijkstra_map(game^)
         } else if data.tile_type == .UpStair {
           clear_visibility(game.grid, game.player.pos, game.player.floor)
           game.player.floor -= 1
           update_visibility(game.grid, game.player.pos, game.player.floor)
+          update_floor_dijkstra_map(game^)
         }
       }
     }

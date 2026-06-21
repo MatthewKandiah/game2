@@ -86,7 +86,6 @@ enemy_manager_get_enemy :: proc(enemy_manager: ^EnemyManager, index: Generationa
 
 enemy_manager_set_enemy_pos :: proc(enemy_manager: ^EnemyManager, index: GenerationalIndex, pos: GridPos) {
   if enemy_manager.active_indices[index.idx] && enemy_manager.current_generations[index.idx] == index.generation {
-    fmt.println("debugging - pos update")
     enemy_manager.buffer[index.idx].pos = pos
   }
 }

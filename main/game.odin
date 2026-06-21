@@ -14,17 +14,17 @@ START_FLOOR :: 4
 DOWN_STAIRS_PER_FLOOR :: 3
 
 Game :: struct {
-  mode:            GameMode,
-  grid:            []GridTile,
-  player:          Player,
+  mode:               GameMode,
+  grid:               []GridTile,
+  player:             Player,
   floor_dijkstra_map: []i32,
-  enemy_manager:   EnemyManager,
-  actor_queue:     ActorQueue,
-  viewport_centre: GridPos,
-  is_looking:      bool,
-  zoom_level:      f32,
-  time:            f32,
-  process_actors:  bool,
+  enemy_manager:      EnemyManager,
+  actor_queue:        ActorQueue,
+  viewport_centre:    GridPos,
+  is_looking:         bool,
+  zoom_level:         f32,
+  time:               f32,
+  process_actors:     bool,
 }
 
 Player :: struct {
@@ -50,6 +50,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
 
   clear_visibility(game.grid, from, game.player.floor)
   update_visibility(game.grid, to, game.player.floor)
+  update_floor_dijkstra_map(game^)
 
   actor := Actor {
     type        = .Player,

@@ -138,7 +138,7 @@ main :: proc() {
   actor_queue_insert(&game.actor_queue, {type = .Player, next_active = 0})
   update_visibility(game.grid, valid_player_pos, game.player.floor)
   update_floor_dijkstra_map(game)
-  
+
   // main loop
   for !glfw.WindowShouldClose(gc.window) {
     time.stopwatch_start(&stopwatch)

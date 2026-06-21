@@ -1,10 +1,104 @@
 package main
 
 import "core:fmt"
+import "core:log"
 
 // leave space for arithmetic without overflowing
 DIJKSTRA_MAP_SENTINEL :: cast(i32)max(i16)
 
+dijkstra_map_move_toward_player_candidates :: proc(
+  dijk: []i32,
+  pos: GridPos,
+) -> (
+  candidate_buf: [8]GridPos,
+  candidate_count: i32,
+) {
+  candidate_value := dijkstra_map_get(dijk, pos) - 1
+
+  up_pos := GridPos {
+    x = pos.x,
+    y = pos.y + 1,
+  }
+  up := dijkstra_map_get(dijk, up_pos)
+  if up == candidate_value {
+    candidate_buf[candidate_count] = up_pos
+    candidate_count += 1
+  }
+
+  left_pos := GridPos {
+    x = pos.x - 1,
+    y = pos.y,
+  }
+  left := dijkstra_map_get(dijk, left_pos)
+  if left == candidate_value {
+    candidate_buf[candidate_count] = left_pos
+    candidate_count += 1
+  }
+
+  right_pos := GridPos {
+    x = pos.x + 1,
+    y = pos.y,
+  }
+  right := dijkstra_map_get(dijk, right_pos)
+  if right == candidate_value {
+    candidate_buf[candidate_count] = right_pos
+    candidate_count += 1
+  }
+
+  down_pos := GridPos {
+    x = pos.x,
+    y = pos.y - 1,
+  }
+  down := dijkstra_map_get(dijk, down_pos)
+  if down == candidate_value {
+    candidate_buf[candidate_count] = down_pos
+    candidate_count += 1
+  }
+
+  up_left_pos := GridPos {
+    x = pos.x - 1,
+    y = pos.y + 1,
+  }
+  up_left := dijkstra_map_get(dijk, up_left_pos)
+  if up_left == candidate_value {
+    candidate_buf[candidate_count] = up_left_pos
+    candidate_count += 1
+  }
+
+  up_right_pos := GridPos {
+    x = pos.x + 1,
+    y = pos.y + 1,
+  }
+  up_right := dijkstra_map_get(dijk, up_right_pos)
+  if up_right == candidate_value {
+    candidate_buf[candidate_count] = up_right_pos
+    candidate_count += 1
+  }
+
+  down_left_pos := GridPos {
+    x = pos.x - 1,
+    y = pos.y - 1,
+  }
+  down_left := dijkstra_map_get(dijk, down_left_pos)
+  if down_left == candidate_value {
+    candidate_buf[candidate_count] = down_left_pos
+    candidate_count += 1
+  }
+
+  down_right_pos := GridPos {
+    x = pos.x + 1,
+    y = pos.y - 1,
+  }
+  down_right := dijkstra_map_get(dijk, down_right_pos)
+  if down_right == candidate_value {
+    candidate_buf[candidate_count] = down_right_pos
+    candidate_count += 1
+  }
+
+  return
+}
+
+// TODO - can this be done more sensibly? Maybe breadth-first search, starting at the player?
 update_floor_dijkstra_map :: proc(game: Game) {
   for &v in game.floor_dijkstra_map {
     v = DIJKSTRA_MAP_SENTINEL
@@ -47,7 +141,7 @@ update_floor_dijkstra_map :: proc(game: Game) {
     }
 
     if no_changes {
-      fmt.println(count)
+      log.info("update_floor_dijkstra_map iteration count:", count)
       break
     }
     count += 1

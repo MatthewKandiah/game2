@@ -39,14 +39,14 @@ enemy_ai :: proc(game: ^Game, enemy_gen_idx: GenerationalIndex) -> (acts_again: 
               }
               got_enemy, enemy_iter_idx, enemy = enemy_manager_get_next(game.enemy_manager, enemy_iter_idx.idx + 1)
             }
-	    if target_pos == game.player.pos {
-	      fmt.println("Rat bites player", enemy_gen_idx)
-	    } else if !is_wall && !is_enemy {
-	      fmt.println("Rat steps towards player", enemy_gen_idx)
+            if target_pos == game.player.pos {
+              fmt.println("Rat bites player", enemy_gen_idx)
+            } else if !is_wall && !is_enemy {
+              fmt.println("Rat steps towards player", enemy_gen_idx)
               enemy_manager_set_enemy_pos(&game.enemy_manager, enemy_gen_idx, target_pos)
             } else {
-	      fmt.println("Rat snarls angrily", enemy_gen_idx)
-	    }
+              fmt.println("Rat snarls angrily", enemy_gen_idx)
+            }
           } else {
             fmt.println("Rat forgets player", enemy_gen_idx)
             enemy_manager_set_enemy_status(&game.enemy_manager, enemy_gen_idx, .INACTIVE)

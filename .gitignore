@@ -2,3 +2,4 @@ build
 *.bin
 *.spv
 game2_logs.txt
+.gdb_history

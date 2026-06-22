@@ -121,20 +121,21 @@ main :: proc() {
 
   game_grid_buf := make([]GridTile, GRID_DEPTH * GRID_WIDTH * GRID_HEIGHT)
   floor_dijkstra_map_buf := make([]i32, GRID_WIDTH * GRID_HEIGHT)
-  actor_queue_buf := make([]Actor, 2 * ENEMIES_BUFFER_SIZE + 1)
+  actor_queue_buf := make([]Actor, 2 * ENTITY_BUFFER_SIZE + 1)
   valid_player_pos := init_grid_tiles(game_grid_buf)
   game := Game {
     mode = .MainMenu,
     grid = game_grid_buf,
     floor_dijkstra_map = floor_dijkstra_map_buf,
-    player = Player{pos = valid_player_pos, floor = 4, health = 10, max_health = 10, move_time = 10},
-    enemy_manager = EnemyManager{},
+    entity_manager = EntityManager{},
     actor_queue = ActorQueue{heap_data = actor_queue_buf, heap_count = 0},
     viewport_centre = valid_player_pos,
     is_looking = false,
     zoom_level = 1,
     process_actors = true,
   }
+  entity_manager_add_player(&game.entity_manager, valid_player_pos, 4)
+  game.player = entity_manager_get_player(&game.entity_manager)
   actor_queue_insert(&game.actor_queue, {type = .Player, next_active = 0})
   update_visibility(game.grid, valid_player_pos, game.player.floor)
   update_floor_dijkstra_map(game)

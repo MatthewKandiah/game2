@@ -28,7 +28,7 @@ ActorData :: union {
 ActorPlayerData :: struct {}
 
 ActorEnemyData :: struct {
-  idx: GenerationalIndex,
+  idx: EntityId,
 }
 
 actor_queue_heap_left_child_idx :: proc(idx: i32) -> i32 {

@@ -1,6 +1,7 @@
 package main
 
 import "core:fmt"
+import "core:log"
 import "core:math"
 
 PlayingViewAction :: struct {
@@ -22,6 +23,7 @@ PlayingViewActionType :: enum {
   ShowAllClick,
   HideAllClick,
   SpawnMonsterClick,
+  WaitClick,
 }
 
 PlayingViewActionData :: union {
@@ -40,7 +42,7 @@ PlayerClickData :: struct {
 }
 
 EnemyClickData :: struct {
-  enemy_idx: GenerationalIndex,
+  id: EntityId,
 }
 
 playing_view :: proc(game: ^Game) {
@@ -234,6 +236,12 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
   }
   ui_pos.y += button_dim.h
 
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Wait", FONT_MEDIUM, .Ubuntu) {
+    action = {
+      type = .WaitClick,
+    }
+  }
+
   return action
 }
 
@@ -326,8 +334,12 @@ grid :: proc(
   }
 
   {   // draw enemies
-    found, enemy_idx, enemy := enemy_manager_get_next(game.enemy_manager, 0)
-    for found {
+    iter := entity_iter_init(&game.entity_manager)
+    for enemy in entity_iter_next(&iter) {
+      if enemy.type == .Player {
+        // TODO - unify later
+        continue
+      }
       ui_pos := grid_tile_screen_pos(
         enemy.pos,
         game.viewport_centre,
@@ -338,11 +350,11 @@ grid :: proc(
       if overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
         trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
         tile := grid_get(game.grid, enemy.pos, enemy.floor)
-        draw_info := enemy_draw_info[enemy.type]
+        draw_info := entity_draw_info[enemy.type]
         if enemy.floor == game.player.floor &&
            tile.visibility == .Visible &&
            grid_button(
-             get_uid(cast(u32)enemy_idx.idx),
+             get_uid(cast(u32)enemy.id.idx),
              ui_pos,
              grid_button_dim,
              0.06,
@@ -354,11 +366,10 @@ grid :: proc(
            ) {
           action = {
             type = .EnemyClick,
-            data = EnemyClickData{enemy_idx = enemy_idx},
+            data = EnemyClickData{id = enemy.id},
           }
         }
       }
-      found, enemy_idx, enemy = enemy_manager_get_next(game.enemy_manager, enemy_idx.idx + 1)
     }
   }
   return action
@@ -499,7 +510,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
   case .EnemyClick:
     {
       data := action.data.(EnemyClickData)
-      enemy_manager_delete_enemy(&game.enemy_manager, data.enemy_idx)
+      entity_manager_delete(&game.entity_manager, data.id)
     }
   case .SpawnMonsterClick:
     {
@@ -514,15 +525,14 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           grid_get(game.grid, GridPos{x = game.player.pos.x + x, y = game.player.pos.y + y}, game.player.floor).type !=
           .Wall
         not_enemy := true
-        got_enemy, enemy_idx, enemy := enemy_manager_get_next(game.enemy_manager, 0)
-        for got_enemy {
+        iter := entity_iter_init(&game.entity_manager)
+        for enemy in entity_iter_next(&iter) {
           if enemy.pos.x == game.player.pos.x + x &&
              enemy.pos.y == game.player.pos.y + y &&
              enemy.floor == game.player.floor {
             not_enemy = false
             break
           }
-          got_enemy, enemy_idx, enemy = enemy_manager_get_next(game.enemy_manager, enemy_idx.idx + 1)
         }
         return not_wall && not_enemy
       }
@@ -553,13 +563,24 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         enemy_pos.y = game.player.pos.y - 1
       } else {panic("Failed to place enemy")}
 
-      enemy_idx := enemy_manager_add_enemy(&game.enemy_manager, .Rat, .INACTIVE, enemy_pos, game.player.floor)
+      ok, enemy_id := entity_manager_add(&game.entity_manager, .Rat, .INACTIVE, enemy_pos, game.player.floor)
       actor := Actor {
         type = .Enemy,
         next_active = game.time + 25,
-        data = ActorEnemyData{idx = enemy_idx},
+        data = ActorEnemyData{idx = enemy_id},
+      }
+      if !ok {unreachable()}
+      actor_queue_insert(&game.actor_queue, actor)
+    }
+  case .WaitClick:
+    {
+      actor := Actor {
+        type        = .Player,
+        next_active = game.time + game.player.move_time,
       }
       actor_queue_insert(&game.actor_queue, actor)
+      game.process_actors = true
+
     }
   }
 }

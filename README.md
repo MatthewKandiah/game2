@@ -15,12 +15,10 @@
 - [ ] Nice `draw_int` and `draw_float` helpers
   - Health and time UI good places to do it
 - [ ] Path finding
-  - Current just hacked in based on vision code
+  - ~~Current just hacked in based on vision code~~
+  - Use "dijkstra map" to give all enemies reasonable paths to the player https://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps
   - Should enable clicking to move the player more than one tile too, set a target position and process moves along that path
 - [ ] Message console for communicating in-game info (instead of console logging to terminal)
 
 # NOTES
-- originally had the actor queue size set to enemy manager buffer size + 1, thinking you can't have more actors than that. Doesn't work unless we also remove dead actors from the actor queue, which we can't do efficiently.   - set it to double the enemy count and see how we go? Unlikely that we wipe every actor out and replace them all and then have another one
-- had a but in our generational index logic! Fixed by moving generation increase to ensure it happens on first run where needed
-  - first actual use of the logging being useful, helped identify that it was index 0 insertions getting checked twice causing wonky generation values
-  - probably would be better to be better with a debugger, I found it hard to get anywhere with gf2 because I had breakpoints in both `enemy_manager` and  `actor_queue` functions, so continuing between breakpoints changed the variables in the frame, so all my watched variables in the watch window changed too. Bet there's a way to do that which is less painful.
+- neat EntityIter custom iterator returning a trailing conditional was new to me

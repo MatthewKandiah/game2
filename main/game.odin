@@ -16,23 +16,15 @@ DOWN_STAIRS_PER_FLOOR :: 3
 Game :: struct {
   mode:               GameMode,
   grid:               []GridTile,
-  player:             Player,
   floor_dijkstra_map: []i32,
-  enemy_manager:      EnemyManager,
+  entity_manager:     EntityManager,
   actor_queue:        ActorQueue,
   viewport_centre:    GridPos,
   is_looking:         bool,
   zoom_level:         f32,
   time:               f32,
   process_actors:     bool,
-}
-
-Player :: struct {
-  pos:        GridPos,
-  floor:      i32,
-  move_time:  f32,
-  health:     i32,
-  max_health: i32,
+  player:             ^Entity,
 }
 
 GameMode :: enum {

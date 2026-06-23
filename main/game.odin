@@ -45,7 +45,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
   update_floor_dijkstra_map(game^)
 
   actor := Actor {
-    type        = .Player,
+    id          = PLAYER_ENTITY_ID,
     next_active = game.time + game.player.move_time,
   }
   actor_queue_insert(&game.actor_queue, actor)

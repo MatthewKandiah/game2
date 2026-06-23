@@ -136,7 +136,7 @@ main :: proc() {
   }
   entity_manager_add_player(&game.entity_manager, valid_player_pos, 4)
   game.player = entity_manager_get_player(&game.entity_manager)
-  actor_queue_insert(&game.actor_queue, {type = .Player, next_active = 0})
+  actor_queue_insert(&game.actor_queue, {id = PLAYER_ENTITY_ID, next_active = 0})
   update_visibility(game.grid, valid_player_pos, game.player.floor)
   update_floor_dijkstra_map(game)
 
@@ -148,19 +148,17 @@ main :: proc() {
     for game.process_actors {
       actor := actor_queue_pop_min(&game.actor_queue)
       game.time = actor.next_active
-      if actor.type != .Player {
-        enemy_idx := actor.data.(ActorEnemyData).idx
-        acts_again, next_action_time := enemy_ai(&game, enemy_idx)
+      if actor.id == PLAYER_ENTITY_ID {
+	game.process_actors = false
+      } else {
+        acts_again, next_action_time := enemy_ai(&game, actor.id)
         if acts_again {
           actor := Actor {
-            type = .Enemy,
+            id = actor.id,
             next_active = next_action_time,
-            data = ActorEnemyData{idx = enemy_idx},
           }
           actor_queue_insert(&game.actor_queue, actor)
         }
-      } else {
-        game.process_actors = false
       }
     }
 

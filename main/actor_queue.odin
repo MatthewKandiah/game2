@@ -10,25 +10,8 @@ ActorQueue :: struct {
 }
 
 Actor :: struct {
-  type:        ActorType,
-  data:        ActorData,
+  id: EntityId,
   next_active: f32,
-}
-
-ActorType :: enum {
-  Player,
-  Enemy,
-}
-
-ActorData :: union {
-  ActorPlayerData,
-  ActorEnemyData,
-}
-
-ActorPlayerData :: struct {}
-
-ActorEnemyData :: struct {
-  idx: EntityId,
 }
 
 actor_queue_heap_left_child_idx :: proc(idx: i32) -> i32 {
@@ -116,7 +99,7 @@ should_be_able_to_insert_and_pop_a_single_element_repeatedly :: proc(t: ^testing
   }
 
   a := Actor {
-    type        = .Player,
+    id        = PLAYER_ENTITY_ID,
     next_active = 1,
   }
   for i in 0 ..< 100 {

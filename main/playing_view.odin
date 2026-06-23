@@ -11,8 +11,7 @@ PlayingViewAction :: struct {
 
 PlayingViewActionType :: enum {
   None,
-  PlayerClick,
-  EnemyClick,
+  EntityClick,
   GridClick,
   LookClick,
   RecentreClick,
@@ -28,8 +27,7 @@ PlayingViewActionType :: enum {
 
 PlayingViewActionData :: union {
   GridClickData,
-  PlayerClickData,
-  EnemyClickData,
+  EntityClickData,
 }
 
 GridClickData :: struct {
@@ -37,11 +35,7 @@ GridClickData :: struct {
   tile_type: GridTileType,
 }
 
-PlayerClickData :: struct {
-  tile_type: GridTileType,
-}
-
-EnemyClickData :: struct {
+EntityClickData :: struct {
   id: EntityId,
 }
 
@@ -301,47 +295,11 @@ grid :: proc(
     }
   }
 
-  {   // draw player
-    ui_pos := grid_tile_screen_pos(
-      game.player.pos,
-      game.viewport_centre,
-      grid_ui_pos_bot_left,
-      grid_ui_dim,
-      grid_button_dim,
-    )
-    trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
-    tile := grid_get(game.grid, game.player.pos, game.player.floor)
-    draw_info := GridTileDrawInfo {
-      char   = '@',
-      colour = YELLOW,
-    }
-    if grid_button(
-      get_uid(),
-      ui_pos,
-      grid_button_dim,
-      0.06,
-      draw_info.char,
-      font_size,
-      .UbuntuMono,
-      draw_info.colour,
-      trim,
-    ) {
-      action = {
-        type = .PlayerClick,
-        data = PlayerClickData{tile_type = tile.type},
-      }
-    }
-  }
-
-  {   // draw enemies
+  {   // draw entities
     iter := entity_iter_init(&game.entity_manager)
-    for enemy in entity_iter_next(&iter) {
-      if enemy.type == .Player {
-        // TODO - unify later
-        continue
-      }
+    for entity in entity_iter_next(&iter) {
       ui_pos := grid_tile_screen_pos(
-        enemy.pos,
+        entity.pos,
         game.viewport_centre,
         grid_ui_pos_bot_left,
         grid_ui_dim,
@@ -349,12 +307,12 @@ grid :: proc(
       )
       if overlaps(ui_pos, grid_button_dim, grid_ui_pos_bot_left, grid_ui_dim) {
         trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
-        tile := grid_get(game.grid, enemy.pos, enemy.floor)
-        draw_info := entity_draw_info[enemy.type]
-        if enemy.floor == game.player.floor &&
+        tile := grid_get(game.grid, entity.pos, entity.floor)
+        draw_info := entity_draw_info[entity.type]
+        if entity.floor == game.player.floor &&
            tile.visibility == .Visible &&
            grid_button(
-             get_uid(cast(u32)enemy.id.idx),
+             get_uid(cast(u32)entity.id.idx),
              ui_pos,
              grid_button_dim,
              0.06,
@@ -365,8 +323,8 @@ grid :: proc(
              trim,
            ) {
           action = {
-            type = .EnemyClick,
-            data = EnemyClickData{id = enemy.id},
+            type = .EntityClick,
+            data = EntityClickData{id = entity.id},
           }
         }
       }
@@ -462,23 +420,28 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         }
       }
     }
-  case .PlayerClick:
+  case .EntityClick:
     {
-      if game.is_looking {
-        game.viewport_centre = game.player.pos
-      } else {
-        data := action.data.(PlayerClickData)
-        if data.tile_type == .DownStair {
-          clear_visibility(game.grid, game.player.pos, game.player.floor)
-          game.player.floor += 1
-          update_visibility(game.grid, game.player.pos, game.player.floor)
-          update_floor_dijkstra_map(game^)
-        } else if data.tile_type == .UpStair {
-          clear_visibility(game.grid, game.player.pos, game.player.floor)
-          game.player.floor -= 1
-          update_visibility(game.grid, game.player.pos, game.player.floor)
-          update_floor_dijkstra_map(game^)
+      data := action.data.(EntityClickData)
+      if data.id == PLAYER_ENTITY_ID {
+        if game.is_looking {
+          game.viewport_centre = game.player.pos
+        } else {
+	  tile := grid_get(game.grid, game.player.pos, game.player.floor)
+          if tile.type == .DownStair {
+            clear_visibility(game.grid, game.player.pos, game.player.floor)
+            game.player.floor += 1
+            update_visibility(game.grid, game.player.pos, game.player.floor)
+            update_floor_dijkstra_map(game^)
+          } else if tile.type == .UpStair {
+            clear_visibility(game.grid, game.player.pos, game.player.floor)
+            game.player.floor -= 1
+            update_visibility(game.grid, game.player.pos, game.player.floor)
+            update_floor_dijkstra_map(game^)
+          }
         }
+      } else {
+        entity_manager_delete(&game.entity_manager, data.id)
       }
     }
   case .HideAllClick:
@@ -506,11 +469,6 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         }
       }
       update_visibility(game.grid, game.player.pos, game.player.floor)
-    }
-  case .EnemyClick:
-    {
-      data := action.data.(EnemyClickData)
-      entity_manager_delete(&game.entity_manager, data.id)
     }
   case .SpawnMonsterClick:
     {
@@ -565,9 +523,8 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
 
       ok, enemy_id := entity_manager_add(&game.entity_manager, .Rat, .INACTIVE, enemy_pos, game.player.floor)
       actor := Actor {
-        type = .Enemy,
+        id          = enemy_id,
         next_active = game.time + 25,
-        data = ActorEnemyData{idx = enemy_id},
       }
       if !ok {unreachable()}
       actor_queue_insert(&game.actor_queue, actor)
@@ -575,7 +532,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
   case .WaitClick:
     {
       actor := Actor {
-        type        = .Player,
+        id          = PLAYER_ENTITY_ID,
         next_active = game.time + game.player.move_time,
       }
       actor_queue_insert(&game.actor_queue, actor)

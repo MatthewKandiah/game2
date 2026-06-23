@@ -9,15 +9,11 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
     log.info("enemy_ai - entity not found", id)
     return
   }
-  if enemy.type == .Player {
-    log.error("enemy_ai - expected enemy, got player", id)
-    panic("Unreachable")
-  }
 
   can_see_player := enemy.floor == game.player.floor && is_visible(game.grid, game.player.pos, enemy.pos, enemy.floor)
   switch enemy.type {
   case .Player:
-    {unreachable()}
+    {panic("Unreachable: enemy_ai should not be called with the player id")}
   case .Rat:
     {
       switch enemy.status {
@@ -47,9 +43,6 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
               is_enemy := false
               entity_iter := entity_iter_init(&game.entity_manager, false)
               for entity in entity_iter_next(&entity_iter) {
-                if entity.type == .Player {
-                  panic("Should have been handled separately and early returnd earlier")
-                }
                 if entity.pos == move_candidate {
                   is_enemy = true
                   break

@@ -37,6 +37,7 @@ GridClickData :: struct {
 
 EntityClickData :: struct {
   id: EntityId,
+  tile: GridTile,
 }
 
 playing_view :: proc(game: ^Game) {
@@ -324,7 +325,7 @@ grid :: proc(
            ) {
           action = {
             type = .EntityClick,
-            data = EntityClickData{id = entity.id},
+            data = EntityClickData{id = entity.id, tile = tile},
           }
         }
       }
@@ -427,13 +428,12 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         if game.is_looking {
           game.viewport_centre = game.player.pos
         } else {
-	  tile := grid_get(game.grid, game.player.pos, game.player.floor)
-          if tile.type == .DownStair {
+          if data.tile.type == .DownStair {
             clear_visibility(game.grid, game.player.pos, game.player.floor)
             game.player.floor += 1
             update_visibility(game.grid, game.player.pos, game.player.floor)
             update_floor_dijkstra_map(game^)
-          } else if tile.type == .UpStair {
+          } else if data.tile.type == .UpStair {
             clear_visibility(game.grid, game.player.pos, game.player.floor)
             game.player.floor -= 1
             update_visibility(game.grid, game.player.pos, game.player.floor)

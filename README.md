@@ -22,3 +22,4 @@
 
 # NOTES
 - neat EntityIter custom iterator returning a trailing conditional was new to me
+- making Player an Entity seems neater, will see if that pays off in the long run

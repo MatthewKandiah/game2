@@ -91,6 +91,7 @@ actor_queue_pop_min :: proc(actor_queue: ^ActorQueue) -> Actor {
   return res
 }
 
+// TODO - worth a cheaper lookup? HashMap with EntityId -> next_active would be cheaper to look up, but possibly annoying duped info in state
 actor_queue_get_next_active :: proc(actor_queue: ActorQueue, id: EntityId) -> (found: bool, next_active: f32) {
   for actor in actor_queue.heap_data[0:actor_queue.heap_count] {
     if actor.id == id {

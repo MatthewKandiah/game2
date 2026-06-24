@@ -14,13 +14,15 @@
   - [ ] Game over state when health hits zero
 - [ ] Nice `draw_int` and `draw_float` helpers
   - Health and time UI good places to do it
-- [x] Path finding
+- [ ] Path finding
   - ~~Current just hacked in based on vision code~~
-  - Use "dijkstra map" to give all enemies reasonable paths to the player https://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps
-  - Should enable clicking to move the player more than one tile too, set a target position and process moves along that path
+  - [x] Use "dijkstra map" to give all enemies reasonable paths to the player https://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps
+  - [ ] Should enable clicking to move the player more than one tile too, set a target position and process moves along that path
 - [ ] Message console for communicating in-game info (instead of console logging to terminal)
+- [ ] Serialise actions to buffer / file
+  - undo and redo would be useful for reviewing behaviours
 
 # NOTES
 - neat EntityIter custom iterator returning a trailing conditional was new to me
 - making Player an Entity seems neater, will see if that pays off in the long run
-- turns out doing pathfinding and enemy AI well are not simple! Probably should have guessed that. Think we need to consider the game design and what behaviours we want to support before we can do a really good job. I think the current behaviour is good enough for now, want to keep building out basic systems.
+- turns out doing pathfinding and enemy AI well are not simple! Probably should have guessed that. Think we need to consider the game design and what behaviours we want to support before we can do a really good job. I think the current behaviour is good enough for now, want to keep building out basic systems. Revisit once the combat mechanics (and possibly more, like magic and items and gods) are implemented.

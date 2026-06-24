@@ -9,18 +9,31 @@ DIJKSTRA_MAP_SENTINEL :: cast(i32)max(i16)
 dijkstra_map_move_toward_player_candidates :: proc(
   dijk: []i32,
   pos: GridPos,
+  include_non_approach_moves: bool,
 ) -> (
   candidate_buf: [8]GridPos,
   candidate_count: i32,
 ) {
-  candidate_value := dijkstra_map_get(dijk, pos) - 1
+  candidate_value_buf := [2]i32{}
+  candidate_value_buf[0] = dijkstra_map_get(dijk, pos) - 1
+  candidate_value_buf[1] = candidate_value_buf[0] + 1
+  candidate_values := candidate_value_buf[0:2] if include_non_approach_moves else candidate_value_buf[0:1]
+
+  is_valid_candidate_pos :: proc (dijk: []i32, pos: GridPos, candidate_values: []i32) -> bool {
+    value := dijkstra_map_get(dijk, pos)
+    for candidate_value in candidate_values {
+      if value == candidate_value {
+	return true
+      }
+    }
+    return false
+  }
 
   up_pos := GridPos {
     x = pos.x,
     y = pos.y + 1,
   }
-  up := dijkstra_map_get(dijk, up_pos)
-  if up == candidate_value {
+  if is_valid_candidate_pos(dijk, up_pos, candidate_values) {
     candidate_buf[candidate_count] = up_pos
     candidate_count += 1
   }
@@ -29,8 +42,7 @@ dijkstra_map_move_toward_player_candidates :: proc(
     x = pos.x - 1,
     y = pos.y,
   }
-  left := dijkstra_map_get(dijk, left_pos)
-  if left == candidate_value {
+  if is_valid_candidate_pos(dijk, left_pos, candidate_values) {
     candidate_buf[candidate_count] = left_pos
     candidate_count += 1
   }
@@ -39,8 +51,7 @@ dijkstra_map_move_toward_player_candidates :: proc(
     x = pos.x + 1,
     y = pos.y,
   }
-  right := dijkstra_map_get(dijk, right_pos)
-  if right == candidate_value {
+  if is_valid_candidate_pos(dijk, right_pos, candidate_values) {
     candidate_buf[candidate_count] = right_pos
     candidate_count += 1
   }
@@ -49,8 +60,7 @@ dijkstra_map_move_toward_player_candidates :: proc(
     x = pos.x,
     y = pos.y - 1,
   }
-  down := dijkstra_map_get(dijk, down_pos)
-  if down == candidate_value {
+  if is_valid_candidate_pos(dijk, down_pos, candidate_values) {
     candidate_buf[candidate_count] = down_pos
     candidate_count += 1
   }
@@ -59,8 +69,7 @@ dijkstra_map_move_toward_player_candidates :: proc(
     x = pos.x - 1,
     y = pos.y + 1,
   }
-  up_left := dijkstra_map_get(dijk, up_left_pos)
-  if up_left == candidate_value {
+  if is_valid_candidate_pos(dijk, up_left_pos, candidate_values) {
     candidate_buf[candidate_count] = up_left_pos
     candidate_count += 1
   }
@@ -69,8 +78,7 @@ dijkstra_map_move_toward_player_candidates :: proc(
     x = pos.x + 1,
     y = pos.y + 1,
   }
-  up_right := dijkstra_map_get(dijk, up_right_pos)
-  if up_right == candidate_value {
+  if is_valid_candidate_pos(dijk, up_right_pos, candidate_values) {
     candidate_buf[candidate_count] = up_right_pos
     candidate_count += 1
   }
@@ -79,8 +87,7 @@ dijkstra_map_move_toward_player_candidates :: proc(
     x = pos.x - 1,
     y = pos.y - 1,
   }
-  down_left := dijkstra_map_get(dijk, down_left_pos)
-  if down_left == candidate_value {
+  if is_valid_candidate_pos(dijk, down_left_pos, candidate_values) {
     candidate_buf[candidate_count] = down_left_pos
     candidate_count += 1
   }
@@ -89,8 +96,7 @@ dijkstra_map_move_toward_player_candidates :: proc(
     x = pos.x + 1,
     y = pos.y - 1,
   }
-  down_right := dijkstra_map_get(dijk, down_right_pos)
-  if down_right == candidate_value {
+  if is_valid_candidate_pos(dijk, down_right_pos, candidate_values) {
     candidate_buf[candidate_count] = down_right_pos
     candidate_count += 1
   }

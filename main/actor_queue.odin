@@ -91,6 +91,15 @@ actor_queue_pop_min :: proc(actor_queue: ^ActorQueue) -> Actor {
   return res
 }
 
+actor_queue_get_next_active :: proc(actor_queue: ActorQueue, id: EntityId) -> (found: bool, next_active: f32) {
+  for actor in actor_queue.heap_data[0:actor_queue.heap_count] {
+    if actor.id == id {
+      return true, actor.next_active
+    }
+  }
+  return false, {}
+}
+
 @(test)
 should_be_able_to_insert_and_pop_a_single_element_repeatedly :: proc(t: ^testing.T) {
   buf := [10]Actor{}

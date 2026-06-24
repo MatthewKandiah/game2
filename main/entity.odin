@@ -17,6 +17,7 @@ Entity :: struct {
   health:     i32,
   max_health: i32,
   move_time:  f32,
+  asked_to_move: bool,
 }
 
 EntityId :: struct {
@@ -39,7 +40,7 @@ EntityStatus :: enum {
   ACTIVE,
 }
 
-ENTITY_BUFFER_SIZE :: 10 // small for debugging
+ENTITY_BUFFER_SIZE :: 1000
 EntityManager :: struct {
   buf:            [ENTITY_BUFFER_SIZE]Entity,
   idx_is_active:  [ENTITY_BUFFER_SIZE]bool,
@@ -158,6 +159,15 @@ entity_manager_set_status :: proc(em: ^EntityManager, id: EntityId, status: Enti
 entity_manager_set_health :: proc(em: ^EntityManager, id: EntityId, health: i32) -> (ok: bool) {
   if entity_manager_id_valid(em, id) {
     em.buf[id.idx].health = health
+    return true
+  } else {
+    return false
+  }
+}
+
+entity_manager_set_asked_to_move :: proc(em: ^EntityManager, id: EntityId, value: bool) -> (ok: bool) {
+  if entity_manager_id_valid(em, id) {
+    em.buf[id.idx].asked_to_move = value
     return true
   } else {
     return false

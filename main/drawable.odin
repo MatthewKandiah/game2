@@ -2,6 +2,11 @@ package main
 
 import "core:fmt"
 
+// TODO - how do we extend to include triangle drawing?
+/*
+ * tagged union drawable? types are Quad and Tri?
+ * only support solid triangles for now?
+ */
 Drawable :: struct {
   pos:             Pos,
   z:               f32,

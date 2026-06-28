@@ -30,6 +30,7 @@ Game :: struct {
 GameMode :: enum {
   MainMenu,
   Playing,
+  GameOver,
 }
 
 PLAYER_VIEW_RADIUS :: 7
@@ -42,7 +43,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
 
   clear_visibility(game.grid, from, game.player.floor)
   update_visibility(game.grid, to, game.player.floor)
-  update_floor_dijkstra_map(game^)
+  update_floor_dijkstra_map(game)
 
   actor := Actor {
     id          = PLAYER_ENTITY_ID,
@@ -185,4 +186,21 @@ lines_intersect :: proc(l1, l2: Line) -> bool {
   t := t_num / denom
   u := u_num / denom
   return (t >= 0 && t <= 1) && (u >= 0 && u <= 1)
+}
+
+game_reset :: proc(game: ^Game) {
+  game.actor_queue.heap_count = 0
+  valid_player_pos := init_grid_tiles(game.grid)
+  game.mode = .MainMenu
+  game.entity_manager = EntityManager{}
+  entity_manager_add_player(&game.entity_manager, valid_player_pos, 4)
+  actor_queue_insert(&game.actor_queue, {id = PLAYER_ENTITY_ID, next_active = 0})
+  game.player = entity_manager_get_player(&game.entity_manager)
+  game.viewport_centre = valid_player_pos
+  game.is_looking = false
+  game.zoom_level = 1
+  game.process_actors = true
+
+  update_visibility(game.grid, valid_player_pos, game.player.floor)
+  update_floor_dijkstra_map(game)
 }

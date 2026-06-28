@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 import "core:math/rand"
+import "core:mem"
 
 GridTileType :: enum {
   Wall,
@@ -34,7 +35,12 @@ grid_tile_draw_info := [GridTileType]GridTileDrawInfo {
 }
 
 init_grid_tiles :: proc(tiles: []GridTile) -> (valid_player_pos: GridPos) {
-  // Assumed grid is zero initialised to all wall
+  for &tile in tiles {
+    tile = GridTile {
+      type       = .Wall,
+      visibility = .Unknown,
+    }
+  }
 
   unset_down_stair_pos_sentinel := GridPos {
     x = -1,

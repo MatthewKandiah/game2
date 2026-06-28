@@ -1,8 +1,8 @@
 # GAME 2
 
 # TODO
-- [ ] Add player -> enemy attacks and enemy -> player attacks
-  - [ ] Game over state when health hits zero
+- [x] Add player -> enemy attacks and enemy -> player attacks
+- [x] Game over state when health hits zero
 - [x] Nice `draw_int` and `draw_float` helpers
   - Health and time UI good places to do it
 - [ ] Click to move the player more than one tile, set a target position and process moves along that path

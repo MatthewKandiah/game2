@@ -105,7 +105,7 @@ dijkstra_map_move_toward_player_candidates :: proc(
 }
 
 // TODO - can this be done more sensibly? Maybe breadth-first search, starting at the player?
-update_floor_dijkstra_map :: proc(game: Game) {
+update_floor_dijkstra_map :: proc(game: ^Game) {
   for &v in game.floor_dijkstra_map {
     v = DIJKSTRA_MAP_SENTINEL
   }

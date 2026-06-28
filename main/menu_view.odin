@@ -29,4 +29,21 @@ menu_view :: proc(game: ^Game) {
   if text_button(get_uid(), ui_pos, button_dim, 0.2, "QUIT", FONT_LARGE, .Ubuntu) {
     os.exit(0)
   }
+  ui_pos.y -= gap
+  ui_pos.y -= button_dim.h
+
+  draw_triangle(
+    {x = ui_pos.x, y = ui_pos.y},
+    {x = ui_pos.x + button_dim.w / 2, y = ui_pos.y + button_dim.h},
+    {x = ui_pos.x + button_dim.w, y = ui_pos.y},
+    0.3,
+    PINK,
+  )
+  draw_triangle(
+    {x = ui_pos.x, y = ui_pos.y},
+    {x = ui_pos.x, y = ui_pos.y + button_dim.h},
+    {x = ui_pos.x + button_dim.w, y = ui_pos.y + button_dim.h / 2},
+    0.4,
+    YELLOW,
+  )
 }

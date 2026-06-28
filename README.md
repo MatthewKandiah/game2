@@ -7,7 +7,7 @@
   - Health and time UI good places to do it
 - [ ] Click to move the player more than one tile, set a target position and process moves along that path
 - [ ] Option to show indicator on each enemy action instead of just jumping to next player action
-  - [ ] draw_triangle helper, yellow arrow on move, red arrow on attack
+  - [x] draw_triangle helper
 - [ ] Message console for communicating in-game info (instead of console logging to terminal)
 - [ ] Serialise actions to buffer / file
   - undo and redo would be useful for reviewing behaviours

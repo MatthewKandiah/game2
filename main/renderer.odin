@@ -22,13 +22,12 @@ VERTEX_SHADER_PATH :: "build/vert.spv"
 SPRITE_FRAGMENT_SHADER_PATH :: "build/sprite-frag.spv"
 MASK_FRAGMENT_SHADER_PATH :: "build/mask-frag.spv"
 
-VERTEX_BUFFER_SIZE :: MASK_DRAWABLES_SIZE * VERTICES_PER_DRAWABLE
+VERTEX_BUFFER_SIZE :: MASK_DRAWABLES_SIZE * 4
 VERTEX_BUFFER := [VERTEX_BUFFER_SIZE]Vertex{}
-INDEX_BUFFER_SIZE :: MASK_DRAWABLES_SIZE * INDICES_PER_DRAWABLE
+VERTEX_BUFFER_COUNT := 0
+INDEX_BUFFER_SIZE :: MASK_DRAWABLES_SIZE * 6
 INDEX_BUFFER := [INDEX_BUFFER_SIZE]u32{}
-
-VERTICES_PER_DRAWABLE :: 4
-INDICES_PER_DRAWABLE :: 6
+INDEX_BUFFER_COUNT := 0
 
 Renderer :: struct {
   physical_device:               vulkan.PhysicalDevice,
@@ -427,9 +426,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 }
 
 render_frame :: proc(renderer: ^Renderer) {
-  sprite_drawables_drawn_this_frame := cast(u32)SPRITE_DRAWABLES_COUNT
-  mask_drawables_drawn_this_frame := cast(u32)MASK_DRAWABLES_COUNT
-  draw_drawables()
+  sprite_index_count, mask_index_count := draw_drawables()
   should_recreate_swapchain := false
 
   {   // copy vertex data into vertex buffer
@@ -637,7 +634,7 @@ render_frame :: proc(renderer: ^Renderer) {
 
       vulkan.CmdDrawIndexed(
         commandBuffer = renderer.command_buffer,
-        indexCount = sprite_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
+        indexCount = sprite_index_count,
         instanceCount = 1,
         firstIndex = 0,
         vertexOffset = 0,
@@ -672,9 +669,9 @@ render_frame :: proc(renderer: ^Renderer) {
 
       vulkan.CmdDrawIndexed(
         commandBuffer = renderer.command_buffer,
-        indexCount = mask_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
+        indexCount = mask_index_count,
         instanceCount = 1,
-        firstIndex = sprite_drawables_drawn_this_frame * INDICES_PER_DRAWABLE,
+        firstIndex = sprite_index_count,
         vertexOffset = 0,
         firstInstance = 0,
       )

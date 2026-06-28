@@ -2,18 +2,32 @@ package main
 
 import "core:fmt"
 
-// TODO - how do we extend to include triangle drawing?
-/*
- * tagged union drawable? types are Quad and Tri?
- * only support solid triangles for now?
- */
 Drawable :: struct {
+  type: DrawableType,
+  data: union {
+    QuadDrawable,
+    TriDrawable,
+  },
+}
+
+DrawableType :: enum {
+  Quad,
+  Tri,
+}
+
+QuadDrawable :: struct {
   pos:             Pos,
   z:               f32,
   dim:             Dim,
   texture_data:    TextureData,
   override_colour: bool,
   colour:          Colour,
+}
+
+TriDrawable :: struct {
+  pos_list: [3]Pos,
+  z:        f32,
+  colour:   Colour,
 }
 
 Trim :: struct {
@@ -31,14 +45,26 @@ SPRITE_DRAWABLES := [SPRITE_DRAWABLES_SIZE]Drawable{}
 MASK_DRAWABLES := [MASK_DRAWABLES_SIZE]Drawable{}
 
 push_drawable :: proc(d: Drawable) {
-  switch (d.texture_data.type) {
-  case .Sprite:
+  switch (d.type) {
+  case .Quad:
     {
-      SPRITE_DRAWABLES[SPRITE_DRAWABLES_COUNT] = d
-      SPRITE_DRAWABLES_COUNT += 1
+      data := d.data.(QuadDrawable)
+      switch (data.texture_data.type) {
+      case .Sprite:
+        {
+          SPRITE_DRAWABLES[SPRITE_DRAWABLES_COUNT] = d
+          SPRITE_DRAWABLES_COUNT += 1
+        }
+      case .Mask:
+        {
+          MASK_DRAWABLES[MASK_DRAWABLES_COUNT] = d
+          MASK_DRAWABLES_COUNT += 1
+        }
+      }
     }
-  case .Mask:
+  case .Tri:
     {
+      // sprite drawable not supported - assumption baked into render call, check renderer for needed updates if this changes
       MASK_DRAWABLES[MASK_DRAWABLES_COUNT] = d
       MASK_DRAWABLES_COUNT += 1
     }
@@ -53,57 +79,98 @@ drawable_pos_to_screen_pos :: proc(pos: Pos) -> Pos {
   return Pos{x = (2 * pos.x) / gc.screen_dim.w - 1, y = 1 - (2 * pos.y) / gc.screen_dim.h}
 }
 
-generate_graphics_primitives :: proc(drawables: []Drawable, drawables_already_generated: int) {
+generate_graphics_primitives :: proc(drawables: []Drawable) -> (index_count: u32) {
   for drawable, idx in drawables {
-    vertex_base_idx := (drawables_already_generated + idx) * VERTICES_PER_DRAWABLE
-    index_base_idx := (drawables_already_generated + idx) * INDICES_PER_DRAWABLE
-    alpha: f32 = 1 if drawable.override_colour else 0
+    switch drawable.type {
+    case .Quad:
+      generate_quad_graphics_primitives(drawable.data.(QuadDrawable))
+      index_count += 6
+    case .Tri:
+      generate_tri_graphics_primitives(drawable.data.(TriDrawable))
+      index_count += 3
+    }
+  }
+  return
+}
 
-    pos := drawable_pos_to_screen_pos(drawable.pos)
-    dim := drawable_dim_to_screen_dim(drawable.dim)
+generate_tri_graphics_primitives :: proc(drawable: TriDrawable) {
+  // TODO - either assert positions are right handed, or use check to guarantee that they are
+  vertex_base_idx := VERTEX_BUFFER_COUNT
+  index_base_idx := INDEX_BUFFER_COUNT
+  defer {
+    VERTEX_BUFFER_COUNT += 3
+    INDEX_BUFFER_COUNT += 3
+  }
+  alpha: f32 = 1
 
-    VERTEX_BUFFER[vertex_base_idx + 0] = {
+  for raw_pos, idx in drawable.pos_list {
+    pos := drawable_pos_to_screen_pos(raw_pos)
+    VERTEX_BUFFER[vertex_base_idx + idx] = {
       {pos.x, pos.y, drawable.z},
       {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
-      {drawable.texture_data.base.x, drawable.texture_data.base.y},
-      drawable.texture_data.tex_idx,
+      {},
+      {},
     }
-    VERTEX_BUFFER[vertex_base_idx + 1] = {
-      {pos.x, pos.y - dim.h, drawable.z},
-      {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
-      {drawable.texture_data.base.x, drawable.texture_data.base.y - drawable.texture_data.dim.h},
-      drawable.texture_data.tex_idx,
-    }
-    VERTEX_BUFFER[vertex_base_idx + 2] = {
-      {pos.x + dim.w, pos.y, drawable.z},
-      {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
-      {drawable.texture_data.base.x + drawable.texture_data.dim.w, drawable.texture_data.base.y},
-      drawable.texture_data.tex_idx,
-    }
-    VERTEX_BUFFER[vertex_base_idx + 3] = {
-      {pos.x + dim.w, pos.y - dim.h, drawable.z},
-      {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
-      {
-        drawable.texture_data.base.x + drawable.texture_data.dim.w,
-        drawable.texture_data.base.y - drawable.texture_data.dim.h,
-      },
-      drawable.texture_data.tex_idx,
-    }
-
-    INDEX_BUFFER[index_base_idx + 0] = cast(u32)(vertex_base_idx + 0)
-    INDEX_BUFFER[index_base_idx + 1] = cast(u32)(vertex_base_idx + 1)
-    INDEX_BUFFER[index_base_idx + 2] = cast(u32)(vertex_base_idx + 2)
-    INDEX_BUFFER[index_base_idx + 3] = cast(u32)(vertex_base_idx + 2)
-    INDEX_BUFFER[index_base_idx + 4] = cast(u32)(vertex_base_idx + 1)
-    INDEX_BUFFER[index_base_idx + 5] = cast(u32)(vertex_base_idx + 3)
+    INDEX_BUFFER[index_base_idx + idx] = cast(u32)(vertex_base_idx + idx)
   }
 }
 
-draw_drawables :: proc() {
-  generate_graphics_primitives(SPRITE_DRAWABLES[:SPRITE_DRAWABLES_COUNT], 0)
-  generate_graphics_primitives(MASK_DRAWABLES[:MASK_DRAWABLES_COUNT], SPRITE_DRAWABLES_COUNT)
+generate_quad_graphics_primitives :: proc(drawable: QuadDrawable) {
+  vertex_base_idx := VERTEX_BUFFER_COUNT
+  index_base_idx := INDEX_BUFFER_COUNT
+  defer {
+    VERTEX_BUFFER_COUNT += 4
+    INDEX_BUFFER_COUNT += 6
+  }
+  alpha: f32 = 1 if drawable.override_colour else 0
+
+  pos := drawable_pos_to_screen_pos(drawable.pos)
+  dim := drawable_dim_to_screen_dim(drawable.dim)
+
+  VERTEX_BUFFER[vertex_base_idx + 0] = {
+    {pos.x, pos.y, drawable.z},
+    {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
+    {drawable.texture_data.base.x, drawable.texture_data.base.y},
+    drawable.texture_data.tex_idx,
+  }
+  VERTEX_BUFFER[vertex_base_idx + 1] = {
+    {pos.x, pos.y - dim.h, drawable.z},
+    {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
+    {drawable.texture_data.base.x, drawable.texture_data.base.y - drawable.texture_data.dim.h},
+    drawable.texture_data.tex_idx,
+  }
+  VERTEX_BUFFER[vertex_base_idx + 2] = {
+    {pos.x + dim.w, pos.y, drawable.z},
+    {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
+    {drawable.texture_data.base.x + drawable.texture_data.dim.w, drawable.texture_data.base.y},
+    drawable.texture_data.tex_idx,
+  }
+  VERTEX_BUFFER[vertex_base_idx + 3] = {
+    {pos.x + dim.w, pos.y - dim.h, drawable.z},
+    {drawable.colour.r, drawable.colour.g, drawable.colour.b, alpha},
+    {
+      drawable.texture_data.base.x + drawable.texture_data.dim.w,
+      drawable.texture_data.base.y - drawable.texture_data.dim.h,
+    },
+    drawable.texture_data.tex_idx,
+  }
+
+  INDEX_BUFFER[index_base_idx + 0] = cast(u32)(vertex_base_idx + 0)
+  INDEX_BUFFER[index_base_idx + 1] = cast(u32)(vertex_base_idx + 1)
+  INDEX_BUFFER[index_base_idx + 2] = cast(u32)(vertex_base_idx + 2)
+  INDEX_BUFFER[index_base_idx + 3] = cast(u32)(vertex_base_idx + 2)
+  INDEX_BUFFER[index_base_idx + 4] = cast(u32)(vertex_base_idx + 1)
+  INDEX_BUFFER[index_base_idx + 5] = cast(u32)(vertex_base_idx + 3)
+}
+
+draw_drawables :: proc() -> (sprite_index_count, mask_index_count: u32) {
+  VERTEX_BUFFER_COUNT = 0
+  INDEX_BUFFER_COUNT = 0
+  sprite_index_count = generate_graphics_primitives(SPRITE_DRAWABLES[:SPRITE_DRAWABLES_COUNT])
+  mask_index_count = generate_graphics_primitives(MASK_DRAWABLES[:MASK_DRAWABLES_COUNT])
   SPRITE_DRAWABLES_COUNT = 0
   MASK_DRAWABLES_COUNT = 0
+  return
 }
 
 draw_trimmed_char :: proc(
@@ -166,7 +233,7 @@ draw_trimmed_char :: proc(
     },
     tex_idx = font_texture_to_idx(font_atlas.font),
   }
-  char_drawable: Drawable = {
+  char_drawable: QuadDrawable = {
     colour          = colour,
     dim             = trimmed_char_ui_dim,
     pos             = trimmed_char_ui_pos,
@@ -174,7 +241,7 @@ draw_trimmed_char :: proc(
     override_colour = false,
     texture_data    = trimmed_char_texture_data,
   }
-  push_drawable(char_drawable)
+  push_drawable({type = .Quad, data = char_drawable})
 }
 
 draw_char :: proc(c: rune, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
@@ -191,7 +258,7 @@ draw_char :: proc(c: rune, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pi
   }
 
   scale := font_size_pixels / font_atlas.font_size_pixels
-  char_drawable: Drawable = {
+  char_drawable: QuadDrawable = {
     colour = colour,
     dim = Dim{w = scale * glyph_info.bounding_box.dim.w, h = scale * glyph_info.bounding_box.dim.h},
     pos = Pos {
@@ -202,7 +269,7 @@ draw_char :: proc(c: rune, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pi
     override_colour = false,
     texture_data = char_texture_data,
   }
-  push_drawable(char_drawable)
+  push_drawable({type = .Quad, data = char_drawable})
 }
 
 draw_fmt_string :: proc(
@@ -234,7 +301,7 @@ draw_string :: proc(chars: string, font_atlas: FontAtlas, pos: Pos, z: f32, font
 }
 
 draw_rect :: proc(pos: Pos, z: f32, dim: Dim, colour: Colour) {
-  drawable: Drawable = {
+  drawable: QuadDrawable = {
     colour          = colour,
     pos             = pos,
     dim             = dim,
@@ -242,5 +309,14 @@ draw_rect :: proc(pos: Pos, z: f32, dim: Dim, colour: Colour) {
     texture_data    = {},
     z               = z,
   }
-  push_drawable(drawable)
+  push_drawable({type = .Quad, data = drawable})
+}
+
+draw_triangle :: proc(pos0, pos1, pos2: Pos, z: f32, colour: Colour) {
+  drawable := TriDrawable {
+    pos_list = [3]Pos{pos0, pos1, pos2},
+    z        = z,
+    colour   = colour,
+  }
+  push_drawable({type = .Tri, data = drawable})
 }

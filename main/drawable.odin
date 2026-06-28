@@ -200,6 +200,19 @@ draw_char :: proc(c: rune, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pi
   push_drawable(char_drawable)
 }
 
+draw_fmt_string :: proc(
+  fmt_str: string,
+  font_atlas: FontAtlas,
+  pos: Pos,
+  z: f32,
+  font_size_pixels: f32,
+  colour: Colour,
+  args: ..any,
+) {
+  str := fmt.tprintf(fmt_str, ..args)
+  draw_string(str, font_atlas, pos, z, font_size_pixels, colour)
+}
+
 draw_string :: proc(chars: string, font_atlas: FontAtlas, pos: Pos, z: f32, font_size_pixels: f32, colour: Colour) {
   assert(font_size_pixels >= 20, "Simple font rendering currently implemented starts visibly breaking below this size")
   x := pos.x

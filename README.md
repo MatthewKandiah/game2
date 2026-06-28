@@ -1,28 +1,15 @@
 # GAME 2
 
 # TODO
-- [x] EnemyManager
-  - [x] test by adding a button to spawn enemies near the player, and delete them on click
-- [x] Add unintelligent enemies that just approach the player if they can see them
-  - [x] needs an in-game time system
-  - [x] needs an actor ordering system
-  - [x] stick time in the UI somewhere
-  - [x] needs enemies to have ALERT and NOT_ALERT modes that drive their behaviour
-- [x] Add player health
-  - [x] stick health in the UI somewhere
 - [ ] Add player -> enemy attacks and enemy -> player attacks
   - [ ] Game over state when health hits zero
-- [ ] Nice `draw_int` and `draw_float` helpers
+- [x] Nice `draw_int` and `draw_float` helpers
   - Health and time UI good places to do it
-- [ ] Path finding
-  - ~~Current just hacked in based on vision code~~
-  - [x] Use "dijkstra map" to give all enemies reasonable paths to the player https://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps
-  - [ ] Should enable clicking to move the player more than one tile too, set a target position and process moves along that path
+- [ ] Click to move the player more than one tile, set a target position and process moves along that path
+- [ ] Option to show indicator on each enemy action instead of just jumping to next player action
 - [ ] Message console for communicating in-game info (instead of console logging to terminal)
 - [ ] Serialise actions to buffer / file
   - undo and redo would be useful for reviewing behaviours
 
 # NOTES
-- neat EntityIter custom iterator returning a trailing conditional was new to me
-- making Player an Entity seems neater, will see if that pays off in the long run
-- turns out doing pathfinding and enemy AI well are not simple! Probably should have guessed that. Think we need to consider the game design and what behaviours we want to support before we can do a really good job. I think the current behaviour is good enough for now, want to keep building out basic systems. Revisit once the combat mechanics (and possibly more, like magic and items and gods) are implemented.
+- temporary allocator freed each frame + tprintf for string formatting => much easier to draw ints and floats!

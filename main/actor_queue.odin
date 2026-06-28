@@ -9,9 +9,9 @@ ActorQueue :: struct {
   heap_count: i32,
 }
 
-// TODO - consider moving next_active to Entity 
+// TODO - consider moving next_active to Entity
 Actor :: struct {
-  id: EntityId,
+  id:          EntityId,
   next_active: f32,
 }
 
@@ -110,7 +110,7 @@ should_be_able_to_insert_and_pop_a_single_element_repeatedly :: proc(t: ^testing
   }
 
   a := Actor {
-    id        = PLAYER_ENTITY_ID,
+    id          = PLAYER_ENTITY_ID,
     next_active = 1,
   }
   for i in 0 ..< 100 {

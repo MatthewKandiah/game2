@@ -19,11 +19,11 @@ dijkstra_map_move_toward_player_candidates :: proc(
   candidate_value_buf[1] = candidate_value_buf[0] + 1
   candidate_values := candidate_value_buf[0:2] if include_non_approach_moves else candidate_value_buf[0:1]
 
-  is_valid_candidate_pos :: proc (dijk: []i32, pos: GridPos, candidate_values: []i32) -> bool {
+  is_valid_candidate_pos :: proc(dijk: []i32, pos: GridPos, candidate_values: []i32) -> bool {
     value := dijkstra_map_get(dijk, pos)
     for candidate_value in candidate_values {
       if value == candidate_value {
-	return true
+        return true
       }
     }
     return false

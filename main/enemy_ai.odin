@@ -31,23 +31,23 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
             move_candidates_buf, move_candidates_count := dijkstra_map_move_toward_player_candidates(
               game.floor_dijkstra_map,
               enemy.pos,
-	      enemy.asked_to_move,
+              enemy.asked_to_move,
             )
             moved_successfully := false
-	    asked_to_move := enemy.asked_to_move
-	    entity_manager_set_asked_to_move(&game.entity_manager, enemy.id, false)
+            asked_to_move := enemy.asked_to_move
+            entity_manager_set_asked_to_move(&game.entity_manager, enemy.id, false)
             obstacle_enemies := [8]Entity{}
             obstacle_enemy_count := 0
             for move_candidate in move_candidates_buf[0:move_candidates_count] {
               if move_candidate == game.player.pos {
-		if asked_to_move {
-		  fmt.println("Rat chooses not to bite the player", id)
-		  continue
-		} else {
+                if asked_to_move {
+                  fmt.println("Rat chooses not to bite the player", id)
+                  continue
+                } else {
                   fmt.println("Rat bites player", id)
                   moved_successfully = true
                   break
-		}
+                }
               }
               is_wall := grid_get(game.grid, move_candidate, enemy.floor).type == .Wall
               if is_wall {continue}
@@ -57,7 +57,7 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
                 if entity.pos == move_candidate {
                   is_enemy = true
                   obstacle_enemies[obstacle_enemy_count] = entity
-		  obstacle_enemy_count += 1
+                  obstacle_enemy_count += 1
                   break
                 }
               }

@@ -149,12 +149,12 @@ main :: proc() {
       actor := actor_queue_pop_min(&game.actor_queue)
       game.time = actor.next_active
       if actor.id == PLAYER_ENTITY_ID {
-	game.process_actors = false
+        game.process_actors = false
       } else {
         acts_again, next_action_time := enemy_ai(&game, actor.id)
         if acts_again {
           actor := Actor {
-            id = actor.id,
+            id          = actor.id,
             next_active = next_action_time,
           }
           actor_queue_insert(&game.actor_queue, actor)
@@ -181,6 +181,7 @@ main :: proc() {
     }
 
     render_frame(&renderer)
+    mem.free_all(context.temp_allocator)
 
     when PRINT_FPS {
       h, m, s, nanos := time.precise_clock_from_stopwatch(stopwatch)

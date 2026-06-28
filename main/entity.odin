@@ -9,14 +9,14 @@ PLAYER_ENTITY_ID :: EntityId {
 }
 
 Entity :: struct {
-  id:         EntityId,
-  type:       EntityType,
-  status:     EntityStatus,
-  pos:        GridPos,
-  floor:      i32,
-  health:     i32,
-  max_health: i32,
-  move_time:  f32,
+  id:            EntityId,
+  type:          EntityType,
+  status:        EntityStatus,
+  pos:           GridPos,
+  floor:         i32,
+  health:        i32,
+  max_health:    i32,
+  move_time:     f32,
   asked_to_move: bool,
 }
 
@@ -63,7 +63,7 @@ entity_move_time := [EntityType]f32 {
 }
 
 entity_max_health := [EntityType]i32 {
-  .Player = 10,
+  .Player = 100,
   .Rat    = 3,
 }
 

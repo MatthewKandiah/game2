@@ -436,7 +436,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           }
         }
       } else {
-        entity_manager_delete(&game.entity_manager, data.id)
+	attack(game, PLAYER_ENTITY_ID, data.id)
       }
     }
   case .HideAllClick:

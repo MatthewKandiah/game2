@@ -44,7 +44,7 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
                   fmt.println("Rat chooses not to bite the player", id)
                   continue
                 } else {
-                  fmt.println("Rat bites player", id)
+                  attack(game, enemy.id, PLAYER_ENTITY_ID)
                   moved_successfully = true
                   break
                 }

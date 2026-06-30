@@ -405,6 +405,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
     }
   case .GridClick:
     {
+      if !game.player_can_interact {return}
       data := action.data.(GridClickData)
       if game.is_looking {
         game.viewport_centre = data.pos
@@ -418,6 +419,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
     }
   case .EntityClick:
     {
+      if !game.player_can_interact {return}
       data := action.data.(EntityClickData)
       if data.id == PLAYER_ENTITY_ID {
         if game.is_looking {
@@ -526,6 +528,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
     }
   case .WaitClick:
     {
+      if !game.player_can_interact {return}
       actor := Actor {
         id          = PLAYER_ENTITY_ID,
         next_active = game.time + game.player.move_time,

@@ -134,12 +134,15 @@ main :: proc() {
     time.stopwatch_start(&stopwatch)
     glfw.PollEvents()
 
-    for game.process_actors {
+    for game.process_actors && game.pause_until_nanos < now() {
       actor := actor_queue_pop_min(&game.actor_queue)
       game.time = actor.next_active
       if actor.id == PLAYER_ENTITY_ID {
+	fmt.println("player's turn!")
+	game.player_can_interact = true
         game.process_actors = false
       } else {
+	game.player_can_interact = false
         acts_again, next_action_time := enemy_ai(&game, actor.id)
         if acts_again {
           actor := Actor {
@@ -148,6 +151,7 @@ main :: proc() {
           }
           actor_queue_insert(&game.actor_queue, actor)
         }
+	game.pause_until_nanos = now() + 2_000_000_000
       }
     }
 

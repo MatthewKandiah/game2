@@ -14,19 +14,17 @@ START_FLOOR :: 4
 DOWN_STAIRS_PER_FLOOR :: 3
 
 Game :: struct {
-  mode:                GameMode,
-  grid:                []GridTile,
-  floor_dijkstra_map:  []i32,
-  entity_manager:      EntityManager,
-  actor_queue:         ActorQueue,
-  viewport_centre:     GridPos,
-  is_looking:          bool,
-  zoom_level:          f32,
-  time:                f32,
-  process_actors:      bool,
-  player_can_interact: bool,
-  pause_until_nanos:   i64,
-  player:              ^Entity,
+  mode:               GameMode,
+  grid:               []GridTile,
+  floor_dijkstra_map: []i32,
+  entity_manager:     EntityManager,
+  actor_queue:        ActorQueue,
+  viewport_centre:    GridPos,
+  is_looking:         bool,
+  zoom_level:         f32,
+  time:               f32,
+  process_actors:     bool,
+  player:             ^Entity,
 }
 
 GameMode :: enum {
@@ -202,8 +200,7 @@ game_reset :: proc(game: ^Game) {
   game.is_looking = false
   game.zoom_level = 1
   game.process_actors = true
-  game.player_can_interact = true
-  
+
   update_visibility(game.grid, valid_player_pos, game.player.floor)
   update_floor_dijkstra_map(game)
 }

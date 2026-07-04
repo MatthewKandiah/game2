@@ -15,3 +15,6 @@
 # NOTES
 - temporary allocator freed each frame + tprintf for string formatting => much easier to draw ints and floats!
 - showing each enemy action with a visible indicator means an action may last multiple frames now. We effectively need the world's simplest animation system.
+  - surprisingly knotty rework, took me a while to make a reasonable plan, not honestly super happy with the current state of it
+  - have to handle unanimated and animated action handling with the current plan, and the player fits in awkwardly because they become active before we can know what they are going to do because we're waiting for user input
+  - unanimated player actions aren't supported

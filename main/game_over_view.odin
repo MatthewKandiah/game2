@@ -10,7 +10,7 @@ game_over_view :: proc(game: ^Game) {
   }
 
   exit_button_pos := center_within_container(button_dim, Pos{x = 0, y = 0}, gc.screen_dim)
-  if text_button(get_uid(), exit_button_pos, button_dim, 0.1, "EXIT", FONT_LARGE, .Ubuntu) {
+  if text_button(get_uid(), true, exit_button_pos, button_dim, 0.1, "EXIT", FONT_LARGE, .Ubuntu) {
     game.mode = .MainMenu
     game_reset(game)
   }

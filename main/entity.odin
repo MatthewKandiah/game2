@@ -8,6 +8,11 @@ PLAYER_ENTITY_ID :: EntityId {
   generation = 0,
 }
 
+NONE_ENTITY_ID :: EntityId {
+  idx        = -1,
+  generation = -1,
+}
+
 Entity :: struct {
   id:            EntityId,
   type:          EntityType,

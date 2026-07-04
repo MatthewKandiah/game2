@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:log"
 import "core:math/rand"
 
-enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_time: f32) {
+enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action) {
   entity_ok, enemy := entity_manager_get(&game.entity_manager, id)
   if !entity_ok {
     log.info("enemy_ai - entity not found", id)
@@ -22,7 +22,7 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
         {
           if can_see_player {
             fmt.println("Rat sees player", id)
-            entity_manager_set_status(&game.entity_manager, id, .ACTIVE)
+            return true, alerted_action(entity_move_time[.Rat])
           }
         }
       case .ACTIVE:
@@ -41,12 +41,11 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
             for move_candidate in move_candidates_buf[0:move_candidates_count] {
               if move_candidate == game.player.pos {
                 if asked_to_move {
-                  fmt.println("Rat chooses not to bite the player", id)
+                  fmt.println("Rat chooses not to bite the player", enemy.type)
                   continue
                 } else {
-                  attack(game, enemy.id, PLAYER_ENTITY_ID)
                   moved_successfully = true
-                  break
+                  return true, attack_action(PLAYER_ENTITY_ID, entity_move_time[.Rat])
                 }
               }
               is_wall := grid_get(game.grid, move_candidate, enemy.floor).type == .Wall
@@ -63,9 +62,7 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
               }
               if is_enemy {continue}
               fmt.println("Rat steps towards player", id)
-              entity_manager_set_pos(&game.entity_manager, id, move_candidate)
-              moved_successfully = true
-              break
+	      return true, move_action(move_candidate, entity_move_time[enemy.type])
             }
             if !moved_successfully {
               if obstacle_enemy_count > 0 {
@@ -74,14 +71,14 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
                 entity_manager_set_asked_to_move(&game.entity_manager, obstacle_enemies[enemy_idx].id, true)
               }
               fmt.println("Rat snarls angrily", id)
+	      return true, snarl_action(entity_move_time[enemy.type])
             }
           } else {
             fmt.println("Rat forgets player", id)
-            entity_manager_set_status(&game.entity_manager, id, .INACTIVE)
+	    return true, deactivate_action(entity_move_time[enemy.type])
           }
         }
       }
-      return true, game.time + enemy.move_time
     }
   }
   panic("Unreachable")

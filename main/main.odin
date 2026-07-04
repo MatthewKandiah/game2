@@ -129,25 +129,47 @@ main :: proc() {
   }
   game_reset(&game)
 
+  animation_time := now()
+
   // main loop
   for !glfw.WindowShouldClose(gc.window) {
     time.stopwatch_start(&stopwatch)
     glfw.PollEvents()
 
-    for game.process_actors {
+    // update animation timer
+    prev_animation_time := animation_time
+    animation_time = now()
+    delta_animation_time := animation_time - prev_animation_time
+    if game.animation_timer_nanos > 0 {
+      game.animation_timer_nanos -= delta_animation_time
+      // handle completed animated action
+      if game.animation_timer_nanos <= 0 {
+        handle_action(&game, game.current_action)
+      }
+    }
+
+    // process actors until we hit a UI update or wait for player input
+    for game.animation_timer_nanos <= 0 && game_none_active(&game) {
       actor := actor_queue_pop_min(&game.actor_queue)
       game.time = actor.next_active
-      if actor.id == PLAYER_ENTITY_ID {
-        game.process_actors = false
-      } else {
-        acts_again, next_action_time := enemy_ai(&game, actor.id)
-        if acts_again {
+      game.active_entity = actor.id
+      if actor.id != PLAYER_ENTITY_ID {
+        action_ok: bool
+        action_ok, game.current_action = enemy_ai(&game, actor.id)
+        if action_ok {
           actor := Actor {
             id          = actor.id,
-            next_active = next_action_time,
+            next_active = game.time + game.current_action.duration,
           }
           actor_queue_insert(&game.actor_queue, actor)
-        }
+
+          if game.current_action.animation_time == 0 {
+            handle_action(&game, game.current_action)
+          } else {game.animation_timer_nanos = game.current_action.animation_time}
+        } else {
+	  // active entity no longer valid
+	  game.active_entity = NONE_ENTITY_ID
+	}
       }
     }
 

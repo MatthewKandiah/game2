@@ -119,7 +119,7 @@ playing_view :: proc(game: ^Game) {
     draw_fmt_string("%8.0f", FONTS[.UbuntuMono], ui_pos, 0.3, top_bar_height, BLACK, game.time)
   }
 
-  handle_action(game, action)
+  handle_view_action(game, action)
 }
 
 grid_tile_screen_pos :: proc(
@@ -155,14 +155,14 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     y = ui_pos_bot_left.y,
   }
 
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .ExitClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .ResetZoomClick,
     }
@@ -176,13 +176,13 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
       h = button_dim.h,
     }
     zoom_button_pos := ui_pos
-    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "+", FONT_MEDIUM, .Ubuntu) {
+    if text_button(get_uid(), true, zoom_button_pos, zoom_button_dim, 0.1, "+", FONT_MEDIUM, .Ubuntu) {
       action = {
         type = .ZoomInClick,
       }
     }
     zoom_button_pos.x += zoom_button_dim.w
-    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "-", FONT_MEDIUM, .Ubuntu) {
+    if text_button(get_uid(), true, zoom_button_pos, zoom_button_dim, 0.1, "-", FONT_MEDIUM, .Ubuntu) {
       action = {
         type = .ZoomOutClick,
       }
@@ -191,42 +191,42 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .RecentreClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .LookClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "See all", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "See all", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .ShowAllClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Hide all", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Hide all", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .HideAllClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Spawn", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), game_player_active(game), ui_pos, button_dim, 0.1, "Spawn", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .SpawnMonsterClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Wait", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), game_player_active(game), ui_pos, button_dim, 0.1, "Wait", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .WaitClick,
     }
@@ -273,6 +273,7 @@ grid :: proc(
         draw_info := grid_tile_draw_info[tile.type]
         if grid_button(
           get_uid(d),
+          game_player_active(game),
           ui_pos,
           grid_button_dim,
           0.05,
@@ -309,6 +310,7 @@ grid :: proc(
            tile.visibility == .Visible &&
            grid_button(
              get_uid(cast(u32)entity.id.idx),
+             game_player_active(game),
              ui_pos,
              grid_button_dim,
              0.06,
@@ -374,7 +376,7 @@ minimap :: proc(
   }
 }
 
-handle_action :: proc(game: ^Game, action: PlayingViewAction) {
+handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
   switch (action.type) {
   case .None:
     return
@@ -412,6 +414,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         if data.tile_type != .Wall &&
            (abs(data.pos.x - game.player.pos.x) <= 1) &&
            (abs(data.pos.y - game.player.pos.y) <= 1) {
+          // TODO - action
           game_player_move(game, data.pos)
         }
       }
@@ -424,11 +427,13 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
           game.viewport_centre = game.player.pos
         } else {
           if data.tile.type == .DownStair {
+            // TODO - action
             clear_visibility(game.grid, game.player.pos, game.player.floor)
             game.player.floor += 1
             update_visibility(game.grid, game.player.pos, game.player.floor)
             update_floor_dijkstra_map(game)
           } else if data.tile.type == .UpStair {
+            // TODO - action
             clear_visibility(game.grid, game.player.pos, game.player.floor)
             game.player.floor -= 1
             update_visibility(game.grid, game.player.pos, game.player.floor)
@@ -531,7 +536,7 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         next_active = game.time + game.player.move_time,
       }
       actor_queue_insert(&game.actor_queue, actor)
-      game.process_actors = true
+      game.active_entity = NONE_ENTITY_ID
 
     }
   }

@@ -14,17 +14,19 @@ START_FLOOR :: 4
 DOWN_STAIRS_PER_FLOOR :: 3
 
 Game :: struct {
-  mode:               GameMode,
-  grid:               []GridTile,
-  floor_dijkstra_map: []i32,
-  entity_manager:     EntityManager,
-  actor_queue:        ActorQueue,
-  viewport_centre:    GridPos,
-  is_looking:         bool,
-  zoom_level:         f32,
-  time:               f32,
-  process_actors:     bool,
-  player:             ^Entity,
+  mode:                  GameMode,
+  grid:                  []GridTile,
+  floor_dijkstra_map:    []i32,
+  entity_manager:        EntityManager,
+  actor_queue:           ActorQueue,
+  viewport_centre:       GridPos,
+  is_looking:            bool,
+  zoom_level:            f32,
+  time:                  f32,
+  active_entity:         EntityId,
+  current_action:        Action,
+  animation_timer_nanos: i64,
+  player:                ^Entity,
 }
 
 GameMode :: enum {
@@ -34,6 +36,14 @@ GameMode :: enum {
 }
 
 PLAYER_VIEW_RADIUS :: 7
+
+game_player_active :: proc(game: ^Game) -> bool {
+  return game.active_entity == PLAYER_ENTITY_ID
+}
+
+game_none_active :: proc(game: ^Game) -> bool {
+  return game.active_entity == NONE_ENTITY_ID
+}
 
 game_player_move :: proc(game: ^Game, to: GridPos) {
   from := game.player.pos
@@ -50,7 +60,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
     next_active = game.time + game.player.move_time,
   }
   actor_queue_insert(&game.actor_queue, actor)
-  game.process_actors = true
+  game.active_entity = NONE_ENTITY_ID
 }
 
 clear_visibility :: proc(grid: []GridTile, player_pos: GridPos, floor: i32) {
@@ -199,7 +209,7 @@ game_reset :: proc(game: ^Game) {
   game.viewport_centre = valid_player_pos
   game.is_looking = false
   game.zoom_level = 1
-  game.process_actors = true
+  game.active_entity = NONE_ENTITY_ID
 
   update_visibility(game.grid, valid_player_pos, game.player.floor)
   update_floor_dijkstra_map(game)

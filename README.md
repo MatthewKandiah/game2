@@ -14,3 +14,4 @@
 
 # NOTES
 - temporary allocator freed each frame + tprintf for string formatting => much easier to draw ints and floats!
+- showing each enemy action with a visible indicator means an action may last multiple frames now. We effectively need the world's simplest animation system.

@@ -324,13 +324,19 @@ grid :: proc(
         trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
         tile := grid_get(game.grid, entity.pos, entity.floor)
         draw_info := entity_draw_info[entity.type]
-	is_active := game.active_entity == entity.id
-	// TODO - incorporate this indicator into the grid_button helper - possibly separate tile from entity helper?
-	// NOTE - colour is wonky, player is active while we wait for their action, but the current action is set to whatever the last action was.
-	if is_active {
-	  indicator_colour := RED if game.current_action.type == .Attack else YELLOW
-	  draw_triangle(ui_pos, Pos{x = ui_pos.x, y = ui_pos.y + grid_button_dim.h}, Pos{x = ui_pos.x + grid_button_dim.w, y = ui_pos.y}, 0.07, indicator_colour)
-	}
+        is_active := game.active_entity == entity.id
+        // TODO - incorporate this indicator into the grid_button helper - possibly separate tile from entity helper?
+        // NOTE - colour is wonky, player is active while we wait for their action, but the current action is set to whatever the last action was.
+        if is_active {
+          indicator_colour := RED if game.current_action.type == .Attack else YELLOW
+          draw_triangle(
+            ui_pos,
+            Pos{x = ui_pos.x, y = ui_pos.y + grid_button_dim.h},
+            Pos{x = ui_pos.x + grid_button_dim.w, y = ui_pos.y},
+            0.07,
+            indicator_colour,
+          )
+        }
         if entity.floor == game.player.floor &&
            tile.visibility == .Visible &&
            grid_button(
@@ -455,18 +461,18 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
           if data.tile.type == .DownStair {
             game.active_entity = PLAYER_ENTITY_ID
             game.current_action = move_down_stairs_action(entity_move_time[.Player])
-	    game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+            game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
           } else if data.tile.type == .UpStair {
             game.active_entity = PLAYER_ENTITY_ID
             game.current_action = move_up_stairs_action(entity_move_time[.Player])
-	    game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+            game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
           }
         }
       } else {
         game.active_entity = PLAYER_ENTITY_ID
-	fmt.println(data.id)
-	game.current_action = attack_action(data.id, entity_move_time[.Player])
-	game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+        fmt.println(data.id)
+        game.current_action = attack_action(data.id, entity_move_time[.Player])
+        game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
       }
     }
   case .HideAllClick:

@@ -56,7 +56,7 @@ game_post_player_move_update :: proc(game: ^Game) {
     id          = PLAYER_ENTITY_ID,
     next_active = game.time,
   }
-  
+
   actor_queue_insert(&game.actor_queue, actor)
   game.active_entity = NONE_ENTITY_ID
 }
@@ -68,7 +68,7 @@ clear_visibility :: proc(grid: []GridTile) {
     case .Visible:
       tile.visibility = .Known
     case .Unknown:
-      // NOOP
+    // NOOP
     }
   }
 }

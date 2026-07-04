@@ -167,9 +167,9 @@ main :: proc() {
             handle_action(&game, game.current_action)
           } else {game.animation_timer_nanos = game.current_action.animation_time}
         } else {
-	  // active entity no longer valid
-	  game.active_entity = NONE_ENTITY_ID
-	}
+          // active entity no longer valid
+          game.active_entity = NONE_ENTITY_ID
+        }
       }
     }
 

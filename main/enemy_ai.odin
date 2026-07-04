@@ -24,8 +24,8 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
             fmt.println("Rat sees player", id)
             return true, alerted_action(entity_move_time[.Rat])
           } else {
-	    return true, snarl_action(entity_move_time[.Rat])
-	  }
+            return true, snarl_action(entity_move_time[.Rat])
+          }
         }
       case .ACTIVE:
         {
@@ -64,7 +64,7 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
               }
               if is_enemy {continue}
               fmt.println("Rat steps towards player", id)
-	      return true, move_action(move_candidate, entity_move_time[enemy.type])
+              return true, move_action(move_candidate, entity_move_time[enemy.type])
             }
             if !moved_successfully {
               if obstacle_enemy_count > 0 {
@@ -73,11 +73,11 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
                 entity_manager_set_asked_to_move(&game.entity_manager, obstacle_enemies[enemy_idx].id, true)
               }
               fmt.println("Rat snarls angrily", id)
-	      return true, snarl_action(entity_move_time[enemy.type])
+              return true, snarl_action(entity_move_time[enemy.type])
             }
           } else {
             fmt.println("Rat forgets player", id)
-	    return true, deactivate_action(entity_move_time[enemy.type])
+            return true, deactivate_action(entity_move_time[enemy.type])
           }
         }
       }

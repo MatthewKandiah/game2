@@ -219,14 +219,32 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), game_player_active(game), ui_pos, button_dim, 0.1, "Spawn", FONT_MEDIUM, .Ubuntu) {
+  if text_button(
+    get_uid(),
+    game_player_active(game) && game.animation_timer_nanos <= 0,
+    ui_pos,
+    button_dim,
+    0.1,
+    "Spawn",
+    FONT_MEDIUM,
+    .Ubuntu,
+  ) {
     action = {
       type = .SpawnMonsterClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), game_player_active(game), ui_pos, button_dim, 0.1, "Wait", FONT_MEDIUM, .Ubuntu) {
+  if text_button(
+    get_uid(),
+    game_player_active(game) && game.animation_timer_nanos <= 0,
+    ui_pos,
+    button_dim,
+    0.1,
+    "Wait",
+    FONT_MEDIUM,
+    .Ubuntu,
+  ) {
     action = {
       type = .WaitClick,
     }
@@ -273,7 +291,7 @@ grid :: proc(
         draw_info := grid_tile_draw_info[tile.type]
         if grid_button(
           get_uid(d),
-          game_player_active(game),
+          game_player_active(game) && game.animation_timer_nanos <= 0,
           ui_pos,
           grid_button_dim,
           0.05,
@@ -310,7 +328,7 @@ grid :: proc(
            tile.visibility == .Visible &&
            grid_button(
              get_uid(cast(u32)entity.id.idx),
-             game_player_active(game),
+             game_player_active(game) && game.animation_timer_nanos <= 0,
              ui_pos,
              grid_button_dim,
              0.06,
@@ -414,8 +432,9 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
         if data.tile_type != .Wall &&
            (abs(data.pos.x - game.player.pos.x) <= 1) &&
            (abs(data.pos.y - game.player.pos.y) <= 1) {
-          // TODO - action
-          game_player_move(game, data.pos)
+          game.active_entity = PLAYER_ENTITY_ID
+          game.current_action = move_action(data.pos, entity_move_time[.Player])
+          game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
         }
       }
     }
@@ -427,21 +446,20 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
           game.viewport_centre = game.player.pos
         } else {
           if data.tile.type == .DownStair {
-            // TODO - action
-            clear_visibility(game.grid, game.player.pos, game.player.floor)
-            game.player.floor += 1
-            update_visibility(game.grid, game.player.pos, game.player.floor)
-            update_floor_dijkstra_map(game)
+            game.active_entity = PLAYER_ENTITY_ID
+            game.current_action = move_down_stairs_action(entity_move_time[.Player])
+	    game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
           } else if data.tile.type == .UpStair {
-            // TODO - action
-            clear_visibility(game.grid, game.player.pos, game.player.floor)
-            game.player.floor -= 1
-            update_visibility(game.grid, game.player.pos, game.player.floor)
-            update_floor_dijkstra_map(game)
+            game.active_entity = PLAYER_ENTITY_ID
+            game.current_action = move_up_stairs_action(entity_move_time[.Player])
+	    game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
           }
         }
       } else {
-        attack(game, PLAYER_ENTITY_ID, data.id)
+        game.active_entity = PLAYER_ENTITY_ID
+	fmt.println(data.id)
+	game.current_action = attack_action(data.id, entity_move_time[.Player])
+	game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
       }
     }
   case .HideAllClick:

@@ -1,5 +1,7 @@
 package main
 
+import "core:fmt"
+
 DEFAULT_ANIMATION_TIME_NANOS: i64 : 500_000_000
 
 Action :: struct {
@@ -11,6 +13,8 @@ Action :: struct {
 
 ActionType :: enum {
   Move,
+  MoveUpStairs,
+  MoveDownStairs,
   Attack,
   Alerted,
   Snarl,
@@ -32,6 +36,14 @@ move_action :: proc(to: GridPos, duration: f32) -> Action {
     duration = duration,
     animation_time = DEFAULT_ANIMATION_TIME_NANOS,
   }
+}
+
+move_up_stairs_action :: proc(duration: f32) -> Action {
+  return {type = .MoveUpStairs, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS}
+}
+
+move_down_stairs_action :: proc(duration: f32) -> Action {
+  return {type = .MoveDownStairs, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS}
 }
 
 AttackActionData :: struct {
@@ -69,17 +81,47 @@ handle_action :: proc(game: ^Game, action: Action) {
   case .Attack:
     {
       data := action.data.(AttackActionData)
-      attack(game, game.active_entity, data.target_entity)
+      if game_player_active(game) {
+        fmt.println("Debugging - player attack")
+        attack(game, game.active_entity, data.target_entity)
+        game_post_player_move_update(game)
+      } else {
+        fmt.println("Debugging - enemy attack")
+        attack(game, game.active_entity, data.target_entity)
+      }
     }
   case .Deactivate:
     {
       entity_manager_set_status(&game.entity_manager, game.active_entity, .INACTIVE)
     }
   case .Move:
-    // TODO handle player action
     {
       data := action.data.(MoveActionData)
-	entity_manager_set_pos(&game.entity_manager, game.active_entity, data.to)
+      entity_manager_set_pos(&game.entity_manager, game.active_entity, data.to)
+      if game_player_active(game) {
+        fmt.println("Debugging - player move in handle_action")
+        game_post_player_move_update(game)
+      }
+    }
+  case .MoveUpStairs:
+    {
+      if game_player_active(game) {
+        fmt.println("Debugging - player move up in handle_action")
+        game.player.floor -= 1
+        game_post_player_move_update(game)
+      } else {
+        panic("enemies moving between floors not supported yet")
+      }
+    }
+  case .MoveDownStairs:
+    {
+      if game_player_active(game) {
+        fmt.println("Debugging - player move down in handle_action")
+        game.player.floor += 1
+        game_post_player_move_update(game)
+      } else {
+        panic("enemies moving between floors not supported yet")
+      }
     }
   case .Snarl:
     {

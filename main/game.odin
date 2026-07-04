@@ -45,40 +45,30 @@ game_none_active :: proc(game: ^Game) -> bool {
   return game.active_entity == NONE_ENTITY_ID
 }
 
-game_player_move :: proc(game: ^Game, to: GridPos) {
-  from := game.player.pos
-  log.info("game_player_move", from, "to", to)
-  game.player.pos = to
-  game.viewport_centre = to
+game_post_player_move_update :: proc(game: ^Game) {
+  game.viewport_centre = game.player.pos
 
-  clear_visibility(game.grid, from, game.player.floor)
-  update_visibility(game.grid, to, game.player.floor)
+  clear_visibility(game.grid)
+  update_visibility(game.grid, game.player.pos, game.player.floor)
   update_floor_dijkstra_map(game)
 
   actor := Actor {
     id          = PLAYER_ENTITY_ID,
-    next_active = game.time + game.player.move_time,
+    next_active = game.time,
   }
+  
   actor_queue_insert(&game.actor_queue, actor)
   game.active_entity = NONE_ENTITY_ID
 }
 
-clear_visibility :: proc(grid: []GridTile, player_pos: GridPos, floor: i32) {
-  for row_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
-    for col_idx in -PLAYER_VIEW_RADIUS ..= PLAYER_VIEW_RADIUS {
-      check_pos := GridPos {
-        x = player_pos.x + cast(i32)col_idx,
-        y = player_pos.y + cast(i32)row_idx,
-      }
-      if check_pos.x < 0 || check_pos.x >= GRID_WIDTH || check_pos.y < 0 || check_pos.y >= GRID_HEIGHT {continue}
-      current := grid_get(grid, check_pos, floor)
-      switch current.visibility {
-      case .Known:
-      case .Visible:
-        grid_set_visibility(grid, check_pos, floor, .Known)
-      case .Unknown:
+clear_visibility :: proc(grid: []GridTile) {
+  for &tile in grid {
+    switch tile.visibility {
+    case .Known:
+    case .Visible:
+      tile.visibility = .Known
+    case .Unknown:
       // NOOP
-      }
     }
   }
 }

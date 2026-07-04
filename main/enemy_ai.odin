@@ -23,7 +23,9 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
           if can_see_player {
             fmt.println("Rat sees player", id)
             return true, alerted_action(entity_move_time[.Rat])
-          }
+          } else {
+	    return true, snarl_action(entity_move_time[.Rat])
+	  }
         }
       case .ACTIVE:
         {
@@ -81,5 +83,6 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
       }
     }
   }
+  fmt.println(enemy)
   panic("Unreachable")
 }

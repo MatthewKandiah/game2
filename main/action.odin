@@ -92,6 +92,7 @@ handle_action :: proc(game: ^Game, action: Action) {
     }
   case .Deactivate:
     {
+      fmt.println("Debugging - Deactivate")
       entity_manager_set_status(&game.entity_manager, game.active_entity, .INACTIVE)
     }
   case .Move:

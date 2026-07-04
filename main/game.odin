@@ -25,6 +25,7 @@ Game :: struct {
   time:                  f32,
   active_entity:         EntityId,
   current_action:        Action,
+  animation_in_progress: bool,
   animation_timer_nanos: i64,
   player:                ^Entity,
 }
@@ -200,6 +201,8 @@ game_reset :: proc(game: ^Game) {
   game.is_looking = false
   game.zoom_level = 1
   game.active_entity = NONE_ENTITY_ID
+  game.animation_in_progress = false
+  game.animation_timer_nanos = 0
 
   update_visibility(game.grid, valid_player_pos, game.player.floor)
   update_floor_dijkstra_map(game)

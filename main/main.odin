@@ -140,16 +140,17 @@ main :: proc() {
     prev_animation_time := animation_time
     animation_time = now()
     delta_animation_time := animation_time - prev_animation_time
-    if game.animation_timer_nanos > 0 {
+    if game.animation_in_progress {
       game.animation_timer_nanos -= delta_animation_time
       // handle completed animated action
       if game.animation_timer_nanos <= 0 {
         handle_action(&game, game.current_action)
+	game.animation_in_progress = false
       }
     }
 
-    // process actors until we hit a UI update or wait for player input
-    for game.animation_timer_nanos <= 0 && game_none_active(&game) {
+    // process actors until we hit an animated action or wait for player input
+    for !game.animation_in_progress && game_none_active(&game) {
       actor := actor_queue_pop_min(&game.actor_queue)
       game.time = actor.next_active
       game.active_entity = actor.id
@@ -165,7 +166,10 @@ main :: proc() {
 
           if game.current_action.animation_time == 0 {
             handle_action(&game, game.current_action)
-          } else {game.animation_timer_nanos = game.current_action.animation_time}
+          } else {
+	    game.animation_in_progress = true
+	    game.animation_timer_nanos = game.current_action.animation_time
+	  }
         } else {
           // active entity no longer valid
           game.active_entity = NONE_ENTITY_ID

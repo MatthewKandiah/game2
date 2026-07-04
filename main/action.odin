@@ -62,12 +62,12 @@ alerted_action :: proc(duration: f32) -> Action {
   return {type = .Alerted, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS}
 }
 
-snarl_action :: proc(duration: f32) -> Action {
-  return {type = .Snarl, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS}
+snarl_action :: proc(duration: f32, animation_time: i64) -> Action {
+  return {type = .Snarl, duration = duration, animation_time = animation_time}
 }
 
 deactivate_action :: proc(duration: f32) -> Action {
-  return {type = .Deactivate, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS}
+  return {type = .Deactivate, duration = duration, animation_time = 0}
 }
 
 handle_action :: proc(game: ^Game, action: Action) {

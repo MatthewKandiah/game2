@@ -221,7 +221,7 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
 
   if text_button(
     get_uid(),
-    game_player_active(game) && game.animation_timer_nanos <= 0,
+    game_player_active(game) && !game.animation_in_progress,
     ui_pos,
     button_dim,
     0.1,
@@ -237,7 +237,7 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
 
   if text_button(
     get_uid(),
-    game_player_active(game) && game.animation_timer_nanos <= 0,
+    game_player_active(game) && !game.animation_in_progress,
     ui_pos,
     button_dim,
     0.1,
@@ -291,7 +291,7 @@ grid :: proc(
         draw_info := grid_tile_draw_info[tile.type]
         if grid_button(
           get_uid(d),
-          game_player_active(game) && game.animation_timer_nanos <= 0,
+          game_player_active(game) && !game.animation_in_progress,
           ui_pos,
           grid_button_dim,
           0.05,
@@ -324,10 +324,8 @@ grid :: proc(
         trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
         tile := grid_get(game.grid, entity.pos, entity.floor)
         draw_info := entity_draw_info[entity.type]
-        is_active := game.active_entity == entity.id
-        // TODO - incorporate this indicator into the grid_button helper - possibly separate tile from entity helper?
-        // NOTE - colour is wonky, player is active while we wait for their action, but the current action is set to whatever the last action was.
-        if is_active {
+        show_indicator := game.active_entity == entity.id && game.animation_in_progress && entity.floor == game.player.floor
+        if show_indicator {
           indicator_colour := RED if game.current_action.type == .Attack else YELLOW
           draw_triangle(
             ui_pos,
@@ -341,7 +339,7 @@ grid :: proc(
            tile.visibility == .Visible &&
            grid_button(
              get_uid(cast(u32)entity.id.idx),
-             game_player_active(game) && game.animation_timer_nanos <= 0,
+             game_player_active(game) && !game.animation_in_progress,
              ui_pos,
              grid_button_dim,
              0.06,
@@ -447,7 +445,9 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
            (abs(data.pos.y - game.player.pos.y) <= 1) {
           game.active_entity = PLAYER_ENTITY_ID
           game.current_action = move_action(data.pos, entity_move_time[.Player])
-          game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+          //game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+          game.animation_timer_nanos = 0
+          game.animation_in_progress = true // player cross frame actions only resolve if an animation is in progress, an animation is just a cross frame action
         }
       }
     }
@@ -462,10 +462,12 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
             game.active_entity = PLAYER_ENTITY_ID
             game.current_action = move_down_stairs_action(entity_move_time[.Player])
             game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+            game.animation_in_progress = true
           } else if data.tile.type == .UpStair {
             game.active_entity = PLAYER_ENTITY_ID
             game.current_action = move_up_stairs_action(entity_move_time[.Player])
             game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+            game.animation_in_progress = true
           }
         }
       } else {
@@ -473,6 +475,7 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
         fmt.println(data.id)
         game.current_action = attack_action(data.id, entity_move_time[.Player])
         game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+        game.animation_in_progress = true
       }
     }
   case .HideAllClick:

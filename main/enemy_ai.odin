@@ -24,7 +24,8 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
             fmt.println("Rat sees player", id)
             return true, alerted_action(entity_move_time[.Rat])
           } else {
-            return true, snarl_action(entity_move_time[.Rat])
+	    animation_time := 0 if enemy.floor != game.player.floor else DEFAULT_ANIMATION_TIME_NANOS
+            return true, snarl_action(entity_move_time[.Rat], animation_time)
           }
         }
       case .ACTIVE:
@@ -73,7 +74,7 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
                 entity_manager_set_asked_to_move(&game.entity_manager, obstacle_enemies[enemy_idx].id, true)
               }
               fmt.println("Rat snarls angrily", id)
-              return true, snarl_action(entity_move_time[enemy.type])
+              return true, snarl_action(entity_move_time[enemy.type], DEFAULT_ANIMATION_TIME_NANOS)
             }
           } else {
             fmt.println("Rat forgets player", id)

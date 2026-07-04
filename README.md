@@ -11,6 +11,7 @@
 - [ ] Message console for communicating in-game info (instead of console logging to terminal)
 - [ ] Serialise actions to buffer / file
   - undo and redo would be useful for reviewing behaviours
+- [ ] Rendering bug - seemingly randomly we get this glitch where a thing stretches, it looks like it stretches to the bottom left corner, guessing we're giving an incorrect index count and reading into zeroed data
 
 # NOTES
 - temporary allocator freed each frame + tprintf for string formatting => much easier to draw ints and floats!

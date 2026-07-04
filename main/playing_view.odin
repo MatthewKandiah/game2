@@ -334,7 +334,6 @@ grid :: proc(
           third_height := grid_button_dim.h / 3
           half_width := grid_button_dim.w / 2
           half_height := grid_button_dim.h / 2
-	  fmt.println("debugging", game.current_action.indicator_position)
           switch game.current_action.indicator_position {
           case .MID:
             {
@@ -423,7 +422,7 @@ grid :: proc(
               }
               triangle_corners[2] = Pos {
                 x = ui_pos.x + grid_button_dim.w,
-                y = ui_pos.y + 2 * third_width,
+                y = ui_pos.y + 2 * third_height,
               }
             }
           case .SE:
@@ -707,6 +706,7 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
         id          = PLAYER_ENTITY_ID,
         next_active = game.time + game.player.move_time,
       }
+      // TODO - make this a wait action too
       actor_queue_insert(&game.actor_queue, actor)
       game.active_entity = NONE_ENTITY_ID
 

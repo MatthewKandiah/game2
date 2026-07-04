@@ -154,7 +154,9 @@ main :: proc() {
       actor := actor_queue_pop_min(&game.actor_queue)
       game.time = actor.next_active
       game.active_entity = actor.id
-      if actor.id != PLAYER_ENTITY_ID {
+      if actor.id == PLAYER_ENTITY_ID {
+	game.current_action = none_action()
+      } else{
         action_ok: bool
         action_ok, game.current_action = enemy_ai(&game, actor.id)
         if action_ok {

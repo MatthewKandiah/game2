@@ -84,6 +84,5 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
       }
     }
   }
-  fmt.println(enemy)
   panic("Unreachable")
 }

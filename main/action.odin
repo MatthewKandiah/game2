@@ -5,14 +5,15 @@ import "core:fmt"
 DEFAULT_ANIMATION_TIME_NANOS: i64 : 500_000_000
 
 Action :: struct {
-  type:                ActionType,
-  data:                ActionData,
-  duration:            f32,
-  animation_time:      i64,
+  type:               ActionType,
+  data:               ActionData,
+  duration:           f32,
+  animation_time:     i64,
   indicator_position: IndicatorPosition,
 }
 
 ActionType :: enum {
+  None,
   Move,
   MoveUpStairs,
   MoveDownStairs,
@@ -25,6 +26,10 @@ ActionType :: enum {
 ActionData :: union {
   MoveActionData,
   AttackActionData,
+}
+
+none_action :: proc() -> Action {
+  return {type = .None, duration = 0, animation_time = 0}
 }
 
 MoveActionData :: struct {
@@ -72,7 +77,12 @@ attack_action :: proc(from, to: GridPos, target: EntityId, duration: f32) -> Act
 }
 
 alerted_action :: proc(duration: f32) -> Action {
-  return {type = .Alerted, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS, indicator_position = .MID}
+  return {
+    type = .Alerted,
+    duration = duration,
+    animation_time = DEFAULT_ANIMATION_TIME_NANOS,
+    indicator_position = .MID,
+  }
 }
 
 snarl_action :: proc(duration: f32, animation_time: i64) -> Action {
@@ -87,6 +97,8 @@ handle_action :: proc(game: ^Game, action: Action) {
   game.time += action.duration
 
   switch action.type {
+  case .None:
+    panic("Tried to handle an action when none was set yet, expect this means it's the player's turn to act, and a user interaction has not set an action for them")
   case .Alerted:
     {
       entity_manager_set_status(&game.entity_manager, game.active_entity, .ACTIVE)
@@ -95,17 +107,14 @@ handle_action :: proc(game: ^Game, action: Action) {
     {
       data := action.data.(AttackActionData)
       if game_player_active(game) {
-        fmt.println("Debugging - player attack")
         attack(game, game.active_entity, data.target_entity)
         game_post_player_move_update(game)
       } else {
-        fmt.println("Debugging - enemy attack")
         attack(game, game.active_entity, data.target_entity)
       }
     }
   case .Deactivate:
     {
-      fmt.println("Debugging - Deactivate")
       entity_manager_set_status(&game.entity_manager, game.active_entity, .INACTIVE)
     }
   case .Move:
@@ -113,14 +122,12 @@ handle_action :: proc(game: ^Game, action: Action) {
       data := action.data.(MoveActionData)
       entity_manager_set_pos(&game.entity_manager, game.active_entity, data.to)
       if game_player_active(game) {
-        fmt.println("Debugging - player move in handle_action")
         game_post_player_move_update(game)
       }
     }
   case .MoveUpStairs:
     {
       if game_player_active(game) {
-        fmt.println("Debugging - player move up in handle_action")
         game.player.floor -= 1
         game_post_player_move_update(game)
       } else {
@@ -130,7 +137,6 @@ handle_action :: proc(game: ^Game, action: Action) {
   case .MoveDownStairs:
     {
       if game_player_active(game) {
-        fmt.println("Debugging - player move down in handle_action")
         game.player.floor += 1
         game_post_player_move_update(game)
       } else {

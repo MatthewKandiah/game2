@@ -36,8 +36,9 @@ GridClickData :: struct {
 }
 
 EntityClickData :: struct {
-  id:   EntityId,
-  tile: GridTile,
+  id:     EntityId,
+  tile:   GridTile,
+  to_pos: GridPos,
 }
 
 playing_view :: proc(game: ^Game) {
@@ -324,16 +325,154 @@ grid :: proc(
         trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
         tile := grid_get(game.grid, entity.pos, entity.floor)
         draw_info := entity_draw_info[entity.type]
-        show_indicator := game.active_entity == entity.id && game.animation_in_progress && entity.floor == game.player.floor
+        show_indicator :=
+          game.active_entity == entity.id && game.animation_in_progress && entity.floor == game.player.floor
         if show_indicator {
-          indicator_colour := RED if game.current_action.type == .Attack else YELLOW
-          draw_triangle(
-            ui_pos,
-            Pos{x = ui_pos.x, y = ui_pos.y + grid_button_dim.h},
-            Pos{x = ui_pos.x + grid_button_dim.w, y = ui_pos.y},
-            0.07,
-            indicator_colour,
-          )
+          indicator_colour := RED if game.current_action.type == .Attack else TEAL
+          triangle_corners: [3]Pos
+          third_width := grid_button_dim.w / 3
+          third_height := grid_button_dim.h / 3
+          half_width := grid_button_dim.w / 2
+          half_height := grid_button_dim.h / 2
+	  fmt.println("debugging", game.current_action.indicator_position)
+          switch game.current_action.indicator_position {
+          case .MID:
+            {
+              triangle_corners[0] = Pos {
+                x = ui_pos.x + third_width,
+                y = ui_pos.y + 2 * third_height,
+              }
+              triangle_corners[1] = Pos {
+                x = ui_pos.x + 2 * third_width,
+                y = ui_pos.y + 2 * third_height,
+              }
+              triangle_corners[2] = Pos {
+                x = ui_pos.x + half_width,
+                y = ui_pos.y + third_height,
+              }
+            }
+          case .N:
+            {
+              triangle_corners[0] = Pos {
+                x = ui_pos.x + third_width,
+                y = ui_pos.y + 2 * third_height,
+              }
+              triangle_corners[1] = Pos {
+                x = ui_pos.x + half_width,
+                y = ui_pos.y + grid_button_dim.h,
+              }
+              triangle_corners[2] = Pos {
+                x = ui_pos.x + 2 * third_width,
+                y = ui_pos.y + 2 * third_height,
+              }
+            }
+          case .E:
+            {
+              triangle_corners[0] = Pos {
+                x = ui_pos.x + 2 * third_width,
+                y = ui_pos.y + 2 * third_height,
+              }
+              triangle_corners[1] = Pos {
+                x = ui_pos.x + grid_button_dim.w,
+                y = ui_pos.y + half_height,
+              }
+              triangle_corners[2] = Pos {
+                x = ui_pos.x + 2 * third_width,
+                y = ui_pos.y + third_height,
+              }
+            }
+          case .S:
+            {
+              triangle_corners[0] = Pos {
+                x = ui_pos.x + third_width,
+                y = ui_pos.y + third_height,
+              }
+              triangle_corners[1] = Pos {
+                x = ui_pos.x + 2 * third_width,
+                y = ui_pos.y + third_height,
+              }
+              triangle_corners[2] = Pos {
+                x = ui_pos.x + half_width,
+                y = ui_pos.y,
+              }
+            }
+          case .W:
+            {
+              triangle_corners[0] = Pos {
+                x = ui_pos.x + third_width,
+                y = ui_pos.y + third_height,
+              }
+              triangle_corners[1] = Pos {
+                x = ui_pos.x,
+                y = ui_pos.y + half_height,
+              }
+              triangle_corners[2] = Pos {
+                x = ui_pos.x + third_width,
+                y = ui_pos.y + 2 * third_height,
+              }
+            }
+          case .NE:
+            {
+              triangle_corners[0] = Pos {
+                x = ui_pos.x + 2 * third_width,
+                y = ui_pos.y + grid_button_dim.h,
+              }
+              triangle_corners[1] = Pos {
+                x = ui_pos.x + grid_button_dim.w,
+                y = ui_pos.y + grid_button_dim.h,
+              }
+              triangle_corners[2] = Pos {
+                x = ui_pos.x + grid_button_dim.w,
+                y = ui_pos.y + 2 * third_width,
+              }
+            }
+          case .SE:
+            {
+              triangle_corners[0] = Pos {
+                x = ui_pos.x + grid_button_dim.w,
+                y = ui_pos.y + third_height,
+              }
+              triangle_corners[1] = Pos {
+                x = ui_pos.x + grid_button_dim.w,
+                y = ui_pos.y,
+              }
+              triangle_corners[2] = Pos {
+                x = ui_pos.x + 2 * third_width,
+                y = ui_pos.y,
+              }
+            }
+          case .SW:
+            {
+              triangle_corners[0] = Pos {
+                x = ui_pos.x,
+                y = ui_pos.y + third_height,
+              }
+              triangle_corners[1] = Pos {
+                x = ui_pos.x + third_width,
+                y = ui_pos.y,
+              }
+              triangle_corners[2] = Pos {
+                x = ui_pos.x,
+                y = ui_pos.y,
+              }
+	    }
+          case .NW:
+            {
+              triangle_corners[0] = Pos {
+                x = ui_pos.x,
+                y = ui_pos.y + 2 * third_height,
+              }
+              triangle_corners[1] = Pos {
+                x = ui_pos.x,
+                y = ui_pos.y + grid_button_dim.h,
+              }
+              triangle_corners[2] = Pos {
+                x = ui_pos.x + third_width,
+                y = ui_pos.y + grid_button_dim.h,
+              }
+	    }
+          }
+          draw_triangle(triangle_corners[0], triangle_corners[1], triangle_corners[2], 0.07, indicator_colour)
         }
         if entity.floor == game.player.floor &&
            tile.visibility == .Visible &&
@@ -351,7 +490,7 @@ grid :: proc(
            ) {
           action = {
             type = .EntityClick,
-            data = EntityClickData{id = entity.id, tile = tile},
+            data = EntityClickData{id = entity.id, tile = tile, to_pos = entity.pos},
           }
         }
       }
@@ -444,10 +583,10 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
            (abs(data.pos.x - game.player.pos.x) <= 1) &&
            (abs(data.pos.y - game.player.pos.y) <= 1) {
           game.active_entity = PLAYER_ENTITY_ID
-          game.current_action = move_action(data.pos, entity_move_time[.Player])
-          //game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
-          game.animation_timer_nanos = 0
-          game.animation_in_progress = true // player cross frame actions only resolve if an animation is in progress, an animation is just a cross frame action
+          game.current_action = move_action(game.player.pos, data.pos, entity_move_time[.Player])
+          game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+          //game.animation_timer_nanos = 0
+          game.animation_in_progress = true // player cross frame actions only resolve if an animation is in progress, an animation is just a cross frame action, all player actions are cross frame at the moment
         }
       }
     }
@@ -472,8 +611,7 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
         }
       } else {
         game.active_entity = PLAYER_ENTITY_ID
-        fmt.println(data.id)
-        game.current_action = attack_action(data.id, entity_move_time[.Player])
+        game.current_action = attack_action(game.player.pos, data.to_pos, data.id, entity_move_time[.Player])
         game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
         game.animation_in_progress = true
       }

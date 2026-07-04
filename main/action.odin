@@ -5,10 +5,11 @@ import "core:fmt"
 DEFAULT_ANIMATION_TIME_NANOS: i64 : 500_000_000
 
 Action :: struct {
-  type:           ActionType,
-  data:           ActionData,
-  duration:       f32,
-  animation_time: i64,
+  type:                ActionType,
+  data:                ActionData,
+  duration:            f32,
+  animation_time:      i64,
+  indicator_position: IndicatorPosition,
 }
 
 ActionType :: enum {
@@ -29,45 +30,57 @@ ActionData :: union {
 MoveActionData :: struct {
   to: GridPos,
 }
-move_action :: proc(to: GridPos, duration: f32) -> Action {
+move_action :: proc(from, to: GridPos, duration: f32) -> Action {
   return {
     type = .Move,
     data = MoveActionData{to = to},
     duration = duration,
     animation_time = DEFAULT_ANIMATION_TIME_NANOS,
+    indicator_position = action_indicator_position(from, to),
   }
 }
 
 move_up_stairs_action :: proc(duration: f32) -> Action {
-  return {type = .MoveUpStairs, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS}
+  return {
+    type = .MoveUpStairs,
+    duration = duration,
+    animation_time = DEFAULT_ANIMATION_TIME_NANOS,
+    indicator_position = .MID,
+  }
 }
 
 move_down_stairs_action :: proc(duration: f32) -> Action {
-  return {type = .MoveDownStairs, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS}
+  return {
+    type = .MoveDownStairs,
+    duration = duration,
+    animation_time = DEFAULT_ANIMATION_TIME_NANOS,
+    indicator_position = .MID,
+  }
 }
 
 AttackActionData :: struct {
   target_entity: EntityId,
 }
-attack_action :: proc(target: EntityId, duration: f32) -> Action {
+attack_action :: proc(from, to: GridPos, target: EntityId, duration: f32) -> Action {
   return {
     type = .Attack,
     data = AttackActionData{target_entity = target},
     duration = duration,
     animation_time = DEFAULT_ANIMATION_TIME_NANOS,
+    indicator_position = action_indicator_position(from, to),
   }
 }
 
 alerted_action :: proc(duration: f32) -> Action {
-  return {type = .Alerted, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS}
+  return {type = .Alerted, duration = duration, animation_time = DEFAULT_ANIMATION_TIME_NANOS, indicator_position = .MID}
 }
 
 snarl_action :: proc(duration: f32, animation_time: i64) -> Action {
-  return {type = .Snarl, duration = duration, animation_time = animation_time}
+  return {type = .Snarl, duration = duration, animation_time = animation_time, indicator_position = .MID}
 }
 
 deactivate_action :: proc(duration: f32) -> Action {
-  return {type = .Deactivate, duration = duration, animation_time = 0}
+  return {type = .Deactivate, duration = duration, animation_time = 0, indicator_position = .MID}
 }
 
 handle_action :: proc(game: ^Game, action: Action) {

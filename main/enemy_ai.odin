@@ -48,7 +48,7 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
                   continue
                 } else {
                   moved_successfully = true
-                  return true, attack_action(PLAYER_ENTITY_ID, entity_move_time[.Rat])
+                  return true, attack_action(enemy.pos, move_candidate, PLAYER_ENTITY_ID, entity_move_time[.Rat])
                 }
               }
               is_wall := grid_get(game.grid, move_candidate, enemy.floor).type == .Wall
@@ -65,7 +65,7 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (ok: bool, planned_action: Action
               }
               if is_enemy {continue}
               fmt.println("Rat steps towards player", id)
-              return true, move_action(move_candidate, entity_move_time[enemy.type])
+              return true, move_action(enemy.pos, move_candidate, entity_move_time[enemy.type])
             }
             if !moved_successfully {
               if obstacle_enemy_count > 0 {

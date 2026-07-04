@@ -68,7 +68,7 @@ entity_move_time := [EntityType]f32 {
 }
 
 entity_max_health := [EntityType]i32 {
-  .Player = 100,
+  .Player = 10,
   .Rat    = 3,
 }
 

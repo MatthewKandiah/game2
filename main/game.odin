@@ -30,6 +30,10 @@ Game :: struct {
   player:                ^Entity,
 }
 
+IndicatorPosition :: enum {
+  MID, N, NE, E, SE, S, SW, W, NW,
+}
+
 GameMode :: enum {
   MainMenu,
   Playing,

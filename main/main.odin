@@ -248,3 +248,49 @@ mouse_button_callback :: proc "c" (window: glfw.WindowHandle, button, action, mo
 get_proc_address :: proc(p: rawptr, name: cstring) {
   (cast(^rawptr)p)^ = glfw.GetInstanceProcAddress(gc.vk_instance, name)
 }
+
+// TODO - where should this live
+action_indicator_position :: proc(from, to: GridPos) -> IndicatorPosition {
+  dx := cast(f32)(to.x - from.x)
+  dy := cast(f32)(to.y - from.y)
+
+  if dx == 0 && dy == 0 {
+    return .MID
+  }
+  
+  if dx == 0 && dy >= 0 {
+    return .N
+  }
+  if dx == 0 && dy < 0 {
+    return .S
+  }
+
+  dydx := abs(dy / dx)
+  if dydx >= 2 {
+    if dy >= 0 {
+      return .N
+    } else {
+      return .S
+    }
+  }
+  if dydx < 2 && dydx > 0.5 {
+    if dx >= 0 && dy >= 0 {
+      return .NE
+    } else if dx >= 0 && dy < 0 {
+      return .SE
+    } else if dx < 0 && dy >= 0 {
+      return .NW
+    } else {
+      return .SW
+    }
+  }
+  if dydx <= 0.5 {
+    if dx >= 0 {
+      return .E
+    } else {
+      return .W
+    }
+  }
+
+  unreachable()
+}

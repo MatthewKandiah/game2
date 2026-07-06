@@ -6,7 +6,7 @@
 - [x] Nice `draw_int` and `draw_float` helpers
   - Health and time UI good places to do it
 - [ ] Click to move the player more than one tile, set a target position and process moves along that path
-- [ ] Option to show indicator on each enemy action instead of just jumping to next player action
+- [x] Option to show indicator on each enemy action instead of just jumping to next player action
   - [x] draw_triangle helper
 - [ ] Message console for communicating in-game info (instead of console logging to terminal)
 - [ ] Serialise actions to buffer / file

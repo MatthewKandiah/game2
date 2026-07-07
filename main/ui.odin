@@ -31,10 +31,14 @@ grid_button :: proc(
   font: FontTexture,
   colour: Colour,
   trim: Trim,
+  should_override_bg_colour: bool = false,
+  override_bg_colour: Colour = BLACK,
 ) -> bool {
   bg_colour: Colour
   text_colour: Colour
-  if (gc.ui.active_id == id) {
+  if should_override_bg_colour {
+    bg_colour = override_bg_colour
+  } else if (gc.ui.active_id == id) {
     bg_colour = colour
     text_colour = BLACK
   } else if (gc.ui.hot_id == id) {

@@ -122,6 +122,7 @@ handle_action :: proc(game: ^Game, action: Action) {
       data := action.data.(MoveActionData)
       entity_manager_set_pos(&game.entity_manager, game.active_entity, data.to)
       if game_player_active(game) {
+	game.player_planned_path_count -= 1
         game_post_player_move_update(game)
       }
     }

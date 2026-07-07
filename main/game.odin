@@ -14,24 +14,34 @@ START_FLOOR :: 4
 DOWN_STAIRS_PER_FLOOR :: 3
 
 Game :: struct {
-  mode:                  GameMode,
-  grid:                  []GridTile,
-  floor_dijkstra_map:    []i32,
-  entity_manager:        EntityManager,
-  actor_queue:           ActorQueue,
-  viewport_centre:       GridPos,
-  is_looking:            bool,
-  zoom_level:            f32,
-  time:                  f32,
-  active_entity:         EntityId,
-  current_action:        Action,
-  animation_in_progress: bool,
-  animation_timer_nanos: i64,
-  player:                ^Entity,
+  mode:                      GameMode,
+  grid:                      []GridTile,
+  floor_dijkstra_map:        []i32,
+  entity_manager:            EntityManager,
+  actor_queue:               ActorQueue,
+  viewport_centre:           GridPos,
+  is_looking:                bool,
+  zoom_level:                f32,
+  time:                      f32,
+  active_entity:             EntityId,
+  current_action:            Action,
+  animation_in_progress:     bool,
+  animation_timer_nanos:     i64,
+  player:                    ^Entity,
+  player_planned_path_buf:   []GridPos,
+  player_planned_path_count: i32,
 }
 
 IndicatorPosition :: enum {
-  MID, N, NE, E, SE, S, SW, W, NW,
+  MID,
+  N,
+  NE,
+  E,
+  SE,
+  S,
+  SW,
+  W,
+  NW,
 }
 
 GameMode :: enum {
@@ -63,6 +73,7 @@ game_post_player_move_update :: proc(game: ^Game) {
   }
 
   actor_queue_insert(&game.actor_queue, actor)
+
   game.active_entity = NONE_ENTITY_ID
 }
 
@@ -207,6 +218,7 @@ game_reset :: proc(game: ^Game) {
   game.active_entity = NONE_ENTITY_ID
   game.animation_in_progress = false
   game.animation_timer_nanos = 0
+  game.player_planned_path_count = 0
 
   update_visibility(game.grid, valid_player_pos, game.player.floor)
   update_floor_dijkstra_map(game)

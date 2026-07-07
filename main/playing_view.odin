@@ -288,6 +288,13 @@ grid :: proc(
       }
       trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
       tile := grid_get(game.grid, grid_pos, game.player.floor)
+      is_on_player_path := false
+      for path_pos in game.player_planned_path_buf[0:game.player_planned_path_count] {
+	if grid_pos == path_pos {
+	  is_on_player_path = true
+	  break
+	}
+      }
       if tile.visibility != .Unknown {
         draw_info := grid_tile_draw_info[tile.type]
         if grid_button(
@@ -301,6 +308,8 @@ grid :: proc(
           .UbuntuMono,
           draw_info.colour if tile.visibility == .Visible else DARK_GREY,
           trim,
+	  is_on_player_path,
+	  TEAL,
         ) {
           action = {
             type = .GridClick,
@@ -454,7 +463,7 @@ grid :: proc(
                 x = ui_pos.x,
                 y = ui_pos.y,
               }
-	    }
+            }
           case .NW:
             {
               triangle_corners[0] = Pos {
@@ -469,7 +478,7 @@ grid :: proc(
                 x = ui_pos.x + third_width,
                 y = ui_pos.y + grid_button_dim.h,
               }
-	    }
+            }
           }
           draw_triangle(triangle_corners[0], triangle_corners[1], triangle_corners[2], 0.07, indicator_colour)
         }
@@ -577,7 +586,16 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
       data := action.data.(GridClickData)
       if game.is_looking {
         game.viewport_centre = data.pos
-      } else {
+      } else if data.tile_type != .Wall {
+	path_ok, path_count := dijkstra_map_player_path(game.floor_dijkstra_map, data.pos, game.player_planned_path_buf)
+	if path_ok {
+	  game.player_planned_path_count = path_count
+	  game.active_entity = PLAYER_ENTITY_ID
+	  game.current_action = move_action(game.player.pos, game.player_planned_path_buf[game.player_planned_path_count - 1], entity_move_time[.Player])
+	  game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+	  game.animation_in_progress = true
+	}
+        /* old move one tile logic
         if data.tile_type != .Wall &&
            (abs(data.pos.x - game.player.pos.x) <= 1) &&
            (abs(data.pos.y - game.player.pos.y) <= 1) {
@@ -587,6 +605,7 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
           //game.animation_timer_nanos = 0
           game.animation_in_progress = true // player cross frame actions only resolve if an animation is in progress, an animation is just a cross frame action, all player actions are cross frame at the moment
         }
+        */
       }
     }
   case .EntityClick:

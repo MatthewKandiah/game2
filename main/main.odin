@@ -122,10 +122,12 @@ main :: proc() {
   game_grid_buf := make([]GridTile, GRID_DEPTH * GRID_WIDTH * GRID_HEIGHT)
   floor_dijkstra_map_buf := make([]i32, GRID_WIDTH * GRID_HEIGHT)
   actor_queue_buf := make([]Actor, 2 * ENTITY_BUFFER_SIZE + 1)
+  player_planned_path_buf := make([]GridPos, max(GRID_DEPTH, GRID_WIDTH))
   game := Game {
     grid = game_grid_buf,
     floor_dijkstra_map = floor_dijkstra_map_buf,
     actor_queue = ActorQueue{heap_data = actor_queue_buf},
+    player_planned_path_buf = player_planned_path_buf,
   }
   game_reset(&game)
 
@@ -145,7 +147,7 @@ main :: proc() {
       // handle completed animated action
       if game.animation_timer_nanos <= 0 {
         handle_action(&game, game.current_action)
-	game.animation_in_progress = false
+        game.animation_in_progress = false
       }
     }
 
@@ -155,8 +157,23 @@ main :: proc() {
       game.time = actor.next_active
       game.active_entity = actor.id
       if actor.id == PLAYER_ENTITY_ID {
-	game.current_action = none_action()
-      } else{
+        if game.player_planned_path_count > 0 {
+	  // TODO - collision => do not move if can't move!
+	  // TODO - interrupt on enemy moving into visibility
+	  // TODO - interrupt on player click
+          game.current_action = move_action(
+            game.player.pos,
+            game.player_planned_path_buf[game.player_planned_path_count - 1],
+            entity_move_time[.Player],
+          )
+	  game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
+	  //game.animation_timer_nanos = 0
+	  // animation setting required (even for timer = 0) or nothing happens
+	  game.animation_in_progress = true
+        } else {
+          game.current_action = none_action()
+        }
+      } else {
         action_ok: bool
         action_ok, game.current_action = enemy_ai(&game, actor.id)
         if action_ok {
@@ -169,9 +186,9 @@ main :: proc() {
           if game.current_action.animation_time == 0 {
             handle_action(&game, game.current_action)
           } else {
-	    game.animation_in_progress = true
-	    game.animation_timer_nanos = game.current_action.animation_time
-	  }
+            game.animation_in_progress = true
+            game.animation_timer_nanos = game.current_action.animation_time
+          }
         } else {
           // active entity no longer valid
           game.active_entity = NONE_ENTITY_ID
@@ -259,7 +276,7 @@ action_indicator_position :: proc(from, to: GridPos) -> IndicatorPosition {
   if dx == 0 && dy == 0 {
     return .MID
   }
-  
+
   if dx == 0 && dy >= 0 {
     return .N
   }

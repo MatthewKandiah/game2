@@ -8,11 +8,6 @@ PLAYER_ENTITY_ID :: EntityId {
   generation = 0,
 }
 
-NONE_ENTITY_ID :: EntityId {
-  idx        = -1,
-  generation = -1,
-}
-
 Entity :: struct {
   id:            EntityId,
   type:          EntityType,
@@ -68,7 +63,7 @@ entity_move_time := [EntityType]f32 {
 }
 
 entity_max_health := [EntityType]i32 {
-  .Player = 10,
+  .Player = 100,
   .Rat    = 3,
 }
 

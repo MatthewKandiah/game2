@@ -6,23 +6,6 @@ import "core:log"
 // leave space for arithmetic without overflowing
 DIJKSTRA_MAP_SENTINEL :: cast(i32)max(i16)
 
-// quickly hacked in, probably needs improving to feel good
-dijkstra_map_player_path :: proc(dijk: []i32, to: GridPos, path_buf: []GridPos) -> (ok: bool, path_count: i32) {
-  current_dist := dijkstra_map_get(dijk, to)
-  current_pos := to
-  for current_dist > 0 {
-    candidate_buf, candidate_count := dijkstra_map_move_toward_player_candidates(dijk, current_pos, false)
-    if candidate_count == 0 {break}
-    
-    path_buf[path_count] = current_pos
-    path_count += 1
-    
-    current_pos = candidate_buf[0]
-    current_dist = dijkstra_map_get(dijk, current_pos)
-  }
-  return true, path_count
-}
-
 dijkstra_map_move_toward_player_candidates :: proc(
   dijk: []i32,
   pos: GridPos,

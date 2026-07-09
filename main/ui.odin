@@ -22,7 +22,6 @@ update_ui_state :: proc(id: u64, pos: Pos, dim: Dim, z: f32) {
 
 grid_button :: proc(
   id: u64,
-  is_interactive: bool,
   pos: Pos,
   dim: Dim,
   z: f32,
@@ -31,14 +30,10 @@ grid_button :: proc(
   font: FontTexture,
   colour: Colour,
   trim: Trim,
-  should_override_bg_colour: bool = false,
-  override_bg_colour: Colour = BLACK,
 ) -> bool {
   bg_colour: Colour
   text_colour: Colour
-  if should_override_bg_colour {
-    bg_colour = override_bg_colour
-  } else if (gc.ui.active_id == id) {
+  if (gc.ui.active_id == id) {
     bg_colour = colour
     text_colour = BLACK
   } else if (gc.ui.hot_id == id) {
@@ -72,19 +67,10 @@ grid_button :: proc(
   }
   char_pos := center_within_container(char_dim, pos, dim)
   draw_trimmed_char(char, font_atlas, pos, dim, trim, font_size, z, colour)
-  return is_interactive && gc.ui.triggered_id == id
+  return gc.ui.triggered_id == id
 }
 
-text_button :: proc(
-  id: u64,
-  is_interactive: bool,
-  pos: Pos,
-  dim: Dim,
-  z: f32,
-  text: string,
-  font_size: f32,
-  font: FontTexture,
-) -> bool {
+text_button :: proc(id: u64, pos: Pos, dim: Dim, z: f32, text: string, font_size: f32, font: FontTexture) -> bool {
   update_ui_state(id, pos, dim, z)
   colour: Colour
   text_colour: Colour
@@ -113,7 +99,7 @@ text_button :: proc(
     draw_string(text, FONTS[font], text_pos, z, font_size, text_colour)
   }
 
-  return is_interactive && gc.ui.triggered_id == id
+  return gc.ui.triggered_id == id
 }
 
 center_within_container :: proc(dim: Dim, container_pos: Pos, container_dim: Dim) -> Pos {

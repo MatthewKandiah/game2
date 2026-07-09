@@ -36,9 +36,8 @@ GridClickData :: struct {
 }
 
 EntityClickData :: struct {
-  id:     EntityId,
-  tile:   GridTile,
-  to_pos: GridPos,
+  id:   EntityId,
+  tile: GridTile,
 }
 
 playing_view :: proc(game: ^Game) {
@@ -120,7 +119,7 @@ playing_view :: proc(game: ^Game) {
     draw_fmt_string("%8.0f", FONTS[.UbuntuMono], ui_pos, 0.3, top_bar_height, BLACK, game.time)
   }
 
-  handle_view_action(game, action)
+  handle_action(game, action)
 }
 
 grid_tile_screen_pos :: proc(
@@ -156,14 +155,14 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
     y = ui_pos_bot_left.y,
   }
 
-  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Exit", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .ExitClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Reset Zoom", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .ResetZoomClick,
     }
@@ -177,13 +176,13 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
       h = button_dim.h,
     }
     zoom_button_pos := ui_pos
-    if text_button(get_uid(), true, zoom_button_pos, zoom_button_dim, 0.1, "+", FONT_MEDIUM, .Ubuntu) {
+    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "+", FONT_MEDIUM, .Ubuntu) {
       action = {
         type = .ZoomInClick,
       }
     }
     zoom_button_pos.x += zoom_button_dim.w
-    if text_button(get_uid(), true, zoom_button_pos, zoom_button_dim, 0.1, "-", FONT_MEDIUM, .Ubuntu) {
+    if text_button(get_uid(), zoom_button_pos, zoom_button_dim, 0.1, "-", FONT_MEDIUM, .Ubuntu) {
       action = {
         type = .ZoomOutClick,
       }
@@ -192,60 +191,42 @@ buttons_column :: proc(game: ^Game, ui_pos_bot_left: Pos, button_dim: Dim) -> (a
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Play", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .RecentreClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Look", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .LookClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "See all", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "See all", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .ShowAllClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(get_uid(), true, ui_pos, button_dim, 0.1, "Hide all", FONT_MEDIUM, .Ubuntu) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Hide all", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .HideAllClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(
-    get_uid(),
-    game_player_active(game) && !game.animation_in_progress,
-    ui_pos,
-    button_dim,
-    0.1,
-    "Spawn",
-    FONT_MEDIUM,
-    .Ubuntu,
-  ) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Spawn", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .SpawnMonsterClick,
     }
   }
   ui_pos.y += button_dim.h
 
-  if text_button(
-    get_uid(),
-    game_player_active(game) && !game.animation_in_progress,
-    ui_pos,
-    button_dim,
-    0.1,
-    "Wait",
-    FONT_MEDIUM,
-    .Ubuntu,
-  ) {
+  if text_button(get_uid(), ui_pos, button_dim, 0.1, "Wait", FONT_MEDIUM, .Ubuntu) {
     action = {
       type = .WaitClick,
     }
@@ -288,18 +269,10 @@ grid :: proc(
       }
       trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
       tile := grid_get(game.grid, grid_pos, game.player.floor)
-      is_on_player_path := false
-      for path_pos in game.player_planned_path_buf[0:game.player_planned_path_count] {
-	if grid_pos == path_pos {
-	  is_on_player_path = true
-	  break
-	}
-      }
       if tile.visibility != .Unknown {
         draw_info := grid_tile_draw_info[tile.type]
         if grid_button(
           get_uid(d),
-          game_player_active(game) && !game.animation_in_progress,
           ui_pos,
           grid_button_dim,
           0.05,
@@ -308,8 +281,6 @@ grid :: proc(
           .UbuntuMono,
           draw_info.colour if tile.visibility == .Visible else DARK_GREY,
           trim,
-	  is_on_player_path,
-	  TEAL,
         ) {
           action = {
             type = .GridClick,
@@ -334,159 +305,10 @@ grid :: proc(
         trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
         tile := grid_get(game.grid, entity.pos, entity.floor)
         draw_info := entity_draw_info[entity.type]
-        show_indicator :=
-          game.active_entity == entity.id && game.animation_in_progress && entity.floor == game.player.floor
-        if show_indicator {
-          indicator_colour := RED if game.current_action.type == .Attack else TEAL
-          triangle_corners: [3]Pos
-          third_width := grid_button_dim.w / 3
-          third_height := grid_button_dim.h / 3
-          half_width := grid_button_dim.w / 2
-          half_height := grid_button_dim.h / 2
-          switch game.current_action.indicator_position {
-          case .MID:
-            {
-              triangle_corners[0] = Pos {
-                x = ui_pos.x + third_width,
-                y = ui_pos.y + 2 * third_height,
-              }
-              triangle_corners[1] = Pos {
-                x = ui_pos.x + 2 * third_width,
-                y = ui_pos.y + 2 * third_height,
-              }
-              triangle_corners[2] = Pos {
-                x = ui_pos.x + half_width,
-                y = ui_pos.y + third_height,
-              }
-            }
-          case .N:
-            {
-              triangle_corners[0] = Pos {
-                x = ui_pos.x + third_width,
-                y = ui_pos.y + 2 * third_height,
-              }
-              triangle_corners[1] = Pos {
-                x = ui_pos.x + half_width,
-                y = ui_pos.y + grid_button_dim.h,
-              }
-              triangle_corners[2] = Pos {
-                x = ui_pos.x + 2 * third_width,
-                y = ui_pos.y + 2 * third_height,
-              }
-            }
-          case .E:
-            {
-              triangle_corners[0] = Pos {
-                x = ui_pos.x + 2 * third_width,
-                y = ui_pos.y + 2 * third_height,
-              }
-              triangle_corners[1] = Pos {
-                x = ui_pos.x + grid_button_dim.w,
-                y = ui_pos.y + half_height,
-              }
-              triangle_corners[2] = Pos {
-                x = ui_pos.x + 2 * third_width,
-                y = ui_pos.y + third_height,
-              }
-            }
-          case .S:
-            {
-              triangle_corners[0] = Pos {
-                x = ui_pos.x + third_width,
-                y = ui_pos.y + third_height,
-              }
-              triangle_corners[1] = Pos {
-                x = ui_pos.x + 2 * third_width,
-                y = ui_pos.y + third_height,
-              }
-              triangle_corners[2] = Pos {
-                x = ui_pos.x + half_width,
-                y = ui_pos.y,
-              }
-            }
-          case .W:
-            {
-              triangle_corners[0] = Pos {
-                x = ui_pos.x + third_width,
-                y = ui_pos.y + third_height,
-              }
-              triangle_corners[1] = Pos {
-                x = ui_pos.x,
-                y = ui_pos.y + half_height,
-              }
-              triangle_corners[2] = Pos {
-                x = ui_pos.x + third_width,
-                y = ui_pos.y + 2 * third_height,
-              }
-            }
-          case .NE:
-            {
-              triangle_corners[0] = Pos {
-                x = ui_pos.x + 2 * third_width,
-                y = ui_pos.y + grid_button_dim.h,
-              }
-              triangle_corners[1] = Pos {
-                x = ui_pos.x + grid_button_dim.w,
-                y = ui_pos.y + grid_button_dim.h,
-              }
-              triangle_corners[2] = Pos {
-                x = ui_pos.x + grid_button_dim.w,
-                y = ui_pos.y + 2 * third_height,
-              }
-            }
-          case .SE:
-            {
-              triangle_corners[0] = Pos {
-                x = ui_pos.x + grid_button_dim.w,
-                y = ui_pos.y + third_height,
-              }
-              triangle_corners[1] = Pos {
-                x = ui_pos.x + grid_button_dim.w,
-                y = ui_pos.y,
-              }
-              triangle_corners[2] = Pos {
-                x = ui_pos.x + 2 * third_width,
-                y = ui_pos.y,
-              }
-            }
-          case .SW:
-            {
-              triangle_corners[0] = Pos {
-                x = ui_pos.x,
-                y = ui_pos.y + third_height,
-              }
-              triangle_corners[1] = Pos {
-                x = ui_pos.x + third_width,
-                y = ui_pos.y,
-              }
-              triangle_corners[2] = Pos {
-                x = ui_pos.x,
-                y = ui_pos.y,
-              }
-            }
-          case .NW:
-            {
-              triangle_corners[0] = Pos {
-                x = ui_pos.x,
-                y = ui_pos.y + 2 * third_height,
-              }
-              triangle_corners[1] = Pos {
-                x = ui_pos.x,
-                y = ui_pos.y + grid_button_dim.h,
-              }
-              triangle_corners[2] = Pos {
-                x = ui_pos.x + third_width,
-                y = ui_pos.y + grid_button_dim.h,
-              }
-            }
-          }
-          draw_triangle(triangle_corners[0], triangle_corners[1], triangle_corners[2], 0.07, indicator_colour)
-        }
         if entity.floor == game.player.floor &&
            tile.visibility == .Visible &&
            grid_button(
              get_uid(cast(u32)entity.id.idx),
-             game_player_active(game) && !game.animation_in_progress,
              ui_pos,
              grid_button_dim,
              0.06,
@@ -498,7 +320,7 @@ grid :: proc(
            ) {
           action = {
             type = .EntityClick,
-            data = EntityClickData{id = entity.id, tile = tile, to_pos = entity.pos},
+            data = EntityClickData{id = entity.id, tile = tile},
           }
         }
       }
@@ -552,7 +374,7 @@ minimap :: proc(
   }
 }
 
-handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
+handle_action :: proc(game: ^Game, action: PlayingViewAction) {
   switch (action.type) {
   case .None:
     return
@@ -586,26 +408,12 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
       data := action.data.(GridClickData)
       if game.is_looking {
         game.viewport_centre = data.pos
-      } else if data.tile_type != .Wall {
-	path_ok, path_count := dijkstra_map_player_path(game.floor_dijkstra_map, data.pos, game.player_planned_path_buf)
-	if path_ok {
-	  game.player_planned_path_count = path_count
-	  game.active_entity = PLAYER_ENTITY_ID
-	  game.current_action = move_action(game.player.pos, game.player_planned_path_buf[game.player_planned_path_count - 1], entity_move_time[.Player])
-	  game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
-	  game.animation_in_progress = true
-	}
-        /* old move one tile logic
+      } else {
         if data.tile_type != .Wall &&
            (abs(data.pos.x - game.player.pos.x) <= 1) &&
            (abs(data.pos.y - game.player.pos.y) <= 1) {
-          game.active_entity = PLAYER_ENTITY_ID
-          game.current_action = move_action(game.player.pos, data.pos, entity_move_time[.Player])
-          game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
-          //game.animation_timer_nanos = 0
-          game.animation_in_progress = true // player cross frame actions only resolve if an animation is in progress, an animation is just a cross frame action, all player actions are cross frame at the moment
+          game_player_move(game, data.pos)
         }
-        */
       }
     }
   case .EntityClick:
@@ -616,22 +424,19 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
           game.viewport_centre = game.player.pos
         } else {
           if data.tile.type == .DownStair {
-            game.active_entity = PLAYER_ENTITY_ID
-            game.current_action = move_down_stairs_action(entity_move_time[.Player])
-            game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
-            game.animation_in_progress = true
+            clear_visibility(game.grid, game.player.pos, game.player.floor)
+            game.player.floor += 1
+            update_visibility(game.grid, game.player.pos, game.player.floor)
+            update_floor_dijkstra_map(game)
           } else if data.tile.type == .UpStair {
-            game.active_entity = PLAYER_ENTITY_ID
-            game.current_action = move_up_stairs_action(entity_move_time[.Player])
-            game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
-            game.animation_in_progress = true
+            clear_visibility(game.grid, game.player.pos, game.player.floor)
+            game.player.floor -= 1
+            update_visibility(game.grid, game.player.pos, game.player.floor)
+            update_floor_dijkstra_map(game)
           }
         }
       } else {
-        game.active_entity = PLAYER_ENTITY_ID
-        game.current_action = attack_action(game.player.pos, data.to_pos, data.id, entity_move_time[.Player])
-        game.animation_timer_nanos = DEFAULT_ANIMATION_TIME_NANOS
-        game.animation_in_progress = true
+        attack(game, PLAYER_ENTITY_ID, data.id)
       }
     }
   case .HideAllClick:
@@ -725,9 +530,8 @@ handle_view_action :: proc(game: ^Game, action: PlayingViewAction) {
         id          = PLAYER_ENTITY_ID,
         next_active = game.time + game.player.move_time,
       }
-      // TODO - make this a wait action too
       actor_queue_insert(&game.actor_queue, actor)
-      game.active_entity = NONE_ENTITY_ID
+      game.process_actors = true
 
     }
   }

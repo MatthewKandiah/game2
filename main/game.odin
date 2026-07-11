@@ -41,6 +41,13 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
   game.player.pos = to
   game.viewport_centre = to
 
+  indicator := Indicator {
+    colour = TEAL,
+    sector = indicator_direction(from, to),
+    timer_nanos = 1_000_000_000,
+  }
+  entity_manager_set_indicator(&game.entity_manager, PLAYER_ENTITY_ID, indicator)
+
   clear_visibility(game.grid, from, game.player.floor)
   update_visibility(game.grid, to, game.player.floor)
   update_floor_dijkstra_map(game)

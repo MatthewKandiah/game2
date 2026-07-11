@@ -18,6 +18,68 @@ Entity :: struct {
   max_health:    i32,
   move_time:     f32,
   asked_to_move: bool,
+  indicator:     Indicator,
+}
+
+Indicator :: struct {
+  sector:      IndicatorDirection,
+  colour:      Colour,
+  timer_nanos: i64,
+}
+
+IndicatorDirection :: enum {
+  NONE,
+  NW,
+  N,
+  NE,
+  W,
+  MID,
+  E,
+  SW,
+  S,
+  SE,
+}
+
+indicator_direction :: proc(from, to: GridPos) -> IndicatorDirection {
+  dx := cast(f32)(to.x - from.x)
+  dy := cast(f32)(to.y - from.y)
+
+  if dx == 0 {
+    if dy == 0 {
+      return .MID
+    } else if dy > 0 {
+      return .N
+    } else {
+      return .S
+    }
+  }
+
+  dydx_abs := abs(dy / dx)
+  if dydx_abs < 0.5 {
+    if dx > 0 {
+      return .E
+    } else {
+      return .W
+    }
+  } else if dydx_abs > 2 {
+    if dy > 0 {
+      return .N
+    } else {
+      return .S
+    }
+  } else {
+    if dy > 0 && dx > 0 {
+      return .NE
+    } else if dy > 0 && dx < 0 {
+      return .NW
+    } else if dy < 0 && dx > 0 {
+      return .SE
+    } else if dy < 0 && dx < 0 {
+      return .SW
+    }
+  }
+
+  unreachable()
 }
 
 EntityId :: struct {
@@ -168,6 +230,15 @@ entity_manager_set_health :: proc(em: ^EntityManager, id: EntityId, health: i32)
 entity_manager_set_asked_to_move :: proc(em: ^EntityManager, id: EntityId, value: bool) -> (ok: bool) {
   if entity_manager_id_valid(em, id) {
     em.buf[id.idx].asked_to_move = value
+    return true
+  } else {
+    return false
+  }
+}
+
+entity_manager_set_indicator :: proc(em: ^EntityManager, id: EntityId, indicator: Indicator) -> (ok: bool) {
+  if entity_manager_id_valid(em, id) {
+    em.buf[id.idx].indicator = indicator
     return true
   } else {
     return false

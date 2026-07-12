@@ -323,146 +323,7 @@ grid :: proc(
             data = EntityClickData{id = entity.id, tile = tile},
           }
         }
-        should_draw_indicator := true
-        triangle_verts := [3]Pos{}
-        half_width := grid_button_dim.w / 2
-        third_width := grid_button_dim.w / 3
-        quarter_width := grid_button_dim.w / 4
-        half_height := grid_button_dim.h / 2
-        third_height := grid_button_dim.h / 3
-        quarter_height := grid_button_dim.h / 4
-        if (entity.id == PLAYER_ENTITY_ID && entity.indicator.sector == .N) {
-          fmt.println("Player indicator north")
-        }
-        switch entity.indicator.sector {
-        case .NONE:
-          {
-            should_draw_indicator = false
-          }
-        case .MID:
-          unreachable()
-        case .N:
-          {
-            triangle_verts[0] = Pos {
-              x = ui_pos.x + quarter_width,
-              y = ui_pos.y + 2 * third_height,
-            }
-            triangle_verts[1] = Pos {
-              x = ui_pos.x + half_width,
-              y = ui_pos.y + grid_button_dim.h,
-            }
-            triangle_verts[2] = Pos {
-              x = ui_pos.x + 3 * quarter_width,
-              y = ui_pos.y + 2 * third_height,
-            }
-          }
-        case .E:
-          {
-            triangle_verts[0] = Pos {
-              x = ui_pos.x + 2 * third_width,
-              y = ui_pos.y + quarter_height,
-            }
-            triangle_verts[1] = Pos {
-              x = ui_pos.x + 2 * third_width,
-              y = ui_pos.y + 3 * quarter_height,
-            }
-            triangle_verts[2] = Pos {
-              x = ui_pos.x + grid_button_dim.w,
-              y = ui_pos.y + half_height,
-            }
-          }
-        case .S:
-          {
-            triangle_verts[0] = Pos {
-              x = ui_pos.x + quarter_width,
-              y = ui_pos.y + third_height,
-            }
-            triangle_verts[1] = Pos {
-              x = ui_pos.x + 3 * quarter_width,
-              y = ui_pos.y + third_height,
-            }
-            triangle_verts[2] = Pos {
-              x = ui_pos.x + half_width,
-              y = ui_pos.y,
-            }
-          }
-        case .W:
-          {
-            triangle_verts[0] = Pos {
-              x = ui_pos.x + third_width,
-              y = ui_pos.y + quarter_height,
-            }
-            triangle_verts[1] = Pos {
-              x = ui_pos.x,
-              y = ui_pos.y + half_height,
-            }
-            triangle_verts[2] = Pos {
-              x = ui_pos.x + third_width,
-              y = ui_pos.y + 3 * quarter_height,
-            }
-          }
-        case .NW:
-          {
-            triangle_verts[0] = Pos {
-              x = ui_pos.x,
-              y = ui_pos.y + grid_button_dim.h,
-            }
-            triangle_verts[1] = Pos {
-              x = ui_pos.x + third_width,
-              y = ui_pos.y + grid_button_dim.h,
-            }
-            triangle_verts[2] = Pos {
-              x = ui_pos.x,
-              y = ui_pos.y + 2 * third_height,
-            }
-          }
-        case .NE:
-          {
-            triangle_verts[0] = Pos {
-              x = ui_pos.x + grid_button_dim.w,
-              y = ui_pos.y + grid_button_dim.h,
-            }
-            triangle_verts[1] = Pos {
-              x = ui_pos.x + grid_button_dim.w,
-              y = ui_pos.y + 2 * third_height,
-            }
-            triangle_verts[2] = Pos {
-              x = ui_pos.x + 2 * third_width,
-              y = ui_pos.y + grid_button_dim.h,
-            }
-          }
-        case .SE:
-          {
-            triangle_verts[0] = Pos {
-              x = ui_pos.x + grid_button_dim.w,
-              y = ui_pos.y,
-            }
-            triangle_verts[1] = Pos {
-              x = ui_pos.x + 2 * third_width,
-              y = ui_pos.y,
-            }
-            triangle_verts[2] = Pos {
-              x = ui_pos.x + grid_button_dim.w,
-              y = ui_pos.y + third_height,
-            }
-          }
-        case .SW:
-          {
-            triangle_verts[0] = ui_pos
-            triangle_verts[1] = Pos {
-              x = ui_pos.x,
-              y = ui_pos.y + third_height,
-            }
-            triangle_verts[2] = Pos {
-              x = ui_pos.x + third_width,
-              y = ui_pos.y,
-            }
-          }
-        }
-        if should_draw_indicator {
-          fmt.println("should draw indicator")
-          draw_triangle(triangle_verts[0], triangle_verts[1], triangle_verts[2], 0.07, entity.indicator.colour)
-        }
+        draw_directional_indicator(entity, grid_button_dim, ui_pos)
       }
     }
   }
@@ -674,5 +535,144 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
       game.process_actors = true
 
     }
+  }
+}
+
+draw_directional_indicator :: proc(entity: Entity, grid_button_dim: Dim, ui_pos: Pos) {
+  should_draw_indicator := true
+  triangle_verts := [3]Pos{}
+  half_width := grid_button_dim.w / 2
+  third_width := grid_button_dim.w / 3
+  quarter_width := grid_button_dim.w / 4
+  half_height := grid_button_dim.h / 2
+  third_height := grid_button_dim.h / 3
+  quarter_height := grid_button_dim.h / 4
+  switch entity.indicator.sector {
+  case .NONE:
+    {
+      should_draw_indicator = false
+    }
+  case .MID:
+    unreachable()
+  case .N:
+    {
+      triangle_verts[0] = Pos {
+        x = ui_pos.x + quarter_width,
+        y = ui_pos.y + 2 * third_height,
+      }
+      triangle_verts[1] = Pos {
+        x = ui_pos.x + half_width,
+        y = ui_pos.y + grid_button_dim.h,
+      }
+      triangle_verts[2] = Pos {
+        x = ui_pos.x + 3 * quarter_width,
+        y = ui_pos.y + 2 * third_height,
+      }
+    }
+  case .E:
+    {
+      triangle_verts[0] = Pos {
+        x = ui_pos.x + 2 * third_width,
+        y = ui_pos.y + quarter_height,
+      }
+      triangle_verts[1] = Pos {
+        x = ui_pos.x + 2 * third_width,
+        y = ui_pos.y + 3 * quarter_height,
+      }
+      triangle_verts[2] = Pos {
+        x = ui_pos.x + grid_button_dim.w,
+        y = ui_pos.y + half_height,
+      }
+    }
+  case .S:
+    {
+      triangle_verts[0] = Pos {
+        x = ui_pos.x + quarter_width,
+        y = ui_pos.y + third_height,
+      }
+      triangle_verts[1] = Pos {
+        x = ui_pos.x + 3 * quarter_width,
+        y = ui_pos.y + third_height,
+      }
+      triangle_verts[2] = Pos {
+        x = ui_pos.x + half_width,
+        y = ui_pos.y,
+      }
+    }
+  case .W:
+    {
+      triangle_verts[0] = Pos {
+        x = ui_pos.x + third_width,
+        y = ui_pos.y + quarter_height,
+      }
+      triangle_verts[1] = Pos {
+        x = ui_pos.x,
+        y = ui_pos.y + half_height,
+      }
+      triangle_verts[2] = Pos {
+        x = ui_pos.x + third_width,
+        y = ui_pos.y + 3 * quarter_height,
+      }
+    }
+  case .NW:
+    {
+      triangle_verts[0] = Pos {
+        x = ui_pos.x,
+        y = ui_pos.y + grid_button_dim.h,
+      }
+      triangle_verts[1] = Pos {
+        x = ui_pos.x + third_width,
+        y = ui_pos.y + grid_button_dim.h,
+      }
+      triangle_verts[2] = Pos {
+        x = ui_pos.x,
+        y = ui_pos.y + 2 * third_height,
+      }
+    }
+  case .NE:
+    {
+      triangle_verts[0] = Pos {
+        x = ui_pos.x + grid_button_dim.w,
+        y = ui_pos.y + grid_button_dim.h,
+      }
+      triangle_verts[1] = Pos {
+        x = ui_pos.x + grid_button_dim.w,
+        y = ui_pos.y + 2 * third_height,
+      }
+      triangle_verts[2] = Pos {
+        x = ui_pos.x + 2 * third_width,
+        y = ui_pos.y + grid_button_dim.h,
+      }
+    }
+  case .SE:
+    {
+      triangle_verts[0] = Pos {
+        x = ui_pos.x + grid_button_dim.w,
+        y = ui_pos.y,
+      }
+      triangle_verts[1] = Pos {
+        x = ui_pos.x + 2 * third_width,
+        y = ui_pos.y,
+      }
+      triangle_verts[2] = Pos {
+        x = ui_pos.x + grid_button_dim.w,
+        y = ui_pos.y + third_height,
+      }
+    }
+  case .SW:
+    {
+      triangle_verts[0] = ui_pos
+      triangle_verts[1] = Pos {
+        x = ui_pos.x,
+        y = ui_pos.y + third_height,
+      }
+      triangle_verts[2] = Pos {
+        x = ui_pos.x + third_width,
+        y = ui_pos.y,
+      }
+    }
+  }
+  if should_draw_indicator {
+    draw_triangle(triangle_verts[0], triangle_verts[1], triangle_verts[2], 0.07, entity.indicator.colour)
   }
 }

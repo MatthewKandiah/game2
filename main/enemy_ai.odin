@@ -23,6 +23,12 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
           if can_see_player {
             fmt.println("Rat sees player", id)
             entity_manager_set_status(&game.entity_manager, id, .ACTIVE)
+            indicator := Indicator {
+              sector      = .MID,
+              colour      = PINK,
+              timer_nanos = 1_000_000_000,
+            }
+            entity_manager_set_indicator(&game.entity_manager, id, indicator)
           }
         }
       case .ACTIVE:
@@ -64,6 +70,12 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
               if is_enemy {continue}
               fmt.println("Rat steps towards player", id)
               entity_manager_set_pos(&game.entity_manager, id, move_candidate)
+              indicator := Indicator {
+                sector      = indicator_direction(enemy.pos, move_candidate),
+                colour      = TEAL,
+                timer_nanos = 1_000_000_000,
+              }
+              entity_manager_set_indicator(&game.entity_manager, id, indicator)
               moved_successfully = true
               break
             }
@@ -74,10 +86,22 @@ enemy_ai :: proc(game: ^Game, id: EntityId) -> (acts_again: bool, next_action_ti
                 entity_manager_set_asked_to_move(&game.entity_manager, obstacle_enemies[enemy_idx].id, true)
               }
               fmt.println("Rat snarls angrily", id)
+	      indicator := Indicator {
+		sector = .MID,
+		colour = TEAL,
+		timer_nanos = 1_000_000_000,
+	      }
+	      entity_manager_set_indicator(&game.entity_manager, id, indicator)
             }
           } else {
             fmt.println("Rat forgets player", id)
             entity_manager_set_status(&game.entity_manager, id, .INACTIVE)
+	    indicator := Indicator {
+	      sector = .MID,
+	      colour = YELLOW,
+	      timer_nanos = 1_000_000_000,
+	    }
+	    entity_manager_set_indicator(&game.entity_manager, id, indicator)
           }
         }
       }

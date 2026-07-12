@@ -305,25 +305,25 @@ grid :: proc(
         trim := grid_tile_trim(grid_ui_pos_bot_left, grid_ui_dim, ui_pos, grid_button_dim)
         tile := grid_get(game.grid, entity.pos, entity.floor)
         draw_info := entity_draw_info[entity.type]
-        if entity.floor == game.player.floor &&
-           tile.visibility == .Visible &&
-           grid_button(
-             get_uid(cast(u32)entity.id.idx),
-             ui_pos,
-             grid_button_dim,
-             0.06,
-             draw_info.char,
-             font_size,
-             .UbuntuMono,
-             draw_info.colour,
-             trim,
-           ) {
-          action = {
-            type = .EntityClick,
-            data = EntityClickData{id = entity.id, tile = tile},
+        if entity.floor == game.player.floor && tile.visibility == .Visible {
+          if grid_button(
+            get_uid(cast(u32)entity.id.idx),
+            ui_pos,
+            grid_button_dim,
+            0.06,
+            draw_info.char,
+            font_size,
+            .UbuntuMono,
+            draw_info.colour,
+            trim,
+          ) {
+            action = {
+              type = .EntityClick,
+              data = EntityClickData{id = entity.id, tile = tile},
+            }
           }
+          draw_directional_indicator(entity, grid_button_dim, ui_pos)
         }
-        draw_directional_indicator(entity, grid_button_dim, ui_pos)
       }
     }
   }
@@ -553,7 +553,20 @@ draw_directional_indicator :: proc(entity: Entity, grid_button_dim: Dim, ui_pos:
       should_draw_indicator = false
     }
   case .MID:
-    unreachable()
+    {
+      triangle_verts[0] = Pos {
+        x = ui_pos.x + half_width,
+        y = ui_pos.y + quarter_height,
+      }
+      triangle_verts[1] = Pos {
+        x = ui_pos.x + quarter_width,
+        y = ui_pos.y + 3 * quarter_height,
+      }
+      triangle_verts[2] = Pos {
+        x = ui_pos.x + 3 * quarter_width,
+        y = ui_pos.y + 3 * quarter_height,
+      }
+    }
   case .N:
     {
       triangle_verts[0] = Pos {

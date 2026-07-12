@@ -11,6 +11,12 @@ attack :: proc(game: ^Game, attacker_id, defender_id: EntityId) {
   fmt.println(attacker_id, "attacks", defender_id)
 
   updated_health := defender.health - 1
+  indicator := Indicator {
+    sector      = indicator_direction(attacker.pos, defender.pos),
+    colour      = RED,
+    timer_nanos = 1_000_000_000,
+  }
+  entity_manager_set_indicator(&game.entity_manager, attacker.id, indicator)
   if updated_health <= 0 {
     if defender.id == PLAYER_ENTITY_ID {
       fmt.println("you die, game over")

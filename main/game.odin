@@ -44,7 +44,7 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
   indicator := Indicator {
     colour = TEAL,
     sector = indicator_direction(from, to),
-    timer_nanos = 1_000_000_000,
+    timer_nanos = 300_000_000,
   }
   entity_manager_set_indicator(&game.entity_manager, PLAYER_ENTITY_ID, indicator)
 

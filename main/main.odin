@@ -129,10 +129,28 @@ main :: proc() {
   }
   game_reset(&game)
 
+  time_nanos := time.now()
   // main loop
   for !glfw.WindowShouldClose(gc.window) {
     time.stopwatch_start(&stopwatch)
     glfw.PollEvents()
+
+    // update indicator timers
+    current_time := time.now()
+    delta_t := time.duration_nanoseconds(time.diff(time_nanos, current_time))
+    entity_iter := entity_iter_init(&game.entity_manager)
+    for entity in entity_iter_next(&entity_iter) {
+      if entity.indicator.sector != .NONE && entity.indicator.timer_nanos > 0 {
+        updated_timer := entity.indicator.timer_nanos - delta_t
+        updated_indicator := Indicator {
+          sector      = entity.indicator.sector if updated_timer > 0 else .NONE,
+          colour      = entity.indicator.colour,
+          timer_nanos = updated_timer,
+        }
+        entity_manager_set_indicator(&game.entity_manager, entity.id, updated_indicator)
+      }
+    }
+    time_nanos = current_time
 
     for game.process_actors {
       actor := actor_queue_pop_min(&game.actor_queue)

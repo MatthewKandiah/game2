@@ -23,8 +23,13 @@ Game :: struct {
   is_looking:         bool,
   zoom_level:         f32,
   time:               f32,
-  process_actors:     bool,
+  main_loop_state:    MainLoopState,
   player:             ^Entity,
+}
+
+MainLoopState :: enum {
+  ProcessActors,
+  DrawFrame,
 }
 
 GameMode :: enum {
@@ -57,7 +62,6 @@ game_player_move :: proc(game: ^Game, to: GridPos) {
     next_active = game.time + game.player.move_time,
   }
   actor_queue_insert(&game.actor_queue, actor)
-  game.process_actors = true
 }
 
 clear_visibility :: proc(grid: []GridTile, player_pos: GridPos, floor: i32) {
@@ -206,7 +210,7 @@ game_reset :: proc(game: ^Game) {
   game.viewport_centre = valid_player_pos
   game.is_looking = false
   game.zoom_level = 1
-  game.process_actors = true
+  game.main_loop_state = .ProcessActors
 
   update_visibility(game.grid, valid_player_pos, game.player.floor)
   update_floor_dijkstra_map(game)

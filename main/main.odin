@@ -152,17 +152,22 @@ main :: proc() {
     }
     time_nanos = current_time
 
-    for game.process_actors {
+    for game.main_loop_state == .ProcessActors {
       actor := actor_queue_pop_min(&game.actor_queue)
       game.time = actor.next_active
       if actor.id == PLAYER_ENTITY_ID {
-        game.process_actors = false
+	// user input sets a `current_action` on game
+	// if current_action.type == None => we are waiting for input and just draw a frame here
+	// if current_action.type != None => we handle the action and continue processing actors
+        game.main_loop_state = .DrawFrame
       } else {
-        acts_again, next_action_time := enemy_ai(&game, actor.id)
-        if acts_again {
+        enemy_ok, enemy := entity_manager_get(&game.entity_manager, actor.id)
+        if enemy_ok {
+          action := enemy_ai(&game, enemy)
+	  handle_enemy_action(&game, action)
           actor := Actor {
             id          = actor.id,
-            next_active = next_action_time,
+            next_active = game.time + action.duration,
           }
           actor_queue_insert(&game.actor_queue, actor)
         }

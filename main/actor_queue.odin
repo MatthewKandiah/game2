@@ -9,7 +9,6 @@ ActorQueue :: struct {
   heap_count: i32,
 }
 
-// TODO - consider moving next_active to Entity
 Actor :: struct {
   id:          EntityId,
   next_active: f32,

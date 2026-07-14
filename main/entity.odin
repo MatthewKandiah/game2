@@ -8,6 +8,11 @@ PLAYER_ENTITY_ID :: EntityId {
   generation = 0,
 }
 
+NONE_ENTITY_ID :: EntityId {
+  idx = -1,
+  generation = -1,
+}
+
 Entity :: struct {
   id:            EntityId,
   type:          EntityType,
@@ -189,7 +194,7 @@ entity_manager_add :: proc(
 }
 
 entity_manager_id_valid :: proc(em: ^EntityManager, id: EntityId) -> bool {
-  return em.idx_is_active[id.idx] && em.idx_generation[id.idx] == id.generation
+  return id != NONE_ENTITY_ID && em.idx_is_active[id.idx] && em.idx_generation[id.idx] == id.generation
 }
 
 entity_manager_get :: proc(em: ^EntityManager, id: EntityId) -> (ok: bool, entity: Entity) {

@@ -413,7 +413,8 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
         if data.tile_type != .Wall &&
            (abs(data.pos.x - game.player.pos.x) <= 1) &&
            (abs(data.pos.y - game.player.pos.y) <= 1) {
-          game_player_move(game, data.pos)
+             game_player_move(game, data.pos) // action - move
+	     game.main_loop_state = .ProcessActors
         }
       }
     }
@@ -428,16 +429,16 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
             clear_visibility(game.grid, game.player.pos, game.player.floor)
             game.player.floor += 1
             update_visibility(game.grid, game.player.pos, game.player.floor)
-            update_floor_dijkstra_map(game)
+            update_floor_dijkstra_map(game) // action - move down stairs
           } else if data.tile.type == .UpStair {
             clear_visibility(game.grid, game.player.pos, game.player.floor)
             game.player.floor -= 1
             update_visibility(game.grid, game.player.pos, game.player.floor)
-            update_floor_dijkstra_map(game)
+            update_floor_dijkstra_map(game) // action - move down 
           }
         }
       } else {
-        attack(game, PLAYER_ENTITY_ID, data.id)
+        attack(game, PLAYER_ENTITY_ID, data.id) // action - attack
       }
     }
   case .HideAllClick:
@@ -527,13 +528,13 @@ handle_action :: proc(game: ^Game, action: PlayingViewAction) {
     }
   case .WaitClick:
     {
+      // action - wait
       actor := Actor {
         id          = PLAYER_ENTITY_ID,
         next_active = game.time + game.player.move_time,
       }
       actor_queue_insert(&game.actor_queue, actor)
-      game.process_actors = true
-
+      game.main_loop_state = .ProcessActors
     }
   }
 }
